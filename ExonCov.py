@@ -44,7 +44,7 @@ def make_Exon_stats(sambamba,wkdir,threads,flanks,mq,bq):
 	files= commands.getoutput("find "+str(wkdir)+ " -iname \"*bam\"").split()
 	x=1
         for file in files:
-                match = re.search("dedup.realigned.bam$", str(file))  	## For Illumina data
+                match = re.search("dedup.bam$", str(file))  	## For Illumina data
 		#match = re.search("merged*bam$", str(file))   	## For Solid data
                 if match:
 			write_sh=open(str(wkdir)+"Depth_job_"+str(x)+".sh","w")
