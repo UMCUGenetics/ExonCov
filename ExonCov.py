@@ -3,18 +3,17 @@ import sys
 import os
 import re
 import commands
-import getopt
-import datetime
+#import getopt
+#import datetime
 import time
 from optparse import OptionParser
-from optparse import OptionGroup
+from optparse import Option,OptionGroup
 import os.path
-from operator import itemgetter
+#from operator import itemgetter
 
 ###########################################################################################################################################
 # AUTHOR: M.G. Elferink
 # DATE: 18-06-2015
-# USE: ./ExonCallCov_v3_v1.4.py 
 # Purpose: This script is used to calculate the coverage of exons, transcripts, preferred transcripts, gene-panels based on BAM input files
 ###########################################################################################################################################
 
@@ -38,38 +37,82 @@ def make_Dic(list):
 
 ########
 
-def make_Exon_stats(sambamba,wkdir,threads,flanks,mq,bq):
+def Write_SH(x,wkdir,sambamba,file,bq,mq,L_list,threads,bed_file,job_list,exoncov_files):
+	write_sh=open(str(wkdir)+"Depth_job_"+str(x)+".sh","w")
+	write_sh.write(str(sambamba) +" depth region "+ str(file))
+        write_sh.write(" -q "+str(bq))
+        write_sh.write(" -F \" mapping_quality >= "+str(mq)+" and not duplicate and not failed_quality_control and not secondary_alignment \"")
+        for item in L_list:
+        	write_sh.write(" -T "+str(item))
+        write_sh.write(" -t "+str(threads)+ " -L " +str(bed_file)+" -o ."+str(file.split(".")[1])+"_exon_coverage.tsv" +"\n")           ###>>> " -o ."+str(file.split(".")[1]) = for BAM files in folder ONLY!
+        exoncov_files+=["."+str(file.split(".")[1])+"_exon_coverage.tsv"]                                                               ###>>> "."+str(file.split(".")[1]) = for BAM files in folder ONLY!
+        write_sh.close()
+        job_list+=[str(wkdir)+"Depth_job_"+str(x)+".sh"]
+        x+=1
+	return job_list,exoncov_files,x
+
+def make_Exon_stats(sambamba,wkdir,threads,flanks,mq,bq,timeslot,search_pattern,input_file,queue,max_mem):
         exoncov_files=[]
 	job_list=[]
-	files= commands.getoutput("find "+str(wkdir)+ " -iname \"*bam\"").split()
-	x=1
-        for file in files:
-                match = re.search("dedup.bam$", str(file))  	## For Illumina data
-		#match = re.search("merged*bam$", str(file))   	## For Solid data
-                if match:
+	if input_file == "off":
+		files= commands.getoutput("find "+str(wkdir)+ " -iname \"*bam\"").split()
+		x=1
+	        for file in files:
+	                match = re.search(str(search_pattern), str(file))  	## For Illumina data only via IAP
+	                if match:
+				return_files=Write_SH(x,wkdir,sambamba,file,bq,mq,L_list,threads,bed_file,job_list,exoncov_files)
+				job_list=return_files[0]
+				exoncov_files=return_files[1]
+				x=return_files[2]
+
+				"""
+				write_sh=open(str(wkdir)+"Depth_job_"+str(x)+".sh","w")
+				write_sh.write(str(sambamba) +" depth region "+ str(file)) 
+				write_sh.write(" -q "+str(bq))
+				write_sh.write(" -F \" mapping_quality >= "+str(mq)+" and not duplicate and not failed_quality_control and not secondary_alignment \"")
+	                        for item in L_list:
+					write_sh.write(" -T "+str(item))
+				write_sh.write(" -t "+str(threads)+ " -L " +str(bed_file)+" -o ."+str(file.split(".")[1])+"_exon_coverage.tsv" +"\n")		###>>> " -o ."+str(file.split(".")[1]) = for BAM files in folder ONLY!
+	                        exoncov_files+=["."+str(file.split(".")[1])+"_exon_coverage.tsv"]								###>>> "."+str(file.split(".")[1]) = for BAM files in folder ONLY!
+				write_sh.close()
+				job_list+=[str(wkdir)+"Depth_job_"+str(x)+".sh"]		
+				x+=1
+				"""
+	else:
+		x=1
+		for file in input_file:
+			return_files=Write_SH(x,wkdir,sambamba,file,bq,mq,L_list,threads,bed_file,job_list,exoncov_files)
+                 	job_list=return_files[0]
+                       	exoncov_files=return_files[1]
+			x=return_files[2]
+
+			"""
 			write_sh=open(str(wkdir)+"Depth_job_"+str(x)+".sh","w")
-			write_sh.write(str(sambamba) +" depth region "+ str(file)) 
-			write_sh.write(" -q "+str(bq))
-			write_sh.write(" -F \" mapping_quality >= "+str(mq)+" and not duplicate and not failed_quality_control and not secondary_alignment \"")
+                        write_sh.write(str(sambamba) +" depth region "+ str(file)) 
+                        write_sh.write(" -q "+str(bq))
+                        write_sh.write(" -F \" mapping_quality >= "+str(mq)+" and not duplicate and not failed_quality_control and not secondary_alignment \"")
                         for item in L_list:
-				write_sh.write(" -T "+str(item))
-			write_sh.write(" -t "+str(threads)+ " -L " +str(bed_file)+" -o ."+str(file.split(".")[1])+"_exon_coverage.tsv" +"\n")		###>>> " -o ."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-                        exoncov_files+=["."+str(file.split(".")[1])+"_exon_coverage.tsv"]								###>>> "."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-			write_sh.close()
-			job_list+=[str(wkdir)+"Depth_job_"+str(x)+".sh"]		
-			x+=1
+                        	write_sh.write(" -T "+str(item))
+                        write_sh.write(" -t "+str(threads)+ " -L " +str(bed_file)+" -o ."+str(file.split(".")[1])+"_exon_coverage.tsv" +"\n")           ###>>> " -o ."+str(file.split(".")[1]) = for BAM files in folder ONLY!
+                        exoncov_files+=["."+str(file.split(".")[1])+"_exon_coverage.tsv"]                                                               ###>>> "."+str(file.split(".")[1]) = for BAM files in folder ONLY!
+                        write_sh.close()
+                        job_list+=[str(wkdir)+"Depth_job_"+str(x)+".sh"]
+                        x+=1
+			"""
+			
 	if len(job_list) == 0:
 		sys.exit("No BAM files detected")
 	else:
 		job_id=[]
 		for item in job_list:
-	                job= "qsub -q veryshort -R y -cwd -pe threaded "+str(threads)+" "+str(item)
-	                job_output= commands.getoutput(job)
+	                #job= "qsub -l h_rt=02:00:00 -l h_vmem=20G -R y -cwd -pe threaded "+str(threads)+" "+str(item)
+			job= "qsub -q "+ str(queue)+ " -l h_rt=" +str(timeslot)+ " -l h_vmem="+str(max_mem)+"G -R y -cwd -pe threaded "+str(threads)+" "+str(item)
+			job_output= commands.getoutput(job)
 	                job_id+=[job_output.split()[2]]
-	        write_sh=open(str(wkdir)+"Hold_job_depth.sh","w")
+	        write_sh=open(str(wkdir)+"Hold_job_exoncov_depth.sh","w")
 	        write_sh.write("echo Finished"+"\n")
 	        write_sh.close()
-	        merge_controls="qsub -q veryshort -cwd -hold_jid "+str(",".join(job_id))+" Hold_job_depth.sh"
+	        merge_controls="qsub -cwd -q "+str(queue)+ " -l h_rt=02:01:00 -l h_vmem=1G "+" -hold_jid "+str(",".join(job_id))+" Hold_job_exoncov_depth.sh"  ## does not require much memory
 	        job_output_control=commands.getoutput(merge_controls).split()[2]
 	        test= commands.getoutput("qstat -j "+str(job_output_control))
 	        loop=0
@@ -424,20 +467,8 @@ def calc_Panel_Cov(transcript_files):
 
 def make_PDF(transcript_files,pwd): 			## Print all Gen-panel per sample results in a HTML page
 	def Color(value):
-		# 10 step color scheme of ExonCallCov_v2
-		#color_map=("#FF0000","#FF6600","#FF9900","#FFCC00","#FFFF00","#CCFF00","#99FF00","#66FF00","#33FF00","#00CC00")
-		#limit_map=("10","20","30","40","50","60","70","80","90","100" )	
-
-		# 20 step color schemes.
-		#color_map = ("#FF0000","#FF2000","#FF4000","#FF6000","#FF8000","#FF9900","#FFAA00","#FFCC00","#FFDD00","#FFFF00","#DDFF00","#CCFF00","#AAFF00","#99FF00","#80FF00","#60FF00","#40FF00","#20FF00","#00FF00","#00CC00")
-		#color_map = ("#FF0000","#FF2000","#FF4000","#FF6000","#FF8000","#FF9900","#FFAA00","#FFCC00","#FFDD00","#FFFF00","#DDFF00","#CCFF00","#AAFF00","#99FF00","#80FF00","#60FF00","#99CC00","#60CC00","#30CC00","#00CC00")
-		#color_map = ("#FF0000","#FF1100","#FF2300","#FF3400","#FF4600","#FF5700","#FF6900","#FF7B00","#FF8C00","#FF9E00","#FFAF00","#FFC100","#FFD300","#FFE400","#FFF600","#F7FF00","#E5FF00",",#9FFF00",",#58FF00",",#00FF00")
-		#limit_map = ("5","10","15","20","25","30","35","40","45","50","55","60","65","70","75","80","85","90","95","100")
-
-		# 17 step color scheme (5,10,15 removed for more contrast at 90,95,100.
                 color_map = ("#FF0000","#FF2000","#FF4000","#FF6000","#FF8000","#FF9900","#FFAA00","#FFCC00","#FFDD00","#FFFF00","#DDFF00","#CCFF00","#AAFF00","#99FF00","#60FF00","#20FF00","#00CC00")
 		limit_map = ("20","25","30","35","40","45","50","55","60","65","70","75","80","85","90","95","100")
-
 		x=0
 		color=color_map[0]
 		for item in limit_map:
@@ -445,7 +476,6 @@ def make_PDF(transcript_files,pwd): 			## Print all Gen-panel per sample results
 				color=color_map[x]
 			x+=1
 		return color
-	
 	html_files=[]
 	for file in transcript_files:
 		HTML_file=open(str(wkdir)+str(file.split("_")[0])+".html","w")
@@ -491,24 +521,18 @@ def make_PDF(transcript_files,pwd): 			## Print all Gen-panel per sample results
 		HTML_file.close()
 	return html_files
 
-#######
-"""
-def bed_genes(bed_file):
-	bed=open(str(bed_file),"r").readlines()
-	genes_bed={}
-	for line in bed:
-		splitline=line.split()
-		for item in splitline[4].split(":"):
-			try:
-				genes_bed[item]
-			except:	
-				genes_bed[item]="1"
+#########################################
 
-	print len(genes_bed)
-	return genes_bed
-"""		
-#######
-
+class MultipleOption(Option):
+	ACTIONS = Option.ACTIONS + ("extend",)
+	STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+	TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+	ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + ("extend",)
+	def take_action(self, action, dest, opt, value, values, parser):
+		if action == "extend":
+			values.ensure_value(dest, []).append(value)
+		else:
+        		Option.take_action(self, action, dest, opt, value, values, parser)
 
 #########################################
 
@@ -516,19 +540,41 @@ def bed_genes(bed_file):
 if __name__ == "__main__":
         parser = OptionParser();
         group = OptionGroup(parser, "Main options")
-	group.add_option("-b", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed", dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed]")
-	group.add_option("-n", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file", metavar="[PATH]", help="full path to file with the link between GENE (HGNC) and all known NM/ENST transcripts [default = [master]/NM_ENSEMBL_HGNC.txt]")
-	group.add_option("-p", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/Preferred_transcript_list.txt", dest="pref_file", metavar="[PATH]", help="full path to Preferred transcript file [default = [master]/Preferred_transcript_list.txt]")
-	group.add_option("-l", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/gpanels_10062015.txt", dest="panel_list", metavar="[PATH]", help="full path to Gene panel file [default = [master]/gpanels_10062015.txt]")
-	group.add_option("-s", default="/hpc/cog_bioinf/common_scripts/sambamba_v0.5.8/sambamba_v0.5.8", dest="sambamba", metavar="[PATH]", help="full path to sambamba [default = /hpc/cog_bioinf/common_scripts/sambamba_v0.5.8/sambamba_v0.5.8]")
-	group.add_option("-w", default="./", dest="wkdir", metavar="[PATH]", help="full path for  working directory [default = ./]")
-	group.add_option("-t", default=4, dest="threads", metavar="[INT]", help="number of threads [default = 4]")
-	group.add_option("-f", default=20, dest="flanks", metavar="[INT]", help="### currently disabled!### size of flanks in bp [default = 20]")
-	group.add_option("-k", default=7, dest="transcript_column", metavar="[INT]", help="column in BED file that contains the transcripts [default = 7]")
-	group.add_option("-q", default=10, dest="bq", metavar="[INT]", help="minimum base quality used [default = 10]")
-	group.add_option("-m", default=20, dest="mq", metavar="[INT]", help="minimum mapping quality used [default = 20]")
-        parser.add_option_group(group)
-        (opt, args) = parser.parse_args()
+
+	######
+        #group.add_option("-i", default="dedup.bam$",metavar="[FILE]",dest="input_file", help="Input BAM file(s)[default = search for dedup.bam$]")
+
+	PROG = os.path.basename(os.path.splitext(__file__)[0])
+	long_commands = ('categories')
+	short_commands = {'cat':'categories'}
+	parser = OptionParser(option_class=MultipleOption, usage='usage: %prog ', version='%s' % (PROG))
+	parser.add_option('-i',action="extend", type="string",dest='input_file',metavar='[FILE]', help="Input BAM file(s)[default = off]")
+	parser.add_option('-d',default="dedup.bam$", type ="string",dest='search_pattern',metavar='[FILE]', help="Search pattern for BAM file(s)(dedup.bam$[default]|dedup.realigned.bam$)")
+	parser.add_option("-a", default="02:00:00", dest="timeslot", metavar="[INT]", help="timeslot used for qsub [default = 02:00:00]")
+        parser.add_option("--queue", default="all.q", dest="queue", metavar="[STRING]", help="sge queue [default = all.q]")
+        parser.add_option("-c", default="off", dest="max_mem", metavar="[INT]", help="memory reserved for qsub [default =  off (=threads*10G)]")
+
+	parser.add_option("-b", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed", dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed]")
+        parser.add_option("-n", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file", metavar="[PATH]", help="full path to file with the link between GENE (HGNC) and all known NM/ENST transcripts [default = [master]/NM_ENSEMBL_HGNC.txt]")
+        parser.add_option("-p", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/Preferred_transcript_list.txt", dest="pref_file", metavar="[PATH]", help="full path to Preferred transcript file [default = [master]/Preferred_transcript_list.txt]")
+        parser.add_option("-l", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/gpanels_10062015.txt", dest="panel_list", metavar="[PATH]", help="full path to Gene panel file [default = [master]/gpanels_10062015.txt]")
+        parser.add_option("-s", default="/hpc/cog_bioinf/common_scripts/sambamba_v0.5.8/sambamba_v0.5.8", dest="sambamba", metavar="[PATH]", help="full path to sambamba [default = /hpc/cog_bioinf/common_scripts/sambamba_v0.5.8/sambamba_v0.5.8]")
+        parser.add_option("-w", default="./", dest="wkdir", metavar="[PATH]", help="full path for  working directory [default = ./]")
+        parser.add_option("-t", default=4, dest="threads", metavar="[INT]", help="number of threads [default = 4]")
+        parser.add_option("-f", default=20, dest="flanks", metavar="[INT]", help="### currently disabled!### size of flanks in bp [default = 20]")
+        parser.add_option("-k", default=7, dest="transcript_column", metavar="[INT]", help="column in BED file that contains the transcripts [default = 7]")
+        parser.add_option("-q", default=10, dest="bq", metavar="[INT]", help="minimum base quality used [default = 10]")
+        parser.add_option("-m", default=20, dest="mq", metavar="[INT]", help="minimum mapping quality used [default = 20]")
+
+	if len(sys.argv) == 1:
+        	parser.parse_args(['--help'])
+	(opt, args) = parser.parse_args()
+        threads=int(opt.threads)
+        if str(opt.max_mem)=="off":
+                max_mem= int(threads)*10
+        else:
+                max_mem=int(opt.max_mem)
+
 	bed_file=opt.bed_file
 	hgnc=opt.hgnc_trans_file
 	preferred=open(str(opt.pref_file),"r").readlines()
@@ -539,16 +585,24 @@ if __name__ == "__main__":
 	hgnc=opt.hgnc_trans_file
         sambamba = str(opt.sambamba)
         wkdir= str(opt.wkdir)
-        threads=int(opt.threads)
         flanks=int(opt.flanks) 								## not incorperated yet!
 	column=int(opt.transcript_column)-1
 	NM_ENS_dic=make_NM_ENS_dic(hgnc)						## make dictionary of all known ENST/NM to HGNC
 	error_collection=open("error_collection_run","w")	
 	bq=str(opt.bq)
 	mq=str(opt.mq)
+	timeslot=str(opt.timeslot)
+	queue=str(opt.queue)
+
+	if opt.input_file:
+		input_file=opt.input_file
+		search_pattern="off"
+	else:
+		search_pattern=str(opt.search_pattern)
+		input_file="off"
 
 	print "Working on Exon coverage"
-	exoncov_files= make_Exon_stats(sambamba,wkdir,threads,flanks,mq,bq)		## Make Exon coverage file for each dedup.realigned.bam file
+	exoncov_files= make_Exon_stats(sambamba,wkdir,threads,flanks,mq,bq,timeslot,search_pattern,input_file,queue,max_mem)		## Make Exon coverage file for each dedup.realigned.bam file
 
 	print "Working on Transcript coverage"
 	trans_stats=make_Transcript_stats(exoncov_files,L_bed,L_list,column,NM_ENS_dic)	## Combine the coverage of each exon for all transcripts in the BAM file.
@@ -621,7 +675,7 @@ os.system("mv *gene_panel_coverage_all.tsv "+str(wkdir)+"/Exoncov_v3/Gene_panel_
 os.system("mv *coverage_*.tsv "+str(wkdir)+"/Exoncov_v3/")
 os.system("mv *error* "+str(wkdir)+"/Exoncov_v3/")
 os.system("mv Depth_job*sh* "+str(wkdir)+"/Exoncov_v3/SH/")
-os.system("mv Hold_job_depth*sh* "+str(wkdir)+"/Exoncov_v3/SH/")
+os.system("mv Hold_job_exoncov_depth*sh* "+str(wkdir)+"/Exoncov_v3/SH/")
 
 for file in html_files:
 	os.system("mv "+str(file)+" "+str(wkdir)+"/Exoncov_v3/")
