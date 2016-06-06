@@ -556,9 +556,10 @@ if __name__ == "__main__":
 
 	parser.add_option("-b", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed", dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed]")
         parser.add_option("-n", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file", metavar="[PATH]", help="full path to file with the link between GENE (HGNC) and all known NM/ENST transcripts [default = [master]/NM_ENSEMBL_HGNC.txt]")
+
         parser.add_option("-p", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/Preferred_transcript_list.txt", dest="pref_file", metavar="[PATH]", help="full path to Preferred transcript file [default = [master]/Preferred_transcript_list.txt]")
         parser.add_option("-l", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/gpanels_10062015.txt", dest="panel_list", metavar="[PATH]", help="full path to Gene panel file [default = [master]/gpanels_10062015.txt]")
-        parser.add_option("-s", default="/hpc/cog_bioinf/common_scripts/sambamba_v0.5.8/sambamba_v0.5.8", dest="sambamba", metavar="[PATH]", help="full path to sambamba [default = /hpc/cog_bioinf/common_scripts/sambamba_v0.5.8/sambamba_v0.5.8]")
+        parser.add_option("-s", default="/hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.1/sambamba_v0.6.1", dest="sambamba", metavar="[PATH]", help="full path to sambamba [default = /hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.1/sambamba_v0.6.1]")
         parser.add_option("-w", default="./", dest="wkdir", metavar="[PATH]", help="full path for  working directory [default = ./]")
         parser.add_option("-t", default=4, dest="threads", metavar="[INT]", help="number of threads [default = 4]")
         parser.add_option("-f", default=20, dest="flanks", metavar="[INT]", help="### currently disabled!### size of flanks in bp [default = 20]")
