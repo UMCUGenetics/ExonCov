@@ -40,7 +40,7 @@ def make_Dic(list):
 def Write_SH(x,wkdir,sambamba,file,bq,mq,L_list,threads,bed_file,job_list,exoncov_files):
 	write_sh=open(str(wkdir)+"Depth_job_"+str(x)+".sh","w")
 	write_sh.write(str(sambamba) +" depth region "+ str(file))
-        write_sh.write(" -q "+str(bq))
+        write_sh.write(" -m -q "+str(bq))
         write_sh.write(" -F \" mapping_quality >= "+str(mq)+" and not duplicate and not failed_quality_control and not secondary_alignment \"")
         for item in L_list:
         	write_sh.write(" -T "+str(item))
