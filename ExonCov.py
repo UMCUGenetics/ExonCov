@@ -418,6 +418,7 @@ def calc_Panel_Cov(transcript_files):
                                       	pass
                               	else:
                                       	genes=splitline[2].split(",")
+					genes=unique(genes)		## make gene list unique
 
                                 for item in genes:
                                         try:
