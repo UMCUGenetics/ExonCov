@@ -654,36 +654,39 @@ error_collection.close()
 
 
 ## Cleanup/move files into relevant folders
-if (os.path.exists(str(wkdir)+"/Exoncov_v3")):
-        os.system("rm "+str(wkdir)+"/Exoncov_v3 -r")
-        os.mkdir(str(wkdir)+"/Exoncov_v3")
-else:
-	os.mkdir(str(wkdir)+"/Exoncov_v3")
-if not (os.path.exists(str(wkdir)+"/Exoncov_v3/Exons")):
-	os.mkdir(str(wkdir)+"/Exoncov_v3/Exons")
-if not (os.path.exists(str(wkdir)+"/Exoncov_v3/All_transcripts")):
-	os.mkdir(str(wkdir)+"/Exoncov_v3/All_transcripts")
-if not (os.path.exists(str(wkdir)+"/Exoncov_v3/Preferred_transcripts")):
-	os.mkdir(str(wkdir)+"/Exoncov_v3/Preferred_transcripts")
-if not (os.path.exists(str(wkdir)+"/Exoncov_v3/Gene_panel_coverage_sample")):
-	os.mkdir(str(wkdir)+"/Exoncov_v3/Gene_panel_coverage_sample")
-if not (os.path.exists(str(wkdir)+"/Exoncov_v3/SH")):
-	os.mkdir(str(wkdir)+"/Exoncov_v3/SH")
 
-#os.system("mv "+str(wkdir)+"*exon_coverage.tsv "+str(wkdir)+"/Exoncov_v3/Exons")
-os.system("mv *preferred_transcripts_coverage.tsv "+str(wkdir)+"/Exoncov_v3/Preferred_transcripts")
-os.system("mv *transcript_coverage.tsv "+str(wkdir)+"/Exoncov_v3/All_transcripts")
-os.system("mv *gene_panel_coverage_all.tsv "+str(wkdir)+"/Exoncov_v3/Gene_panel_coverage_sample")
-os.system("mv *coverage_*.tsv "+str(wkdir)+"/Exoncov_v3/")
-os.system("mv *error* "+str(wkdir)+"/Exoncov_v3/")
-os.system("mv Depth_job*sh* "+str(wkdir)+"/Exoncov_v3/SH/")
-os.system("mv Hold_job_exoncov_depth*sh* "+str(wkdir)+"/Exoncov_v3/SH/")
+ExonCov_folder="/hpc/local/CentOS7/cog_bioinf/ExonCov/"
+Exoncov_v=commands.getoutput("git --git-dir="+str(ExonCov_folder)+".git describe --tags")
+
+if (os.path.exists(str(wkdir)+"/Exoncov_"+str(Exoncov_v))):
+        os.system("rm "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+" -r")
+        os.mkdir(str(wkdir)+"/Exoncov_"+str(Exoncov_v))
+else:
+	os.mkdir(str(wkdir)+"/Exoncov_"+str(Exoncov_v))
+if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Exons")):
+	os.mkdir(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Exons")
+if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/All_transcripts")):
+	os.mkdir(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/All_transcripts")
+if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Preferred_transcripts")):
+	os.mkdir(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Preferred_transcripts")
+if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Gene_panel_coverage_sample")):
+	os.mkdir(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Gene_panel_coverage_sample")
+if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/SH")):
+	os.mkdir(str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/SH")
+
+os.system("mv *preferred_transcripts_coverage.tsv "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Preferred_transcripts")
+os.system("mv *transcript_coverage.tsv "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/All_transcripts")
+os.system("mv *gene_panel_coverage_all.tsv "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Gene_panel_coverage_sample")
+os.system("mv *coverage_*.tsv "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/")
+os.system("mv *error* "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/")
+os.system("mv Depth_job*sh* "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/SH/")
+os.system("mv Hold_job_exoncov_depth*sh* "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/SH/")
 
 for file in html_files:
-	os.system("mv "+str(file)+" "+str(wkdir)+"/Exoncov_v3/")
+	os.system("mv "+str(file)+" "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/")
 
 for file in exoncov_files:
-	os.system("mv "+str(file)+" "+str(wkdir)+"/Exoncov_v3/Exons")
+	os.system("mv "+str(file)+" "+str(wkdir)+"/Exoncov_"+str(Exoncov_v)+"/Exons")
 
 sys.exit("\n################\nScript completed\n################")
 
