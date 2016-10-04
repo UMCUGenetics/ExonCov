@@ -549,8 +549,9 @@ if __name__ == "__main__":
 	long_commands = ('categories')
 	short_commands = {'cat':'categories'}
 	parser = OptionParser(option_class=MultipleOption, usage='usage: %prog ', version='%s' % (PROG))
+        parser.add_option("-o", default="Exoncov_v3", dest="exoncov_folder", metavar="[PATH]", help="full name of output folder [default = Exoncov_v3]")
+        parser.add_option('-d',default="dedup.bam$", type ="string",dest='search_pattern',metavar='[FILE]', help="Search pattern for BAM file(s)(dedup.bam$[default]|dedup.realigned.bam$)")
 	parser.add_option('-i',action="extend", type="string",dest='input_file',metavar='[FILE]', help="Input BAM file(s)[default = off]")
-	parser.add_option('-d',default="dedup.bam$", type ="string",dest='search_pattern',metavar='[FILE]', help="Search pattern for BAM file(s)(dedup.bam$[default]|dedup.realigned.bam$)")
 	parser.add_option("-a", default="02:00:00", dest="timeslot", metavar="[INT]", help="timeslot used for qsub [default = 02:00:00]")
         parser.add_option("--queue", default="all.q", dest="queue", metavar="[STRING]", help="sge queue [default = all.q]")
         parser.add_option("-c", default="off", dest="max_mem", metavar="[INT]", help="memory reserved for qsub [default =  off (=threads*10G)]")
@@ -567,8 +568,7 @@ if __name__ == "__main__":
         parser.add_option("-k", default=7, dest="transcript_column", metavar="[INT]", help="column in BED file that contains the transcripts [default = 7]")
         parser.add_option("-q", default=10, dest="bq", metavar="[INT]", help="minimum base quality used [default = 10]")
         parser.add_option("-m", default=20, dest="mq", metavar="[INT]", help="minimum mapping quality used [default = 20]")
-        parser.add_option("-x", default="/hpc/cog_bioinf/data/mapping/diagnostiek/Dx_resources/", dest="Dx_resources_folder", metavar="[string]", help="path to Dx_resource_folder [default = /hpc/cog_bioinf/data/mapping/diagnostiek/Dx_resources/]")
-
+        #parser.add_option("-x", default="/hpc/cog_bioinf/data/mapping/diagnostiek/Dx_resources/", dest="Dx_resources_folder", metavar="[string]", help="path to Dx_resource_folder [default = /hpc/cog_bioinf/data/mapping/diagnostiek/Dx_resources/]")
 
 	if len(sys.argv) == 1:
         	parser.parse_args(['--help'])
@@ -597,7 +597,8 @@ if __name__ == "__main__":
 	mq=str(opt.mq)
 	timeslot=str(opt.timeslot)
 	queue=str(opt.queue)
-	Dx_resources_folder=str(opt.Dx_resources_folder)
+	#Dx_resources_folder=str(opt.Dx_resources_folder)
+	exoncov_folder=str(opt.exoncov_folder)
 
 	if opt.input_file:
 		input_file=opt.input_file
@@ -658,50 +659,41 @@ error_collection.close()
 
 ## Cleanup/move files into relevant folders
 
+"""
 try:
 	Dx_resources_v=commands.getoutput("git --git-dir="+str(Dx_resources_folder)+".git describe --tags")
 except:
 	Dx_resources_v="v3"
+"""
 
-if (os.path.exists(str(wkdir)+"/Exoncov_"+str(Dx_resources_v))):
-        os.system("rm "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+" -r")
-        os.mkdir(str(wkdir)+"/Exoncov_"+str(Dx_resources_v))
+if (os.path.exists(str(wkdir)+"/"+str(exoncov_folder))):
+        os.system("rm "+str(wkdir)+"/"+str(exoncov_folder)+" -r")
+        os.mkdir(str(wkdir)+"/"+str(exoncov_folder))
 else:
-	os.mkdir(str(wkdir)+"/Exoncov_"+str(Dx_resources_v))
-if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Exons")):
-	os.mkdir(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Exons")
-if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/All_transcripts")):
-	os.mkdir(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/All_transcripts")
-if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Preferred_transcripts")):
-	os.mkdir(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Preferred_transcripts")
-if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Gene_panel_coverage_sample")):
-	os.mkdir(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Gene_panel_coverage_sample")
-if not (os.path.exists(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/SH")):
-	os.mkdir(str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/SH")
+	os.mkdir(str(wkdir)+"/"+str(exoncov_folder))
+if not (os.path.exists(str(wkdir)+"/"+str(exoncov_folder)+"/Exons")):
+	os.mkdir(str(wkdir)+"/"+str(exoncov_folder)+"/Exons")
+if not (os.path.exists(str(wkdir)+"/"+str(exoncov_folder)+"/All_transcripts")):
+	os.mkdir(str(wkdir)+"/"+str(exoncov_folder)+"/All_transcripts")
+if not (os.path.exists(str(wkdir)+"/"+str(exoncov_folder)+"/Preferred_transcripts")):
+	os.mkdir(str(wkdir)+"/"+str(exoncov_folder)+"/Preferred_transcripts")
+if not (os.path.exists(str(wkdir)+"/"+str(exoncov_folder)+"/Gene_panel_coverage_sample")):
+	os.mkdir(str(wkdir)+"/"+str(exoncov_folder)+"/Gene_panel_coverage_sample")
+if not (os.path.exists(str(wkdir)+"/"+str(exoncov_folder)+"/SH")):
+	os.mkdir(str(wkdir)+"/"+str(exoncov_folder)+"/SH")
 
-os.system("mv *preferred_transcripts_coverage.tsv "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Preferred_transcripts")
-os.system("mv *transcript_coverage.tsv "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/All_transcripts")
-os.system("mv *gene_panel_coverage_all.tsv "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Gene_panel_coverage_sample")
-os.system("mv *coverage_*.tsv "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/")
-os.system("mv *error* "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/")
-os.system("mv Depth_job*sh* "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/SH/")
-os.system("mv Hold_job_exoncov_depth*sh* "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/SH/")
+os.system("mv *preferred_transcripts_coverage.tsv "+str(wkdir)+"/"+str(exoncov_folder)+"/Preferred_transcripts")
+os.system("mv *transcript_coverage.tsv "+str(wkdir)+"/"+str(exoncov_folder)+"/All_transcripts")
+os.system("mv *gene_panel_coverage_all.tsv "+str(wkdir)+"/"+str(exoncov_folder)+"/Gene_panel_coverage_sample")
+os.system("mv *coverage_*.tsv "+str(wkdir)+"/"+str(exoncov_folder)+"/")
+os.system("mv *error* "+str(wkdir)+"/"+str(exoncov_folder)+"/")
+os.system("mv Depth_job*sh* "+str(wkdir)+"/"+str(exoncov_folder)+"/SH/")
+os.system("mv Hold_job_exoncov_depth*sh* "+str(wkdir)+"/"+str(exoncov_folder)+"/SH/")
 
 for file in html_files:
-	os.system("mv "+str(file)+" "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/")
+	os.system("mv "+str(file)+" "+str(wkdir)+"/"+str(exoncov_folder)+"/")
 
 for file in exoncov_files:
-	os.system("mv "+str(file)+" "+str(wkdir)+"/Exoncov_"+str(Dx_resources_v)+"/Exons")
+	os.system("mv "+str(file)+" "+str(wkdir)+"/"+str(exoncov_folder)+"/Exons")
 
 sys.exit("\n################\nScript completed\n################")
-
-
-
-
-
-
-
-
-
-
-			
