@@ -42,95 +42,81 @@ def make_Dic(list):
 ########
 
 
-def Write_SH(x, wkdir, sambamba, file, bq, mq, L_list, threads, bed_file, job_list, exoncov_files):
-    write_sh = open(str(wkdir) + "Depth_job_" + str(x) + ".sh", "w")
-    write_sh.write(str(sambamba) + " depth region " + str(file))
-    write_sh.write(" -m -q " + str(bq))
-    write_sh.write(" -F \" mapping_quality >= " + str(mq) + " and not duplicate and not failed_quality_control and not secondary_alignment \"")
-    for item in L_list:
-        write_sh.write(" -T " + str(item))
-    # >>> " -o ."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-    write_sh.write(" -t " + str(threads) + " -L " + str(bed_file) + " -o ." + str(file.split(".")[1]) + "_exon_coverage.tsv" + "\n")
-    exoncov_files += ["." + str(file.split(".")[1]) + "_exon_coverage.tsv"]  # >>> "."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-    write_sh.close()
-    job_list += [str(wkdir) + "Depth_job_" + str(x) + ".sh"]
-    x += 1
-    return job_list, exoncov_files, x
+def Write_SH(job_num, wkdir, sambamba, bam_file, bq, mq, L_list, threads, bed_file):
+    sambamba_filter = "mapping_quality >= {mq} and not duplicate and not failed_quality_control and not secondary_alignment".format(mq=mq)
+    prefix, _ = os.path.basename(bam_file).rsplit(".", 1)
+    out_file = "{}_exon_coverage.tsv".format(prefix)
+    command = '{sambamba} depth region {bam_file} -m -q {bq} -F " {sambamba_filter} "'.format(
+        sambamba=sambamba,
+        bam_file=bam_file,
+        bq=bq,
+        sambamba_filter=sambamba_filter,
+    )
+    command += ' {thresholds} -t {threads} -L {bed_file} -o {out_file}\n'.format(
+        thresholds=" ".join("-T {}".format(threshold) for threshold in L_list),
+        threads=threads,
+        bed_file=bed_file,
+        out_file=out_file,
+    )
+    script_file = os.path.join(wkdir, "Depth_job_{}.sh".format(job_num))
+    with open(script_file, "w") as f:
+        f.write(command)
+    return script_file, out_file
+
+########
 
 
-def make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, search_pattern, input_file, queue, max_mem):
+def wait_for_job_ids(job_ids, queue, wkdir):
+    hold_script = os.path.join(wkdir, "Hold_job_exoncov_depth.sh")
+    with open(hold_script, "w") as f:
+        f.write("echo Finished" + "\n")
+    qsub = "qsub -cwd -q {queue} -l h_rt=02:01:00 -l h_vmem=1G -hold_jid {hold_job_ids} {hold_script}".format(
+        queue=queue,
+        hold_job_ids=",".join(job_ids),
+        hold_script=hold_script,
+    )
+    hold_job_id = commands.getoutput(qsub).split()[2]
+    test = commands.getoutput("qstat -j " + hold_job_id)
+    while True:
+        if "do not exist" in test:
+            break
+        else:
+            time.sleep(5)
+            test = commands.getoutput("qstat -j " + hold_job_id)
+
+
+########
+
+
+def submit_jobs(job_list, queue, timeslot, max_mem, threads, wkdir):
+    job_ids = []
+    for job in job_list:
+        qsub = "qsub -q {queue} -l h_rt={timeslot} -l h_vmem={max_mem}G -R y -cwd -pe threaded {threads} {job}".format(
+            queue=queue,
+            timeslot=timeslot,
+            max_mem=max_mem,
+            threads=threads,
+            job=job,
+        )
+        job_id = commands.getoutput(qsub).split()[2]
+        job_ids.append(job_id)
+    wait_for_job_ids(job_ids, queue, wkdir)
+
+########
+
+
+def make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue, max_mem):
     exoncov_files = []
     job_list = []
-    if input_file == "off":
-        files = commands.getoutput("find " + str(wkdir) + " -iname \"*bam\"").split()
-        x = 1
-        for file in files:
-            match = re.search(str(search_pattern), str(file))  # For Illumina data only via IAP
-            if match:
-                return_files = Write_SH(x, wkdir, sambamba, file, bq, mq, L_list, threads, bed_file, job_list, exoncov_files)
-                job_list = return_files[0]
-                exoncov_files = return_files[1]
-                x = return_files[2]
-
-                """
-				write_sh=open(str(wkdir)+"Depth_job_"+str(x)+".sh","w")
-				write_sh.write(str(sambamba) +" depth region "+ str(file)) 
-				write_sh.write(" -q "+str(bq))
-				write_sh.write(" -F \" mapping_quality >= "+str(mq)+" and not duplicate and not failed_quality_control and not secondary_alignment \"")
-	                        for item in L_list:
-					write_sh.write(" -T "+str(item))
-				write_sh.write(" -t "+str(threads)+ " -L " +str(bed_file)+" -o ."+str(file.split(".")[1])+"_exon_coverage.tsv" +"\n")		###>>> " -o ."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-	                        exoncov_files+=["."+str(file.split(".")[1])+"_exon_coverage.tsv"]								###>>> "."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-				write_sh.close()
-				job_list+=[str(wkdir)+"Depth_job_"+str(x)+".sh"]		
-				x+=1
-				"""
-    else:
-        x = 1
-        for file in input_file:
-            return_files = Write_SH(x, wkdir, sambamba, file, bq, mq, L_list, threads, bed_file, job_list, exoncov_files)
-            job_list = return_files[0]
-            exoncov_files = return_files[1]
-            x = return_files[2]
-
-            """
-			write_sh=open(str(wkdir)+"Depth_job_"+str(x)+".sh","w")
-                        write_sh.write(str(sambamba) +" depth region "+ str(file)) 
-                        write_sh.write(" -q "+str(bq))
-                        write_sh.write(" -F \" mapping_quality >= "+str(mq)+" and not duplicate and not failed_quality_control and not secondary_alignment \"")
-                        for item in L_list:
-                        	write_sh.write(" -T "+str(item))
-                        write_sh.write(" -t "+str(threads)+ " -L " +str(bed_file)+" -o ."+str(file.split(".")[1])+"_exon_coverage.tsv" +"\n")           ###>>> " -o ."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-                        exoncov_files+=["."+str(file.split(".")[1])+"_exon_coverage.tsv"]                                                               ###>>> "."+str(file.split(".")[1]) = for BAM files in folder ONLY!
-                        write_sh.close()
-                        job_list+=[str(wkdir)+"Depth_job_"+str(x)+".sh"]
-                        x+=1
-			"""
+    for job_num, bam_file in enumerate(input_files, start=1):
+        job, out_file = Write_SH(job_num, wkdir, sambamba, bam_file, bq, mq, L_list, threads, bed_file)
+        job_list.append(job)
+        exoncov_files.append(out_file)
 
     if len(job_list) == 0:
         sys.exit("No BAM files detected")
     else:
-        job_id = []
-        for item in job_list:
-            #job= "qsub -l h_rt=02:00:00 -l h_vmem=20G -R y -cwd -pe threaded "+str(threads)+" "+str(item)
-            job = "qsub -q " + str(queue) + " -l h_rt=" + str(timeslot) + " -l h_vmem=" + str(max_mem) + \
-                "G -R y -cwd -pe threaded " + str(threads) + " " + str(item)
-            job_output = commands.getoutput(job)
-            job_id += [job_output.split()[2]]
-        write_sh = open(str(wkdir) + "Hold_job_exoncov_depth.sh", "w")
-        write_sh.write("echo Finished" + "\n")
-        write_sh.close()
-        merge_controls = "qsub -cwd -q " + str(queue) + " -l h_rt=02:01:00 -l h_vmem=1G " + " -hold_jid " + \
-            str(",".join(job_id)) + " Hold_job_exoncov_depth.sh"  # does not require much memory
-        job_output_control = commands.getoutput(merge_controls).split()[2]
-        test = commands.getoutput("qstat -j " + str(job_output_control))
-        loop = 0
-        while loop == 0:
-            if "exist" in str(test):
-                loop = 1
-            else:
-                time.sleep(30)
-                test = commands.getoutput("qstat -j " + str(job_output_control))
+        submit_jobs(job_list, queue, timeslot, max_mem, threads, wkdir)
     return exoncov_files
 
 ########
@@ -169,12 +155,12 @@ def make_Transcript_stats(exoncov_files, L_bed, L_list, column, NM_ENS_dic):
                 list += item, exon[4], exon[0], exon[1], exon[2], int(exon[2]) - int(exon[1])
                 # add number of bases covered in total for target
                 list += [int("%.0f" % float(float(int(exon[2]) - int(exon[1])) * (float(exon[8]))))]
-                # int(L_bed+3)-1)= length BED file + 3 output fields sambamaba (-1 for offset). len(list) = values as input -L option sambamba
+                # int(L_bed+3)-1)= length BED file + 3 output fields sambamaba (-1 for offset). len(L_list) = values as input -L option sambamba
                 for cov in exon[(int(L_bed + 3) - 1):((int(L_bed + 3) - 1) + int(len(L_list)))]:
                     bases = ((int(exon[2]) - int(exon[1])) * float(cov))
-                    list += [float(bases)]
-                list += [exon[int(total_length) - 1]]  # last value = sample name
-                final_list += [list]
+                    list.append(float(bases))
+                list.append(exon[total_length - 1])  # last value = sample name
+                final_list.append(list)
             if len(final_list) == 1:
                 printline = final_list[0]
                 printline += [int("1")]  # add number of exons to last column
@@ -204,7 +190,7 @@ def make_Transcript_stats(exoncov_files, L_bed, L_list, column, NM_ENS_dic):
                         try:
                             error_dic[item]
                         except:
-                            error_dic[item] = str(region[2]), region[5 + len(L_list) + 1]
+                            error_dic[item] = str(region[2]), region[-1]
 
             if len(printline) > 0:  # convert bases covered >X to percentage based on total transcript length
                 transcript_line = [printline[0]]
@@ -237,8 +223,8 @@ def make_Transcript_stats(exoncov_files, L_bed, L_list, column, NM_ENS_dic):
             write_file.write("\n")
         write_file.close()
         print "\tFinished Transcript coverage for sample: " + str(transcript_list[0][-1])
-        for item in error_dic:
-            error_file.write("Transcript has multiple hits in the genome: " + str(item) + " from sample " + str(error_dic[item][1]) + "\n")
+        for item, error in error_dic.items():
+            error_file.write("Transcript has multiple hits in the genome: " + str(item) + " from sample " + str(error[1]) + "\n")
     error_file.close()
     return transcript_files, dic_trans, error_dic
 
@@ -490,7 +476,7 @@ def calc_Panel_Cov(transcript_files):
 ########
 
 
-def make_PDF(transcript_files, pwd):  # Print all Gen-panel per sample results in a HTML page
+def make_html(transcript_files, pwd):  # Print all Gen-panel per sample results in a HTML page
     def Color(value):
         color_map = ("#FF0000", "#FF2000", "#FF4000", "#FF6000", "#FF8000", "#FF9900", "#FFAA00", "#FFCC00",
                      "#FFDD00", "#FFFF00", "#DDFF00", "#CCFF00", "#AAFF00", "#99FF00", "#60FF00", "#20FF00", "#00CC00")
@@ -504,10 +490,10 @@ def make_PDF(transcript_files, pwd):  # Print all Gen-panel per sample results i
         return color
     html_files = []
     for file in transcript_files:
-        HTML_file = open(str(wkdir) + str(file.split("_")[0]) + ".html", "w")
-        html_files += [str(file.split("_")[0]) + ".html"]
-        sample = str(file.split("_")[0])
-        file = open(str(file.split("_")[0]) + "_gene_panel_coverage_all.tsv", "r").readlines()
+        HTML_file = open(os.path.join(wkdir, file.split("_")[0] + ".html"), "w")
+        html_files.append(file.split("_")[0] + ".html")
+        sample = file.split("_")[0]
+        file = open(file.split("_")[0] + "_gene_panel_coverage_all.tsv", "r").readlines()
         HTML_file.write(
             "<!DOCTYPE html>\n<html>\n<head>\n<style>\ntable, th, td {\n    border: 1px solid grey;\n    border-collapse: collapse;\n}\nth, td {\n    padding: 1px;\n    text-align: center;\n}\ntable th        {\n    background-color: lightgrey;\n    color: black;\n}\n\n</style>\n</head>\n<body>\n\n<table style=\"width:100%\">\n")
         HTML_file.write("<caption><font size=6>Sample=" + str(sample) + " Run=" + str(pwd) + "</font></caption>\n")
@@ -558,7 +544,7 @@ def glob_move(source_glob, dest_dir):
 ###########
 
 
-def cleanup_results(results_dir):
+def cleanup_results(results_dir, exoncov_files, html_files):
     if os.path.isdir(results_dir):
         shutil.rmtree(results_dir)
 
@@ -581,8 +567,20 @@ def cleanup_results(results_dir):
     for f in exoncov_files:
         shutil.move(f, os.path.join(results_dir, "Exons"))
 
-#########################################
+###########
 
+
+def find_input_files(wkdir, search_pattern):
+    input_files = []
+    bam_files = commands.getoutput("find {} -iname '*bam'".format(wkdir)).split()
+    for bam_file in bam_files:
+        match = re.search(search_pattern, bam_file)  # For Illumina data only via IAP
+        if match:
+            input_files.append(bam_file)
+    return input_files
+
+
+#########################################
 
 class MultipleOption(Option):
     ACTIONS = Option.ACTIONS + ("extend",)
@@ -604,7 +602,7 @@ if __name__ == "__main__":
     group = OptionGroup(parser, "Main options")
 
     ######
-    #group.add_option("-i", default="dedup.bam$",metavar="[FILE]",dest="input_file", help="Input BAM file(s)[default = search for dedup.bam$]")
+    #group.add_option("-i", default="dedup.bam$",metavar="[FILE]",dest="input_files", help="Input BAM file(s)[default = search for dedup.bam$]")
 
     PROG = os.path.basename(os.path.splitext(__file__)[0])
     long_commands = ('categories')
@@ -613,7 +611,7 @@ if __name__ == "__main__":
     parser.add_option("-o", default="Exoncov_v3", dest="exoncov_folder", metavar="[PATH]", help="full name of output folder [default = Exoncov_v3]")
     parser.add_option('-d', default="dedup.bam$", type="string", dest='search_pattern',
                       metavar='[FILE]', help="Search pattern for BAM file(s)(dedup.bam$[default]|dedup.realigned.bam$)")
-    parser.add_option('-i', action="extend", type="string", dest='input_file', metavar='[FILE]', help="Input BAM file(s)[default = off]")
+    parser.add_option('-i', action="extend", type="string", dest='input_files', metavar='[FILE]', help="Input BAM file(s)[default = off]")
     parser.add_option("-a", default="02:00:00", dest="timeslot", metavar="[INT]", help="timeslot used for qsub [default = 02:00:00]")
     parser.add_option("--queue", default="all.q", dest="queue", metavar="[STRING]", help="sge queue [default = all.q]")
     parser.add_option("-c", default="off", dest="max_mem", metavar="[INT]", help="memory reserved for qsub [default =  off (=threads*10G)]")
@@ -668,18 +666,16 @@ if __name__ == "__main__":
     # Dx_resources_folder=str(opt.Dx_resources_folder)
     exoncov_folder = str(opt.exoncov_folder)
 
-    if opt.input_file:
-        input_file = opt.input_file
-        search_pattern = "off"
+    if not opt.input_files:
+        input_files = find_input_files(wkdir, opt.search_pattern)
     else:
-        search_pattern = str(opt.search_pattern)
-        input_file = "off"
+        input_files = opt.input_files
 
-    print "Working on Exon coverage"
-    exoncov_files = make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, search_pattern, input_file,
-                                    queue, max_mem)  # Make Exon coverage file for each dedup.realigned.bam file
+    print "Working on Exon coverage ({})".format(input_files)
+    exoncov_files = make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue,
+                                    max_mem)  # Make Exon coverage file for each dedup.realigned.bam file
 
-    print "Working on Transcript coverage"
+    print "Working on Transcript coverage ({})".format(exoncov_files)
     # Combine the coverage of each exon for all transcripts in the BAM file.
     trans_stats = make_Transcript_stats(exoncov_files, L_bed, L_list, column, NM_ENS_dic)
     transcript_files = trans_stats[0]
@@ -689,7 +685,7 @@ if __name__ == "__main__":
     pref_dic = pref_Dic(preferred)  # make dictionary for preferred transcripts
     pref_gene_dic = pref_Gene_Dic(pref_dic)  # make dictionary for all genes of preferred transcripts
 
-    print "Working on preferred Transcript"
+    print "Working on preferred Transcript ({})".format(transcript_files)
     # get preferred transcript, or if not known, the longest NM or ENST transcript.
     dic = get_Longest_Transcript(transcript_files, pref_gene_dic, pref_dic, gene_dic)
     panel_coverage = {}
@@ -697,9 +693,9 @@ if __name__ == "__main__":
     pwd = commands.getoutput("pwd").split("/")[-1]  # Assumes last folder in PWD is the run name.
     print "Working on gene panel coverage"
     panel_coverage = calc_Panel_Cov(transcript_files)
-    html_files = make_PDF(transcript_files, pwd)
+    html_files = make_html(transcript_files, pwd)
     x = 0
-    print "Working on gen-panels"
+    print "Working on gene-panels"
     F_list = ["Coverage"] + L_list
     for cov in F_list:
         write_file3 = open(str(pwd) + "_coverage_" + str(cov) + ".tsv", "w")
@@ -725,8 +721,6 @@ if __name__ == "__main__":
                 write_file3.write(str(col) + "\t")
             write_file3.write("\n")
         write_file3.close()
-error_collection.close()
-
-cleanup_results(os.path.join(wkdir, exoncov_folder))
-
-sys.exit("\n################\nScript completed\n################")
+    error_collection.close()
+    cleanup_results(os.path.join(wkdir, exoncov_folder), exoncov_files, html_files)
+    sys.exit("\n################\nScript completed\n################")
