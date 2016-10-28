@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 import sys
 import os
+import shutil
+import glob
 import re
 import commands
 #import getopt
@@ -546,6 +548,39 @@ def make_PDF(transcript_files, pwd):  # Print all Gen-panel per sample results i
         HTML_file.close()
     return html_files
 
+###########
+
+
+def glob_move(source_glob, dest_dir):
+    for f in glob.glob(source_glob):
+        shutil.move(f, dest_dir)
+
+###########
+
+
+def cleanup_results(results_dir):
+    if os.path.isdir(results_dir):
+        shutil.rmtree(results_dir)
+
+    for sub_dir in ["Exons", "All_transcripts", "Preferred_transcripts", "Gene_panel_coverage_sample", "SH"]:
+        d = os.path.join(results_dir, sub_dir)
+        if not os.path.isdir(d):
+            os.makedirs(d)
+
+    glob_move(r"*preferred_transcripts_coverage.tsv", os.path.join(results_dir, "Preferred_transcripts"))
+    glob_move(r"*transcript_coverage.tsv", os.path.join(results_dir, "All_transcripts"))
+    glob_move(r"*gene_panel_coverage_all.tsv", os.path.join(results_dir, "Gene_panel_coverage_sample"))
+    glob_move(r"*coverage_*.tsv", results_dir)
+    glob_move(r"*error*", results_dir)
+    glob_move(r"Depth_job*sh*", os.path.join(results_dir, "SH"))
+    glob_move(r"Hold_job_exoncov_depth*sh*", os.path.join(results_dir, "SH"))
+
+    for f in html_files:
+        shutil.move(f, results_dir)
+
+    for f in exoncov_files:
+        shutil.move(f, os.path.join(results_dir, "Exons"))
+
 #########################################
 
 
@@ -692,44 +727,6 @@ if __name__ == "__main__":
         write_file3.close()
 error_collection.close()
 
-
-# Cleanup/move files into relevant folders
-
-"""
-try:
-	Dx_resources_v=commands.getoutput("git --git-dir="+str(Dx_resources_folder)+".git describe --tags")
-except:
-	Dx_resources_v="v3"
-"""
-
-if (os.path.exists(str(wkdir) + "/" + str(exoncov_folder))):
-    os.system("rm " + str(wkdir) + "/" + str(exoncov_folder) + " -r")
-    os.mkdir(str(wkdir) + "/" + str(exoncov_folder))
-else:
-    os.mkdir(str(wkdir) + "/" + str(exoncov_folder))
-if not (os.path.exists(str(wkdir) + "/" + str(exoncov_folder) + "/Exons")):
-    os.mkdir(str(wkdir) + "/" + str(exoncov_folder) + "/Exons")
-if not (os.path.exists(str(wkdir) + "/" + str(exoncov_folder) + "/All_transcripts")):
-    os.mkdir(str(wkdir) + "/" + str(exoncov_folder) + "/All_transcripts")
-if not (os.path.exists(str(wkdir) + "/" + str(exoncov_folder) + "/Preferred_transcripts")):
-    os.mkdir(str(wkdir) + "/" + str(exoncov_folder) + "/Preferred_transcripts")
-if not (os.path.exists(str(wkdir) + "/" + str(exoncov_folder) + "/Gene_panel_coverage_sample")):
-    os.mkdir(str(wkdir) + "/" + str(exoncov_folder) + "/Gene_panel_coverage_sample")
-if not (os.path.exists(str(wkdir) + "/" + str(exoncov_folder) + "/SH")):
-    os.mkdir(str(wkdir) + "/" + str(exoncov_folder) + "/SH")
-
-os.system("mv *preferred_transcripts_coverage.tsv " + str(wkdir) + "/" + str(exoncov_folder) + "/Preferred_transcripts")
-os.system("mv *transcript_coverage.tsv " + str(wkdir) + "/" + str(exoncov_folder) + "/All_transcripts")
-os.system("mv *gene_panel_coverage_all.tsv " + str(wkdir) + "/" + str(exoncov_folder) + "/Gene_panel_coverage_sample")
-os.system("mv *coverage_*.tsv " + str(wkdir) + "/" + str(exoncov_folder) + "/")
-os.system("mv *error* " + str(wkdir) + "/" + str(exoncov_folder) + "/")
-os.system("mv Depth_job*sh* " + str(wkdir) + "/" + str(exoncov_folder) + "/SH/")
-os.system("mv Hold_job_exoncov_depth*sh* " + str(wkdir) + "/" + str(exoncov_folder) + "/SH/")
-
-for file in html_files:
-    os.system("mv " + str(file) + " " + str(wkdir) + "/" + str(exoncov_folder) + "/")
-
-for file in exoncov_files:
-    os.system("mv " + str(file) + " " + str(wkdir) + "/" + str(exoncov_folder) + "/Exons")
+cleanup_results(os.path.join(wkdir, exoncov_folder))
 
 sys.exit("\n################\nScript completed\n################")
