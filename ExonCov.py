@@ -723,4 +723,4 @@ if __name__ == "__main__":
         write_file3.close()
     error_collection.close()
     cleanup_results(os.path.join(wkdir, exoncov_folder), exoncov_files, html_files)
-    sys.exit("\n################\nScript completed\n################")
+    print("\n################\nScript completed\n################")
