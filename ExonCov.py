@@ -66,13 +66,22 @@ def Write_SH(job_num, wkdir, sambamba, bam_file, bq, mq, L_list, threads, bed_fi
 ########
 
 
-def wait_for_job_ids(job_ids, queue, project, wkdir):
+def one_more_minute(timeslot):
+    hours, minutes, seconds = (int(s) for s in timeslot.split(":"))
+    extra_hours, minutes = divmod(minutes + 1, 60)
+    return ":".join(("{:02d}".format(n) for n in (hours + extra_hours, minutes, seconds)))
+
+########
+
+
+def wait_for_job_ids(job_ids, queue, project, timeslot, wkdir):
     hold_script = os.path.join(wkdir, "Hold_job_exoncov_depth.sh")
     with open(hold_script, "w") as f:
         f.write("echo Finished" + "\n")
-    qsub = "qsub -cwd -q {queue} {project} -l h_rt=02:01:00 -l h_vmem=1G -hold_jid {hold_job_ids} {hold_script}".format(
+    qsub = "qsub -cwd -q {queue} {project} -l h_rt={timeslot} -l h_vmem=1G -hold_jid {hold_job_ids} {hold_script}".format(
         queue=queue,
         project="-P {}".format(project) if project else "",
+        timeslot=one_more_minute(timeslot),
         hold_job_ids=",".join(job_ids),
         hold_script=hold_script,
     )
@@ -102,7 +111,7 @@ def submit_jobs(job_list, queue, project, timeslot, max_mem, threads, wkdir):
         )
         job_id = commands.getoutput(qsub).split()[2]
         job_ids.append(job_id)
-    wait_for_job_ids(job_ids, queue, project, wkdir)
+    wait_for_job_ids(job_ids, queue, project, timeslot, wkdir)
 
 ########
 
