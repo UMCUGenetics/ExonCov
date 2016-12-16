@@ -66,12 +66,22 @@ def Write_SH(job_num, wkdir, sambamba, bam_file, bq, mq, L_list, threads, bed_fi
 ########
 
 
-def wait_for_job_ids(job_ids, queue, wkdir):
+def one_more_minute(timeslot):
+    hours, minutes, seconds = (int(s) for s in timeslot.split(":"))
+    extra_hours, minutes = divmod(minutes + 1, 60)
+    return ":".join(("{:02d}".format(n) for n in (hours + extra_hours, minutes, seconds)))
+
+########
+
+
+def wait_for_job_ids(job_ids, queue, project, timeslot, wkdir):
     hold_script = os.path.join(wkdir, "Hold_job_exoncov_depth.sh")
     with open(hold_script, "w") as f:
         f.write("echo Finished" + "\n")
-    qsub = "qsub -cwd -q {queue} -l h_rt=02:01:00 -l h_vmem=1G -hold_jid {hold_job_ids} {hold_script}".format(
+    qsub = "qsub -cwd -q {queue} {project} -l h_rt={timeslot} -l h_vmem=1G -hold_jid {hold_job_ids} {hold_script}".format(
         queue=queue,
+        project="-P {}".format(project) if project else "",
+        timeslot=one_more_minute(timeslot),
         hold_job_ids=",".join(job_ids),
         hold_script=hold_script,
     )
@@ -88,11 +98,12 @@ def wait_for_job_ids(job_ids, queue, wkdir):
 ########
 
 
-def submit_jobs(job_list, queue, timeslot, max_mem, threads, wkdir):
+def submit_jobs(job_list, queue, project, timeslot, max_mem, threads, wkdir):
     job_ids = []
     for job in job_list:
-        qsub = "qsub -q {queue} -l h_rt={timeslot} -l h_vmem={max_mem}G -R y -cwd -pe threaded {threads} {job}".format(
+        qsub = "qsub -q {queue} {project} -l h_rt={timeslot} -l h_vmem={max_mem}G -R y -cwd -pe threaded {threads} {job}".format(
             queue=queue,
+            project="-P {}".format(project) if project else "",
             timeslot=timeslot,
             max_mem=max_mem,
             threads=threads,
@@ -100,12 +111,12 @@ def submit_jobs(job_list, queue, timeslot, max_mem, threads, wkdir):
         )
         job_id = commands.getoutput(qsub).split()[2]
         job_ids.append(job_id)
-    wait_for_job_ids(job_ids, queue, wkdir)
+    wait_for_job_ids(job_ids, queue, project, timeslot, wkdir)
 
 ########
 
 
-def make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue, max_mem):
+def make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue, project, max_mem):
     exoncov_files = []
     job_list = []
     for job_num, bam_file in enumerate(input_files, start=1):
@@ -116,7 +127,7 @@ def make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_fi
     if len(job_list) == 0:
         sys.exit("No BAM files detected")
     else:
-        submit_jobs(job_list, queue, timeslot, max_mem, threads, wkdir)
+        submit_jobs(job_list, queue, project, timeslot, max_mem, threads, wkdir)
     return exoncov_files
 
 ########
@@ -613,7 +624,8 @@ if __name__ == "__main__":
                       metavar='[FILE]', help="Search pattern for BAM file(s)(dedup.bam$[default]|dedup.realigned.bam$)")
     parser.add_option('-i', action="extend", type="string", dest='input_files', metavar='[FILE]', help="Input BAM file(s)[default = off]")
     parser.add_option("-a", default="02:00:00", dest="timeslot", metavar="[INT]", help="timeslot used for qsub [default = 02:00:00]")
-    parser.add_option("--queue", default="all.q", dest="queue", metavar="[STRING]", help="sge queue [default = all.q]")
+    parser.add_option("--queue", default="all.q", dest="queue", metavar="[STRING]", help="SGE queue [default = all.q]")
+    parser.add_option("--project", metavar="[STRING]", help="SGE project [default = SGE default]")
     parser.add_option("-c", default="off", dest="max_mem", metavar="[INT]", help="memory reserved for qsub [default =  off (=threads*10G)]")
 
     parser.add_option("-b", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed",
@@ -672,7 +684,7 @@ if __name__ == "__main__":
         input_files = opt.input_files
 
     print "Working on Exon coverage ({})".format(input_files)
-    exoncov_files = make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue,
+    exoncov_files = make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue, opt.project,
                                     max_mem)  # Make Exon coverage file for each dedup.realigned.bam file
 
     print "Working on Transcript coverage ({})".format(exoncov_files)
