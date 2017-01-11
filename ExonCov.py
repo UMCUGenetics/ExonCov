@@ -628,15 +628,15 @@ if __name__ == "__main__":
     parser.add_option("--project", metavar="[STRING]", help="SGE project [default = SGE default]")
     parser.add_option("-c", default="off", dest="max_mem", metavar="[INT]", help="memory reserved for qsub [default =  off (=threads*10G)]")
 
-    parser.add_option("-b", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed",
-                      dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_20bpflank.bed]")
-    parser.add_option("-n", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file",
+    parser.add_option("-b", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed",
+                      dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed]")
+    parser.add_option("-n", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Exoncov/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file",
                       metavar="[PATH]", help="full path to file with the link between GENE (HGNC) and all known NM/ENST transcripts [default = [master]/NM_ENSEMBL_HGNC.txt]")
 
-    parser.add_option("-p", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/Preferred_transcript_list.txt", dest="pref_file",
+    parser.add_option("-p", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Exoncov/Preferred_transcript_list.txt", dest="pref_file",
                       metavar="[PATH]", help="full path to Preferred transcript file [default = [master]/Preferred_transcript_list.txt]")
-    parser.add_option("-l", default="/hpc/cog_bioinf/common_scripts/martin/Scripts_master/gpanels_10062015.txt", dest="panel_list",
-                      metavar="[PATH]", help="full path to Gene panel file [default = [master]/gpanels_10062015.txt]")
+    parser.add_option("-l", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Exoncov/gpanels.txt", dest="panel_list",
+                      metavar="[PATH]", help="full path to Gene panel file [default = [master]/gpanels.txt]")
     parser.add_option("-s", default="/hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.1/sambamba_v0.6.1", dest="sambamba",
                       metavar="[PATH]", help="full path to sambamba [default = /hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.1/sambamba_v0.6.1]")
     parser.add_option("-w", default="./", dest="wkdir", metavar="[PATH]", help="full path for  working directory [default = ./]")
@@ -646,7 +646,6 @@ if __name__ == "__main__":
                       help="column in BED file that contains the transcripts [default = 7]")
     parser.add_option("-q", default=10, dest="bq", metavar="[INT]", help="minimum base quality used [default = 10]")
     parser.add_option("-m", default=20, dest="mq", metavar="[INT]", help="minimum mapping quality used [default = 20]")
-    #parser.add_option("-x", default="/hpc/cog_bioinf/data/mapping/diagnostiek/Dx_resources/", dest="Dx_resources_folder", metavar="[string]", help="path to Dx_resource_folder [default = /hpc/cog_bioinf/data/mapping/diagnostiek/Dx_resources/]")
 
     if len(sys.argv) == 1:
         parser.parse_args(['--help'])
@@ -675,7 +674,6 @@ if __name__ == "__main__":
     mq = str(opt.mq)
     timeslot = str(opt.timeslot)
     queue = str(opt.queue)
-    # Dx_resources_folder=str(opt.Dx_resources_folder)
     exoncov_folder = str(opt.exoncov_folder)
 
     if not opt.input_files:
