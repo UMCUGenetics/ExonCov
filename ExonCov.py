@@ -577,7 +577,6 @@ def cleanup_results(results_dir, exoncov_files, html_files):
 
     for f in exoncov_files:
         shutil.move(f, os.path.join(results_dir, "Exons"))
-
 ###########
 
 
@@ -628,17 +627,17 @@ if __name__ == "__main__":
     parser.add_option("--project", metavar="[STRING]", help="SGE project [default = SGE default]")
     parser.add_option("-c", default="off", dest="max_mem", metavar="[INT]", help="memory reserved for qsub [default =  off (=threads*10G)]")
 
-    parser.add_option("-b", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed",
+    parser.add_option("-b", default="/hpc/cog_bioinf/diagnostiek/production/Dx_tracks/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed",
                       dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed]")
-    parser.add_option("-n", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Exoncov/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file",
+    parser.add_option("-n", default="/hpc/cog_bioinf/diagnostiek/production/Dx_tracks/Exoncov/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file",
                       metavar="[PATH]", help="full path to file with the link between GENE (HGNC) and all known NM/ENST transcripts [default = [master]/NM_ENSEMBL_HGNC.txt]")
 
-    parser.add_option("-p", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Exoncov/Preferred_transcript_list.txt", dest="pref_file",
+    parser.add_option("-p", default="/hpc/cog_bioinf/diagnostiek/production/Dx_tracks/Exoncov/Preferred_transcript_list.txt", dest="pref_file",
                       metavar="[PATH]", help="full path to Preferred transcript file [default = [master]/Preferred_transcript_list.txt]")
-    parser.add_option("-l", default="/hpc/cog_bioinf/diagnostiek/production/Dx_resources/Exoncov/gpanels.txt", dest="panel_list",
+    parser.add_option("-l", default="/hpc/cog_bioinf/diagnostiek/production/Dx_tracks/Exoncov/gpanels.txt", dest="panel_list",
                       metavar="[PATH]", help="full path to Gene panel file [default = [master]/gpanels.txt]")
-    parser.add_option("-s", default="/hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.1/sambamba_v0.6.1", dest="sambamba",
-                      metavar="[PATH]", help="full path to sambamba [default = /hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.1/sambamba_v0.6.1]")
+    parser.add_option("-s", default="/hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.5/sambamba_v0.6.5", dest="sambamba",
+                      metavar="[PATH]", help="full path to sambamba [default = /hpc/local/CentOS7/cog_bioinf/sambamba_v0.6.5/sambamba_v0.6.5]")
     parser.add_option("-w", default="./", dest="wkdir", metavar="[PATH]", help="full path for  working directory [default = ./]")
     parser.add_option("-t", default=4, dest="threads", metavar="[INT]", help="number of threads [default = 4]")
     parser.add_option("-f", default=20, dest="flanks", metavar="[INT]", help="### currently disabled!### size of flanks in bp [default = 20]")
@@ -646,6 +645,7 @@ if __name__ == "__main__":
                       help="column in BED file that contains the transcripts [default = 7]")
     parser.add_option("-q", default=10, dest="bq", metavar="[INT]", help="minimum base quality used [default = 10]")
     parser.add_option("-m", default=20, dest="mq", metavar="[INT]", help="minimum mapping quality used [default = 20]")
+    parser.add_option("-e", default="off", dest="exon_start", choices=['on','off'], metavar="[STRING]", help="start analysis from Exon files, not from BAM files [default = off]")
 
     if len(sys.argv) == 1:
         parser.parse_args(['--help'])
@@ -681,9 +681,20 @@ if __name__ == "__main__":
     else:
         input_files = opt.input_files
 
-    print "Working on Exon coverage ({})".format(input_files)
-    exoncov_files = make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue, opt.project,
+    if str(opt.exon_start)=="off": # start from BAM file
+        print "Working on Exon coverage ({})".format(input_files)
+        exoncov_files = make_Exon_stats(sambamba, wkdir, threads, flanks, mq, bq, timeslot, input_files, queue, opt.project,
                                     max_mem)  # Make Exon coverage file for each dedup.realigned.bam file
+    elif str(opt.exon_start)=="on": # start from Exoncov file
+        action="find -iname \"*_exon_coverage.tsv\""
+        exoncov_files=commands.getoutput("find -iname \"*_exon_coverage.tsv\"").split()
+        new_files=[]
+        for file in exoncov_files:
+            os.system("sed -i \'s/,/\./g' "+ str(file))
+            os.system("cp "+str(file)+ " "+ str(wkdir))
+            new_files.append(str(wkdir)+str(file).split("/")[-1])
+        exoncov_files=new_files
+        exoncov_folder = str(opt.exoncov_folder)+"_from_exoncov"
 
     print "Working on Transcript coverage ({})".format(exoncov_files)
     # Combine the coverage of each exon for all transcripts in the BAM file.
