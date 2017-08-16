@@ -23,10 +23,10 @@ class LoadDesign(Command):
 
     def run(self, exon_file, gene_transcript_file):
         """Load design files."""
-        print "EXON FILE"
         transcripts = {}
         exons = []
         with open(exon_file, 'r') as f:
+            print "Loading exon file: {0}".format(exon_file)
             for line in f:
                 data = line.rstrip().split('\t')
                 chr, start, end = data[:3]
@@ -56,9 +56,9 @@ class LoadDesign(Command):
 
         db.session.commit()
 
-        print "GENE TRANSCRIPT FILE"
         genes = {}
         with open(gene_transcript_file, 'r') as f:
+            print "Loading gene transcript file: {0}".format(gene_transcript_file)
             for line in f:
                 if line.startswith('#'):
                     continue
@@ -110,6 +110,7 @@ class LoadSample(Command):
             sys.exit("ERROR: Can't open file({0}).".format(exoncov_file))
         else:
             with f:
+                print "Loading sample: {0}-{1}-{2}".format(run_name, sample_name, exoncov_file)
                 header = f.readline()
                 exon_measurements = []
                 measurement_types = header[7:-1]
@@ -118,13 +119,14 @@ class LoadSample(Command):
                     chr, start, end = data[:3]
                     measurements = data[7:-1]
 
-                    for i, measurement in enumerate(measurements):
-                        exon_measurement = ExonMeasurement(
-                            sample_id=sample.id,
-                            exon_id='{}_{}_{}'.format(chr, start, end),
-                            measurement=float(measurement),
-                            measurement_type=measurement_types[i]
-                        )
-                        exon_measurements.append(exon_measurement)
-                db.session.bulk_save_objects(exon_measurements)
+                    exon_measurements.extend(
+                        [
+                            dict(
+                                sample_id=sample.id, exon_id='{}_{}_{}'.format(chr, start, end),
+                                measurement=float(measurement), measurement_type=measurement_types[i]
+                            )
+                            for i, measurement in enumerate(measurements)
+                        ]
+                    )
+                db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements)
             db.session.commit()
