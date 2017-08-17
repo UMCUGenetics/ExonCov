@@ -1,5 +1,7 @@
 """ExonCov SQLAlchemy database models."""
 
+import datetime
+
 from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -72,7 +74,7 @@ class Sample(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
-    import_date = db.Column(db.Date)
+    import_date = db.Column(db.Date, default=datetime.datetime.today)
 
     sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'))
 
