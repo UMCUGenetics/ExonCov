@@ -14,6 +14,11 @@ exons_transcripts = db.Table(
     db.Column('transcript_id', db.ForeignKey('transcripts.id'), primary_key=True)
 )
 
+panels_transcripts = db.Table(
+    'panels_transcripts',
+    db.Column('panel_id', db.ForeignKey('panels.id'), primary_key=True),
+    db.Column('transcript_id', db.ForeignKey('transcripts.id'), primary_key=True)
+)
 
 class Exon(db.Model):
     """Exon class."""
@@ -48,6 +53,7 @@ class Transcript(db.Model):
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
     gene = db.relationship('Gene', back_populates='transcripts')
+    panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
 
     def __repr__(self):
         return "Transcript({0})".format(self.name)
@@ -65,6 +71,18 @@ class Gene(db.Model):
 
     def __repr__(self):
         return "Gene({0})".format(self.name)
+
+
+class Panel(db.Model):
+    """Panel class."""
+
+    __tablename__ = 'panels'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True)
+
+    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
+
 
 
 class Sample(db.Model):
