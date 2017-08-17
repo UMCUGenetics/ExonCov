@@ -101,6 +101,7 @@ class LoadSample(Command):
         if not sample:
             sample = Sample(name=sample_name, sequencing_run=sequencing_run)
             db.session.add(sample)
+            db.session.commit()
         else:
             sys.exit("ERROR: Sample and run combination already exists.")
 
@@ -111,9 +112,10 @@ class LoadSample(Command):
         else:
             with f:
                 print "Loading sample: {0}-{1}-{2}".format(run_name, sample_name, exoncov_file)
-                header = f.readline()
+                header = f.readline().rstrip().split('\t')
                 exon_measurements = []
                 measurement_types = header[7:-1]
+
                 for line in f:
                     data = line.rstrip().split('\t')
                     chr, start, end = data[:3]
