@@ -16,19 +16,21 @@ def drop():
 
 @db_manager.command
 def create():
-    """Create database."""
+    """Create database tables."""
     db.create_all()
 
 
 @db_manager.command
 def reset():
-    """Reset (drop and create) database."""
+    """Reset (drop and create) database tables."""
     drop()
     create()
 
 
+db_manager.add_command('load_design', cli.LoadDesign())
+db_manager.add_command('stats', cli.PrintStats())
+
 manager.add_command("db", db_manager)
-manager.add_command('load_design', cli.LoadDesign())
 manager.add_command('load_sample', cli.LoadSample())
 
 

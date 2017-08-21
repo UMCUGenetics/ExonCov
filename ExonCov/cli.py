@@ -5,26 +5,37 @@ import sys
 from flask_script import Command, Option
 
 from . import db, utils
-from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement
+from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, Panel
 
 
 class LoadDesign(Command):
     """Load design files to database."""
 
-    def __init__(self, default_exon_file='test_files/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed', default_design_file='test_files/NM_ENSEMBL_HGNC.txt'):
+    def __init__(
+        self,
+        default_exon_file='test_files/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed',
+        default_gene_transcript_file='test_files/NM_ENSEMBL_HGNC.txt',
+        default_preferred_transcripts_file='test_files/preferred_transcripts.txt',
+        defaut_gene_panel_file='test_files/gpanels.txt',
+    ):
         self.default_exon_file = default_exon_file
-        self.default_design_file = default_design_file
+        self.default_gene_transcript_file = default_gene_transcript_file
+        self.default_preferred_transcripts_file = default_preferred_transcripts_file
+        self.defaut_gene_panel_file = defaut_gene_panel_file
 
     def get_options(self):
         return [
             Option('-e', '--exon_file', dest='exon_file', default=self.default_exon_file),
-            Option('-g', '--gene_transcript_file', dest='gene_transcript_file', default=self.default_design_file),
+            Option('-gt', '--gene_transcript', dest='gene_transcript_file', default=self.default_gene_transcript_file),
+            Option('-pt', '--preferred_transcripts', dest='preferred_transcripts_file', default=self.default_preferred_transcripts_file),
+            Option('-gp', '--gene_panel', dest='gene_panel_file', default=self.defaut_gene_panel_file),
         ]
 
-    def run(self, exon_file, gene_transcript_file):
-        """Load design files."""
+    def run(self, exon_file, gene_transcript_file, preferred_transcripts_file, gene_panel_file):
+        """Load files."""
         transcripts = {}
         exons = []
+        # Parse Exon file
         with open(exon_file, 'r') as f:
             print "Loading exon file: {0}".format(exon_file)
             for line in f:
@@ -56,6 +67,7 @@ class LoadDesign(Command):
 
         db.session.commit()
 
+        # Load gene and transcript file
         genes = {}
         with open(gene_transcript_file, 'r') as f:
             print "Loading gene transcript file: {0}".format(gene_transcript_file)
@@ -77,7 +89,33 @@ class LoadDesign(Command):
             db.session.add_all(genes.values())
 
         db.session.commit()
-        db.session.close()
+
+        # Setup preferred transcript dictonary
+        preferred_transcripts = {}  # key = gene, value = transcript
+        with open(preferred_transcripts_file, 'r') as f:
+            print "Loading preferred transcripts file: {0}".format(preferred_transcripts_file)
+            for line in f:
+                if line.startswith('#'):
+                    continue
+                data = line.rstrip().split('\t')
+                preferred_transcripts[data[1]] = data[0]
+
+        # Setup gene panel
+        with open(gene_panel_file, 'r') as f:
+            f.readline()  # skip header
+            for line in f:
+                print "Loading gene panel file: {0}".format(gene_panel_file)
+                data = line.rstrip().split('\t')
+                panel_name = data[0]
+                genes = data[2].split(',')
+
+                panel = Panel(name=panel_name)
+
+                for gene in set(genes):
+                    transcript = transcripts[preferred_transcripts[gene]]
+                    panel.transcripts.append(transcript)
+                db.session.add(panel)
+            db.session.commit()
 
 
 class LoadSample(Command):
@@ -132,3 +170,15 @@ class LoadSample(Command):
                     )
                 db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements)
             db.session.commit()
+
+
+class PrintStats(Command):
+    """Print database stats."""
+
+    def run(self):
+        """Run function."""
+        print "Number of genes: {0}".format(Gene.query.count())
+        print "Number of transcripts: {0}".format(Transcript.query.count())
+        print "Number of exons: {0}".format(Exon.query.count())
+        print "Number of panels: {0}".format(Panel.query.count())
+        print "Number of samples: {0}".format(Sample.query.count())
