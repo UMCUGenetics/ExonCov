@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block header %}{{sample}}</br><small>{{sample.sequencing_run.name}}</small>{% endblock %}
+{% block header %}{{sample.name}} - {{panel.name}}</br><small>{{sample.sequencing_run.name}}</small>{% endblock %}
 {% block body %}
 
 <table class="table table-bordered table-hover">
@@ -19,12 +19,12 @@
     <tbody>
         {% for measurement in measurements %}
         <tr>
-            <td>{{measurement}}</a></td>
-            <td>GENE</a></td>
-            <td>{{measurements[measurement][measurement_types[0]]['chr']}}</a></td>
-            <td>{{measurements[measurement][measurement_types[0]]['start']}}</a></td>
-            <td>{{measurements[measurement][measurement_types[0]]['end']}}</a></td>
-            <td>{{measurements[measurement][measurement_types[0]]['exon_count']}}</a></td>
+            <td><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=measurement) }}">{{measurement}}</a></td>
+            <td>GENE</td>
+            <td>{{measurements[measurement][measurement_types[0]]['chr']}}/td>
+            <td>{{measurements[measurement][measurement_types[0]]['start']}}</td>
+            <td>{{measurements[measurement][measurement_types[0]]['end']}}</td>
+            <td>{{measurements[measurement][measurement_types[0]]['exon_count']}}</td>
             {% for type in measurement_types %}
                 <td>{{measurements[measurement][type]['value']}}</td>
             {% endfor %}

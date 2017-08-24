@@ -3,7 +3,7 @@
 from flask import render_template
 
 from ExonCov import app, db
-from .models import Sample, Panel, Transcript, Exon, ExonMeasurement, panels_transcripts
+from .models import Sample, Panel, Transcript, Exon, ExonMeasurement, panels_transcripts, exons_transcripts
 
 
 @app.route('/')
@@ -33,7 +33,7 @@ def sample(id):
     return render_template('sample.html', sample=sample, measurements=measurements, measurement_types=measurement_types)
 
 
-@app.route('/sample/<int:sample_id>/<string:panel_name>')
+@app.route('/sample/<int:sample_id>/panel/<string:panel_name>')
 def sample_panel(sample_id, panel_name):
     """Sample panel page."""
     sample = Sample.query.get(sample_id)
@@ -55,5 +55,27 @@ def sample_panel(sample_id, panel_name):
             measurements[transcript_name][measurement_type]['start'] = exon_start
         if measurements[transcript_name][measurement_type]['end'] < exon_end:
             measurements[transcript_name][measurement_type]['end'] = exon_end
-    print measurements['NM_030578']
-    return render_template('sample_panel.html', sample=sample, measurements=measurements, measurement_types=measurement_types)
+
+    return render_template('sample_panel.html', sample=sample, panel=panel, measurements=measurements, measurement_types=measurement_types)
+
+
+@app.route('/sample/<int:sample_id>/transcript/<string:transcript_name>')
+def sample_transcript(sample_id, transcript_name):
+    """Sample transcript page."""
+    sample = Sample.query.get(sample_id)
+    transcript = Transcript.query.filter_by(name=transcript_name).first()
+
+    measurement_types = ['meanCoverage', 'percentage15', 'percentage30']
+    query = db.session.query(Exon.id, Exon.chr, Exon.start, Exon.end, ExonMeasurement.measurement_type, ExonMeasurement.measurement).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).join(ExonMeasurement).filter_by(sample_id=sample.id).filter(ExonMeasurement.measurement_type.in_(measurement_types)).all()
+    exons = {}
+
+    for exon_id, exon_chr, exon_start, exon_end, measurement_type, measurement in query:
+        if exon_id not in exons:
+            exons[exon_id] = {
+                'chr': exon_chr,
+                'start': exon_start,
+                'end': exon_end
+            }
+        exons[exon_id][measurement_type] = measurement
+
+    return render_template('sample_transcript.html', sample=sample, transcript=transcript, exons=exons, measurement_types=measurement_types)

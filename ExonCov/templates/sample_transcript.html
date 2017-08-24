@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block header %}{{sample.name}} - {{transcript.name}}</br>
+    <small>{{sample.sequencing_run.name}}</small>
+{% endblock %}
+{% block body %}
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Chr</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Total Bases</th>
+            {% for type in measurement_types %}
+                <th>{{type}}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for exon in exons %}
+        <tr>
+            <td>{{exons[exon]['chr']}}</td>
+            <td>{{exons[exon]['start']}}</td>
+            <td>{{exons[exon]['end']}}</td>
+            <td>{{exons[exon]['end'] - exons[exon]['start']}}</td>
+            {% for type in measurement_types %}
+                <td>{{exons[exon][type]}}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
