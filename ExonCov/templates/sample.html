@@ -1,5 +1,27 @@
 {% extends 'base.html' %}
-{% block header %}Samples</br><small>{{sample.sequencing_run.name}}</small>{% endblock %}
+{% block header %}{{sample.name}}</br><small>{{sample.sequencing_run.name}}</small>{% endblock %}
 {% block body %}
 
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Gene Panel</th>
+            <th>Total_size(bp)</th>
+            {% for type in measurement_types %}
+                <th>{{type}}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for measurement in measurements %}
+        <tr>
+            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_name=measurement) }}">{{measurement}}</a></td>
+            <td>{{measurements[measurement][measurement_types[0]]['len']}}</td>
+            {% for type in measurement_types %}
+                <td>{{measurements[measurement][type]['value']}}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

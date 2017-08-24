@@ -20,6 +20,7 @@ panels_transcripts = db.Table(
     db.Column('transcript_id', db.ForeignKey('transcripts.id'), primary_key=True)
 )
 
+
 class Exon(db.Model):
     """Exon class."""
 
@@ -38,6 +39,7 @@ class Exon(db.Model):
 
     @hybrid_property
     def len(self):
+        """Calculate exon length."""
         return self.end - self.start
 
 
@@ -48,8 +50,7 @@ class Transcript(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True, unique=True)
-
-    gene_id = db.Column(db.Integer, db.ForeignKey('genes.id'))
+    gene_id = db.Column(db.Integer, db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
     gene = db.relationship('Gene', back_populates='transcripts')
@@ -79,10 +80,12 @@ class Panel(db.Model):
     __tablename__ = 'panels'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True)
+    name = db.Column(db.String(50), index=True, unique=True)
 
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
 
+    def __repr__(self):
+        return "Panel({0})".format(self.name)
 
 
 class Sample(db.Model):
@@ -93,8 +96,7 @@ class Sample(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
     import_date = db.Column(db.Date, default=datetime.datetime.today)
-
-    sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'))
+    sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'), index=True)
 
     sequencing_run = db.relationship('SequencingRun', back_populates='samples')
     exon_measurements = db.relationship('ExonMeasurement', back_populates='sample')
@@ -132,8 +134,8 @@ class ExonMeasurement(db.Model):
     measurement = db.Column(db.Float)
     measurement_type = db.Column(db.String(25), index=True)  # e.g. percentage20
 
-    exon_id = db.Column(db.String(25), db.ForeignKey('exons.id'))
-    sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'))
+    exon_id = db.Column(db.String(25), db.ForeignKey('exons.id'), index=True)
+    sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
 
     sample = db.relationship('Sample', back_populates='exon_measurements')
     exon = db.relationship('Exon', back_populates='exon_measurements')

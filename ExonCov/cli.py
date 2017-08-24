@@ -102,9 +102,9 @@ class LoadDesign(Command):
 
         # Setup gene panel
         with open(gene_panel_file, 'r') as f:
+            print "Loading gene panel file: {0}".format(gene_panel_file)
             f.readline()  # skip header
             for line in f:
-                print "Loading gene panel file: {0}".format(gene_panel_file)
                 data = line.rstrip().split('\t')
                 panel_name = data[0]
                 genes = data[2].split(',')
