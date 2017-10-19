@@ -81,7 +81,7 @@ class LoadDesign(Command):
                 if gene_name in genes:
                     gene = genes[gene_name]
                 else:
-                    gene = Gene(name=data[0])
+                    gene = Gene(id=data[0])
                 if transcript_name in transcripts:
                     gene.transcripts.append(transcripts[transcript_name])
                 genes[gene_name] = gene

@@ -1,17 +1,15 @@
 {% extends 'base.html' %}
-{% block header %}{{panel.name}} - {{sample.name}}{% endblock %}
+{% block header %}{{gene.id}} - {{sample.name}}{% endblock %}
 
 {% block body %}
 <dl class="dl-horizontal">
   <dt>Sequencing run</dt><dd>{{sample.sequencing_run.name}}</dd>
-  <dt>Panel</dt><dd>{{panel.name}}</dd>
+  <dt>Gene</dt><dd>{{gene.id}}</dd>
 </dl>
-
 <table class="table table-bordered table-hover">
     <thead>
         <tr>
             <th>Transcript</th>
-            <th>Gene</th>
             <th>Chr</th>
             <th>Start</th>
             <th>End</th>
@@ -25,7 +23,6 @@
         {% for measurement in measurements %}
         <tr>
             <td><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=measurement) }}">{{measurement}}</a></td>
-            <td><a href="{{ url_for('sample_gene', sample_id=sample.id, gene_id=measurements[measurement][measurement_types[0]]['gene']) }}">{{measurements[measurement][measurement_types[0]]['gene']}}</a></td>
             <td>{{measurements[measurement][measurement_types[0]]['chr']}}</td>
             <td>{{measurements[measurement][measurement_types[0]]['start']}}</td>
             <td>{{measurements[measurement][measurement_types[0]]['end']}}</td>

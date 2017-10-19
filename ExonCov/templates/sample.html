@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
-{% block header %}{{sample.name}}</br><small>{{sample.sequencing_run.name}}</small>{% endblock %}
+{% block header %}{{sample.name}}{% endblock %}
+
 {% block body %}
+<dl class="dl-horizontal">
+  <dt>Sequencing run</dt><dd>{{sample.sequencing_run.name}}</dd>
+</dl>
 
 <table class="table table-bordered table-hover">
     <thead>

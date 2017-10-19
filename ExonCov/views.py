@@ -3,7 +3,7 @@
 from flask import render_template
 
 from ExonCov import app, db
-from .models import Sample, Panel, Transcript, Exon, ExonMeasurement, panels_transcripts, exons_transcripts
+from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, panels_transcripts, exons_transcripts
 
 
 @app.route('/')
@@ -40,13 +40,13 @@ def sample_panel(sample_id, panel_name):
     panel = Panel.query.filter_by(name=panel_name).first()
 
     measurement_types = ['meanCoverage', 'percentage15', 'percentage30']
-    query = db.session.query(Transcript.name, Exon.chr, Exon.start, Exon.end, ExonMeasurement.measurement_type, ExonMeasurement.measurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=sample.id).filter(ExonMeasurement.measurement_type.in_(measurement_types)).all()
+    query = db.session.query(Transcript.name, Transcript.gene_id, Exon.chr, Exon.start, Exon.end, ExonMeasurement.measurement_type, ExonMeasurement.measurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=sample.id).filter(ExonMeasurement.measurement_type.in_(measurement_types)).all()
     measurements = {}
 
-    for transcript_name, exon_chr, exon_start, exon_end, measurement_type, measurement in query:
+    for transcript_name, gene_id, exon_chr, exon_start, exon_end, measurement_type, measurement in query:
         exon_len = exon_end - exon_start
         if transcript_name not in measurements:
-            measurements[transcript_name] = {key: dict({'value': 0, 'len': 0, 'chr': exon_chr, 'start': exon_start, 'end': exon_end, 'exon_count': 0}) for key in measurement_types}
+            measurements[transcript_name] = {key: dict({'value': 0, 'len': 0, 'chr': exon_chr, 'start': exon_start, 'end': exon_end, 'exon_count': 0, 'gene': gene_id}) for key in measurement_types}
         measurements[transcript_name][measurement_type]['value'] = ((measurements[transcript_name][measurement_type]['len'] * measurements[transcript_name][measurement_type]['value']) + (exon_len * measurement)) / (measurements[transcript_name][measurement_type]['len'] + exon_len)
         measurements[transcript_name][measurement_type]['len'] += exon_len
         measurements[transcript_name][measurement_type]['exon_count'] += 1
@@ -79,3 +79,30 @@ def sample_transcript(sample_id, transcript_name):
         exons[exon_id][measurement_type] = measurement
 
     return render_template('sample_transcript.html', sample=sample, transcript=transcript, exons=exons, measurement_types=measurement_types)
+
+
+@app.route('/sample/<int:sample_id>/gene/<string:gene_id>')
+def sample_gene(sample_id, gene_id):
+    """Sample gene page."""
+    sample = Sample.query.get(sample_id)
+    gene = Gene.query.get(gene_id)
+    
+    measurement_types = ['meanCoverage', 'percentage15', 'percentage30']
+    query = db.session.query(Transcript.name, Transcript.gene_id, Exon.chr, Exon.start, Exon.end, ExonMeasurement.measurement_type, ExonMeasurement.measurement).filter(Transcript.gene_id == gene.id).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=sample.id).filter(ExonMeasurement.measurement_type.in_(measurement_types)).all()
+
+    measurements = {}
+
+    for transcript_name, gene_id, exon_chr, exon_start, exon_end, measurement_type, measurement in query:
+        exon_len = exon_end - exon_start
+        if transcript_name not in measurements:
+            measurements[transcript_name] = {key: dict({'value': 0, 'len': 0, 'chr': exon_chr, 'start': exon_start, 'end': exon_end, 'exon_count': 0}) for key in measurement_types}
+        measurements[transcript_name][measurement_type]['value'] = ((measurements[transcript_name][measurement_type]['len'] * measurements[transcript_name][measurement_type]['value']) + (exon_len * measurement)) / (measurements[transcript_name][measurement_type]['len'] + exon_len)
+        measurements[transcript_name][measurement_type]['len'] += exon_len
+        measurements[transcript_name][measurement_type]['exon_count'] += 1
+
+        if measurements[transcript_name][measurement_type]['start'] > exon_start:
+            measurements[transcript_name][measurement_type]['start'] = exon_start
+        if measurements[transcript_name][measurement_type]['end'] < exon_end:
+            measurements[transcript_name][measurement_type]['end'] = exon_end
+
+    return render_template('sample_gene.html', sample=sample, gene=gene, measurements=measurements, measurement_types=measurement_types)

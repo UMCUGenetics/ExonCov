@@ -50,7 +50,7 @@ class Transcript(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True, unique=True)
-    gene_id = db.Column(db.Integer, db.ForeignKey('genes.id'), index=True)
+    gene_id = db.Column(db.String(50), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
     gene = db.relationship('Gene', back_populates='transcripts')
@@ -65,13 +65,12 @@ class Gene(db.Model):
 
     __tablename__ = 'genes'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), index=True, unique=True)  # hgnc
+    id = db.Column(db.String(50), primary_key=True)  # hgnc
 
     transcripts = db.relationship('Transcript', back_populates='gene')
 
     def __repr__(self):
-        return "Gene({0})".format(self.name)
+        return "Gene({0})".format(self.id)
 
 
 class Panel(db.Model):
