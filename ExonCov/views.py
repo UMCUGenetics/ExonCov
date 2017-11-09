@@ -25,7 +25,7 @@ def sample(id):
 
     for panel_name, exon_len, measurement_type, measurement in query:
         if panel_name not in measurements:
-            measurements[panel_name] = {key: dict({'value': 0, 'len': 0}) for key in measurement_types}
+            measurements[panel_name] = dict((key, {'value': 0, 'len': 0}) for key in measurement_types)
 
         measurements[panel_name][measurement_type]['value'] = ((measurements[panel_name][measurement_type]['len'] * measurements[panel_name][measurement_type]['value']) + (exon_len * measurement)) / (measurements[panel_name][measurement_type]['len'] + exon_len)
         measurements[panel_name][measurement_type]['len'] += exon_len
@@ -46,7 +46,7 @@ def sample_panel(sample_id, panel_name):
     for transcript_name, gene_id, exon_chr, exon_start, exon_end, measurement_type, measurement in query:
         exon_len = exon_end - exon_start
         if transcript_name not in measurements:
-            measurements[transcript_name] = {key: dict({'value': 0, 'len': 0, 'chr': exon_chr, 'start': exon_start, 'end': exon_end, 'exon_count': 0, 'gene': gene_id}) for key in measurement_types}
+            measurements[transcript_name] = dict((key, {'value': 0, 'len': 0, 'chr': exon_chr, 'start': exon_start, 'end': exon_end, 'exon_count': 0, 'gene': gene_id}) for key in measurement_types)
         measurements[transcript_name][measurement_type]['value'] = ((measurements[transcript_name][measurement_type]['len'] * measurements[transcript_name][measurement_type]['value']) + (exon_len * measurement)) / (measurements[transcript_name][measurement_type]['len'] + exon_len)
         measurements[transcript_name][measurement_type]['len'] += exon_len
         measurements[transcript_name][measurement_type]['exon_count'] += 1
@@ -86,7 +86,7 @@ def sample_gene(sample_id, gene_id):
     """Sample gene page."""
     sample = Sample.query.get(sample_id)
     gene = Gene.query.get(gene_id)
-    
+
     measurement_types = ['meanCoverage', 'percentage15', 'percentage30']
     query = db.session.query(Transcript.name, Transcript.gene_id, Exon.chr, Exon.start, Exon.end, ExonMeasurement.measurement_type, ExonMeasurement.measurement).filter(Transcript.gene_id == gene.id).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=sample.id).filter(ExonMeasurement.measurement_type.in_(measurement_types)).all()
 
@@ -95,7 +95,7 @@ def sample_gene(sample_id, gene_id):
     for transcript_name, gene_id, exon_chr, exon_start, exon_end, measurement_type, measurement in query:
         exon_len = exon_end - exon_start
         if transcript_name not in measurements:
-            measurements[transcript_name] = {key: dict({'value': 0, 'len': 0, 'chr': exon_chr, 'start': exon_start, 'end': exon_end, 'exon_count': 0}) for key in measurement_types}
+            measurements[transcript_name] = dict((key, {'value': 0, 'len': 0, 'chr': exon_chr, 'start': exon_start, 'end': exon_end, 'exon_count': 0}) for key in measurement_types)
         measurements[transcript_name][measurement_type]['value'] = ((measurements[transcript_name][measurement_type]['len'] * measurements[transcript_name][measurement_type]['value']) + (exon_len * measurement)) / (measurements[transcript_name][measurement_type]['len'] + exon_len)
         measurements[transcript_name][measurement_type]['len'] += exon_len
         measurements[transcript_name][measurement_type]['exon_count'] += 1
