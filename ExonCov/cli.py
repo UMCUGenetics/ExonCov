@@ -45,7 +45,7 @@ class LoadDesign(Command):
 
                 # Create exon
                 exon = Exon(
-                    id='{}_{}_{}'.format(chr, start, end),
+                    id='{0}_{1}_{2}'.format(chr, start, end),
                     chr=chr,
                     start=int(start),
                     end=int(end)
