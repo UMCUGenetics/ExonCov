@@ -62,9 +62,12 @@ class LoadDesign(Command):
                     exon.transcripts.append(transcript)
                 exons.append(exon)
 
-            db.session.add_all(exons)
-            db.session.add_all(transcripts.values())
-
+        # Bulk insert exons and transcript
+        bulk_insert_n = 1000
+        for i in range(0, len(exons), bulk_insert_n):
+            db.session.add_all(exons[i:i+bulk_insert_n])
+            db.session.commit()
+        db.session.add_all(transcripts.values())
         db.session.commit()
 
         # Load gene and transcript file
@@ -76,8 +79,8 @@ class LoadDesign(Command):
                     continue
 
                 data = line.rstrip().split('\t')
-                gene_name = data[0]
-                transcript_name = data[1]
+                gene_name = data[0].rstrip()
+                transcript_name = data[1].rstrip()
                 if gene_name in genes:
                     gene = genes[gene_name]
                 else:
@@ -86,8 +89,7 @@ class LoadDesign(Command):
                     gene.transcripts.append(transcripts[transcript_name])
                 genes[gene_name] = gene
 
-            db.session.add_all(genes.values())
-
+        db.session.add_all(genes.values())
         db.session.commit()
 
         # Setup preferred transcript dictonary
@@ -115,7 +117,7 @@ class LoadDesign(Command):
                     transcript = transcripts[preferred_transcripts[gene]]
                     panel.transcripts.append(transcript)
                 db.session.add(panel)
-            db.session.commit()
+        db.session.commit()
 
 
 class LoadSample(Command):
