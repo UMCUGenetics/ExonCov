@@ -170,7 +170,13 @@ class LoadSample(Command):
                             for i, measurement in enumerate(measurements)
                         ]
                     )
-                db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements)
+
+            # Bulk insert exons and transcript
+            bulk_insert_n = 5000
+            for i in range(0, len(exon_measurements), bulk_insert_n):
+                db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements[i:i+bulk_insert_n])
+                db.session.commit()
+
             db.session.commit()
 
 
