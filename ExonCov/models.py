@@ -50,7 +50,7 @@ class Transcript(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True, unique=True)
-    gene_id = db.Column(db.String(50), db.ForeignKey('genes.id'), index=True)
+    gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
     gene = db.relationship('Gene', back_populates='transcripts')
@@ -65,7 +65,7 @@ class Gene(db.Model):
 
     __tablename__ = 'genes'
 
-    id = db.Column(db.String(50), primary_key=True)  # hgnc
+    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
 
     transcripts = db.relationship('Transcript', back_populates='gene')
 

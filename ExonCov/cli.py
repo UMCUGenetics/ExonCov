@@ -63,7 +63,7 @@ class LoadDesign(Command):
                 exons.append(exon)
 
         # Bulk insert exons and transcript
-        bulk_insert_n = 1000
+        bulk_insert_n = 5000
         for i in range(0, len(exons), bulk_insert_n):
             db.session.add_all(exons[i:i+bulk_insert_n])
             db.session.commit()
