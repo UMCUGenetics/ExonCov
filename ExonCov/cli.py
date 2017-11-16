@@ -164,7 +164,7 @@ class LoadSample(Command):
                     exon_measurements.extend(
                         [
                             dict(
-                                sample_id=sample.id, exon_id='{}_{}_{}'.format(chr, start, end),
+                                sample_id=sample.id, exon_id='{0}_{1}_{2}'.format(chr, start, end),
                                 measurement=float(measurement), measurement_type=measurement_types[i]
                             )
                             for i, measurement in enumerate(measurements)
