@@ -20,3 +20,15 @@ def get_one_or_create(session, model, create_method='', create_method_kwargs=Non
         except IntegrityError:
             session.rollback()
             return session.query(model).filter_by(**kwargs).one(), True
+
+
+class WSGIMiddleware(object):
+    """WSGI Middleware."""
+
+    def __init__(self, app, prefix):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+        environ['SCRIPT_NAME'] = self.prefix
+        return self.app(environ, start_response)
