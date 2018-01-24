@@ -28,7 +28,7 @@
             <td>{{exons[exon]['end']}}</td>
             <td>{{exons[exon]['end'] - exons[exon]['start']}}</td>
             {% for type in measurement_types %}
-                <td>{{exons[exon][type]}}</td>
+                <td>{{exons[exon]['measurement'][type]}}</td>
             {% endfor %}
         </tr>
         {% endfor %}

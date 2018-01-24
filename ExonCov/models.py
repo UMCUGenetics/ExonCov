@@ -4,6 +4,7 @@ import datetime
 
 from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.dialects.mysql import BIGINT
 
 from . import db
 
@@ -125,13 +126,19 @@ class SequencingRun(db.Model):
 
 
 class ExonMeasurement(db.Model):
-    """Exon measurement class, stores sample (coverage) measurements per exon."""
+    """Exon measurement class, stores sample measurements per exon."""
 
     __tablename__ = 'exon_measurements'
 
-    id = db.Column(db.Integer, primary_key=True)
-    measurement = db.Column(db.Float)
-    measurement_type = db.Column(db.String(25), index=True)  # e.g. percentage20
+    id = db.Column(BIGINT(unsigned=True), primary_key=True)
+
+    measurement_mean_coverage = db.Column(db.Float)
+    measurement_percentage10 = db.Column(db.Float)
+    measurement_percentage15 = db.Column(db.Float)
+    measurement_percentage20 = db.Column(db.Float)
+    measurement_percentage30 = db.Column(db.Float)
+    measurement_percentage50 = db.Column(db.Float)
+    measurement_percentage100 = db.Column(db.Float)
 
     exon_id = db.Column(db.String(25), db.ForeignKey('exons.id'), index=True)
     sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
@@ -140,8 +147,11 @@ class ExonMeasurement(db.Model):
     exon = db.relationship('Exon', back_populates='exon_measurements')
 
     __table_args = (
-        UniqueConstraint('exon_id', 'sample_id', 'measurement_type')
+        UniqueConstraint('exon_id', 'sample_id')
     )
 
     def __repr__(self):
-        return "ExonMeasurement({0}-{1}-{2})".format(self.measurement_type, self.sample, self.exon)
+        return "ExonMeasurement({0}-{1})".format(self.sample, self.exon)
+
+    def __getitem__(self, item):
+        return getattr(self, item)

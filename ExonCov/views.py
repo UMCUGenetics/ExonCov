@@ -65,18 +65,16 @@ def sample_transcript(sample_id, transcript_name):
     sample = Sample.query.get(sample_id)
     transcript = Transcript.query.filter_by(name=transcript_name).first()
 
-    measurement_types = ['meanCoverage', 'percentage15', 'percentage30']
-    query = db.session.query(Exon.id, Exon.chr, Exon.start, Exon.end, ExonMeasurement.measurement_type, ExonMeasurement.measurement).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).join(ExonMeasurement).filter_by(sample_id=sample.id).filter(ExonMeasurement.measurement_type.in_(measurement_types)).all()
+    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    query = db.session.query(Exon.id, Exon.chr, Exon.start, Exon.end, ExonMeasurement).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).join(ExonMeasurement).filter_by(sample_id=sample.id).all()
     exons = {}
-
-    for exon_id, exon_chr, exon_start, exon_end, measurement_type, measurement in query:
-        if exon_id not in exons:
-            exons[exon_id] = {
-                'chr': exon_chr,
-                'start': exon_start,
-                'end': exon_end
-            }
-        exons[exon_id][measurement_type] = measurement
+    for exon_id, exon_chr, exon_start, exon_end, exon_measurement in query:
+        exons[exon_id] = {
+            'chr': exon_chr,
+            'start': exon_start,
+            'end': exon_end,
+            'measurement': exon_measurement
+        }
 
     return render_template('sample_transcript.html', sample=sample, transcript=transcript, exons=exons, measurement_types=measurement_types)
 

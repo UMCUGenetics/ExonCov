@@ -154,22 +154,36 @@ class LoadSample(Command):
                 print "Loading sample: {0}-{1}-{2}".format(run_name, sample_name, exoncov_file)
                 header = f.readline().rstrip().split('\t')
                 exon_measurements = []
-                measurement_types = header[7:-1]
+                measurement_mean_coverage_index = header.index('meanCoverage')
+                measurement_percentage10_index = header.index('percentage10')
+                measurement_percentage15_index = header.index('percentage15')
+                measurement_percentage20_index = header.index('percentage20')
+                measurement_percentage30_index = header.index('percentage30')
+                measurement_percentage50_index = header.index('percentage50')
+                measurement_percentage100_index = header.index('percentage100')
 
                 for line in f:
                     data = line.rstrip().split('\t')
                     chr, start, end = data[:3]
-                    measurements = data[7:-1]
+                    measurement_mean_coverage = data[measurement_mean_coverage_index]
+                    measurement_percentage10 = data[measurement_percentage10_index]
+                    measurement_percentage15 = data[measurement_percentage15_index]
+                    measurement_percentage20 = data[measurement_percentage20_index]
+                    measurement_percentage30 = data[measurement_percentage30_index]
+                    measurement_percentage50 = data[measurement_percentage50_index]
+                    measurement_percentage100 = data[measurement_percentage100_index]
 
-                    exon_measurements.extend(
-                        [
-                            dict(
-                                sample_id=sample.id, exon_id='{0}_{1}_{2}'.format(chr, start, end),
-                                measurement=float(measurement), measurement_type=measurement_types[i]
-                            )
-                            for i, measurement in enumerate(measurements)
-                        ]
-                    )
+                    exon_measurements.append({
+                        'sample_id': sample.id,
+                        'exon_id': '{0}_{1}_{2}'.format(chr, start, end),
+                        'measurement_mean_coverage': measurement_mean_coverage,
+                        'measurement_percentage10': measurement_percentage10,
+                        'measurement_percentage15': measurement_percentage15,
+                        'measurement_percentage20': measurement_percentage20,
+                        'measurement_percentage30': measurement_percentage30,
+                        'measurement_percentage50': measurement_percentage50,
+                        'measurement_percentage100': measurement_percentage100,
+                    })
 
             # Bulk insert exons and transcript
             bulk_insert_n = 5000
