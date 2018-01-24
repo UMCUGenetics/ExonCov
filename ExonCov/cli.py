@@ -193,6 +193,9 @@ class LoadSample(Command):
 
             db.session.commit()
 
+            # Set transcript measurements
+            sample.insert_transcript_measurements()
+
 
 class PrintStats(Command):
     """Print database stats."""

@@ -56,6 +56,7 @@ class Transcript(db.Model):
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
     gene = db.relationship('Gene', back_populates='transcripts')
     panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
+    transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
 
     def __repr__(self):
         return "Transcript({0})".format(self.name)
@@ -100,15 +101,43 @@ class Sample(db.Model):
 
     sequencing_run = db.relationship('SequencingRun', back_populates='samples')
     exon_measurements = db.relationship('ExonMeasurement', back_populates='sample')
+    transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='sample')
 
     __table_args__ = (
         UniqueConstraint('name', 'sequencing_run_id'),
         Index('sample_run', 'name', 'sequencing_run_id')
     )
 
-
     def __repr__(self):
         return "Sample({0})".format(self.name)
+
+    def insert_transcript_measurements(self):
+        """."""
+        query = db.session.query(Transcript.id, Exon.len, ExonMeasurement).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=self.id).all()
+        transcripts = {}
+
+        for transcript_id, exon_len, exon_measurement in query:
+            if transcript_id not in transcripts:
+                transcripts[transcript_id] = {
+                    'len': exon_len,
+                    'transcript_id': transcript_id,
+                    'sample_id': self.id,
+                    'measurement_mean_coverage': exon_measurement.measurement_mean_coverage,
+                    'measurement_percentage10': exon_measurement.measurement_percentage10,
+                    'measurement_percentage15': exon_measurement.measurement_percentage15,
+                    'measurement_percentage20': exon_measurement.measurement_percentage20,
+                    'measurement_percentage30': exon_measurement.measurement_percentage30,
+                    'measurement_percentage50': exon_measurement.measurement_percentage50,
+                    'measurement_percentage100': exon_measurement.measurement_percentage100,
+                }
+            else:
+                measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
+                for measurement_type in measurement_types:
+                    transcripts[transcript_id][measurement_type] = ((transcripts[transcript_id]['len'] * transcripts[transcript_id][measurement_type]) + (exon_len * exon_measurement[measurement_type])) / (transcripts[transcript_id]['len'] + exon_len)
+                transcripts[transcript_id]['len'] += exon_len
+
+        db.session.bulk_insert_mappings(TranscriptMeasurement, transcripts.values())
+        db.session.commit()
 
 
 class SequencingRun(db.Model):
@@ -152,6 +181,38 @@ class ExonMeasurement(db.Model):
 
     def __repr__(self):
         return "ExonMeasurement({0}-{1})".format(self.sample, self.exon)
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
+class TranscriptMeasurement(db.Model):
+    """Transcript measurement class, stores sample measurements per transcript."""
+
+    __tablename__ = 'transcript_measurements'
+
+    id = db.Column(BIGINT(unsigned=True), primary_key=True)
+    len = db.Column(db.Integer)  # Store length used to calculate average
+    measurement_mean_coverage = db.Column(db.Float)
+    measurement_percentage10 = db.Column(db.Float)
+    measurement_percentage15 = db.Column(db.Float)
+    measurement_percentage20 = db.Column(db.Float)
+    measurement_percentage30 = db.Column(db.Float)
+    measurement_percentage50 = db.Column(db.Float)
+    measurement_percentage100 = db.Column(db.Float)
+
+    transcript_id = db.Column(db.Integer, db.ForeignKey('transcripts.id'), index=True)
+    sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
+
+    sample = db.relationship('Sample', back_populates='transcript_measurements')
+    transcript = db.relationship('Transcript', back_populates='transcript_measurements')
+
+    __table_args = (
+        UniqueConstraint('transcript_id', 'sample_id')
+    )
+
+    def __repr__(self):
+        return "TranscriptMeasurement({0}-{1})".format(self.sample, self.transcript)
 
     def __getitem__(self, item):
         return getattr(self, item)
