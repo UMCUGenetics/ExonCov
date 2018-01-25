@@ -51,6 +51,10 @@ class Transcript(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True, unique=True)
+    chr = db.Column(db.String(2))  # Based on exon.chr
+    start = db.Column(db.Integer)  # Based on smallest exon.start
+    end = db.Column(db.Integer)  # Based on largest exon.end
+
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
@@ -99,7 +103,7 @@ class Sample(db.Model):
     import_date = db.Column(db.Date, default=datetime.datetime.today)
     sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'), index=True)
 
-    sequencing_run = db.relationship('SequencingRun', back_populates='samples')
+    sequencing_run = db.relationship('SequencingRun', back_populates='samples', lazy='joined')
     exon_measurements = db.relationship('ExonMeasurement', back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='sample')
 
@@ -112,7 +116,7 @@ class Sample(db.Model):
         return "Sample({0})".format(self.name)
 
     def insert_transcript_measurements(self):
-        """."""
+        """Insert transcript measurements based exon measurements."""
         query = db.session.query(Transcript.id, Exon.len, ExonMeasurement).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=self.id).all()
         transcripts = {}
 
@@ -192,7 +196,7 @@ class TranscriptMeasurement(db.Model):
     __tablename__ = 'transcript_measurements'
 
     id = db.Column(BIGINT(unsigned=True), primary_key=True)
-    len = db.Column(db.Integer)  # Store length used to calculate average
+    len = db.Column(db.Integer)  # Store length used to calculate weighted average
     measurement_mean_coverage = db.Column(db.Float)
     measurement_percentage10 = db.Column(db.Float)
     measurement_percentage15 = db.Column(db.Float)

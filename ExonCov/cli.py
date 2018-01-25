@@ -56,8 +56,24 @@ class LoadDesign(Command):
 
                     if transcript_name in transcripts:
                         transcript = transcripts[transcript_name]
+
+                        # Set start / end positions
+                        if transcript.start > exon.start:
+                            transcript.start = exon.start
+                        if transcript.end < exon.end:
+                            transcript.end = exon.end
+
+                        # Sanity check chromosome
+                        if transcript.chr != exon.chr:
+                            print "Warning: Different chromosomes for {0} and {1}".format(transcript, exon)
+
                     else:
-                        transcript = Transcript(name=transcript_name)
+                        transcript = Transcript(
+                            name=transcript_name,
+                            chr=exon.chr,
+                            start=exon.start,
+                            end=exon.end
+                        )
                         transcripts[transcript_name] = transcript
                     exon.transcripts.append(transcript)
                 exons.append(exon)
