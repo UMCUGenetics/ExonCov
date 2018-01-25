@@ -57,13 +57,18 @@ class Transcript(db.Model):
 
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
-    exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
+    exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts', lazy='joined')
     gene = db.relationship('Gene', back_populates='transcripts')
     panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
     transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
 
     def __repr__(self):
         return "Transcript({0})".format(self.name)
+
+    @hybrid_property
+    def exon_count(self):
+        """Calculate exon length."""
+        return len(self.exons)
 
 
 class Gene(db.Model):
