@@ -5,7 +5,7 @@ import sys
 from flask_script import Command, Option
 
 from . import db, utils
-from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, Panel
+from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel
 
 
 class LoadDesign(Command):
@@ -13,7 +13,7 @@ class LoadDesign(Command):
 
     def __init__(
         self,
-        default_exon_file='test_files/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed',
+        default_exon_file='test_files/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.multi_chr_transcripts_removed.bed',
         default_gene_transcript_file='test_files/NM_ENSEMBL_HGNC.txt',
         default_preferred_transcripts_file='test_files/preferred_transcripts.txt',
         defaut_gene_panel_file='test_files/gpanels.txt',
@@ -41,8 +41,6 @@ class LoadDesign(Command):
             for line in f:
                 data = line.rstrip().split('\t')
                 chr, start, end = data[:3]
-                transcript_data = set(data[6].split(':'))
-
                 # Create exon
                 exon = Exon(
                     id='{0}_{1}_{2}'.format(chr, start, end),
@@ -50,6 +48,12 @@ class LoadDesign(Command):
                     start=int(start),
                     end=int(end)
                 )
+
+                try:
+                    transcript_data = set(data[6].split(':'))
+                except IndexError:
+                    print "Warning: No transcripts for exon: {0}.".format(exon)
+                    transcript_data = []
 
                 # Create transcripts
                 for transcript_name in transcript_data:
@@ -201,7 +205,7 @@ class LoadSample(Command):
                         'measurement_percentage100': measurement_percentage100,
                     })
 
-            # Bulk insert exons and transcript
+            # Bulk insert exons measurements
             bulk_insert_n = 5000
             for i in range(0, len(exon_measurements), bulk_insert_n):
                 db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements[i:i+bulk_insert_n])
@@ -210,7 +214,35 @@ class LoadSample(Command):
             db.session.commit()
 
             # Set transcript measurements
-            sample.insert_transcript_measurements()
+            query = db.session.query(Transcript.id, Exon.len, ExonMeasurement).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=sample.id).all()
+            transcripts = {}
+
+            for transcript_id, exon_len, exon_measurement in query:
+                if transcript_id not in transcripts:
+                    transcripts[transcript_id] = {
+                        'len': exon_len,
+                        'transcript_id': transcript_id,
+                        'sample_id': sample.id,
+                        'measurement_mean_coverage': exon_measurement.measurement_mean_coverage,
+                        'measurement_percentage10': exon_measurement.measurement_percentage10,
+                        'measurement_percentage15': exon_measurement.measurement_percentage15,
+                        'measurement_percentage20': exon_measurement.measurement_percentage20,
+                        'measurement_percentage30': exon_measurement.measurement_percentage30,
+                        'measurement_percentage50': exon_measurement.measurement_percentage50,
+                        'measurement_percentage100': exon_measurement.measurement_percentage100,
+                    }
+                else:
+                    measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
+                    for measurement_type in measurement_types:
+                        transcripts[transcript_id][measurement_type] = ((transcripts[transcript_id]['len'] * transcripts[transcript_id][measurement_type]) + (exon_len * exon_measurement[measurement_type])) / (transcripts[transcript_id]['len'] + exon_len)
+                    transcripts[transcript_id]['len'] += exon_len
+
+            # Bulk insert exons measurements
+            bulk_insert_n = 5000
+            transcript_values = transcripts.values()
+            for i in range(0, len(transcript_values), bulk_insert_n):
+                db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
+                db.session.commit()
 
 
 class PrintStats(Command):

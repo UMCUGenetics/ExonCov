@@ -105,7 +105,7 @@ class Sample(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
-    import_date = db.Column(db.Date, default=datetime.datetime.today)
+    import_date = db.Column(db.Date, default=datetime.date.today)
     sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'), index=True)
 
     sequencing_run = db.relationship('SequencingRun', back_populates='samples', lazy='joined')
@@ -120,37 +120,9 @@ class Sample(db.Model):
     def __repr__(self):
         return "Sample({0})".format(self.name)
 
-    def insert_transcript_measurements(self):
-        """Insert transcript measurements based exon measurements."""
-        query = db.session.query(Transcript.id, Exon.len, ExonMeasurement).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=self.id).all()
-        transcripts = {}
-
-        for transcript_id, exon_len, exon_measurement in query:
-            if transcript_id not in transcripts:
-                transcripts[transcript_id] = {
-                    'len': exon_len,
-                    'transcript_id': transcript_id,
-                    'sample_id': self.id,
-                    'measurement_mean_coverage': exon_measurement.measurement_mean_coverage,
-                    'measurement_percentage10': exon_measurement.measurement_percentage10,
-                    'measurement_percentage15': exon_measurement.measurement_percentage15,
-                    'measurement_percentage20': exon_measurement.measurement_percentage20,
-                    'measurement_percentage30': exon_measurement.measurement_percentage30,
-                    'measurement_percentage50': exon_measurement.measurement_percentage50,
-                    'measurement_percentage100': exon_measurement.measurement_percentage100,
-                }
-            else:
-                measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
-                for measurement_type in measurement_types:
-                    transcripts[transcript_id][measurement_type] = ((transcripts[transcript_id]['len'] * transcripts[transcript_id][measurement_type]) + (exon_len * exon_measurement[measurement_type])) / (transcripts[transcript_id]['len'] + exon_len)
-                transcripts[transcript_id]['len'] += exon_len
-
-        db.session.bulk_insert_mappings(TranscriptMeasurement, transcripts.values())
-        db.session.commit()
-
 
 class SequencingRun(db.Model):
-    """Sample class."""
+    """Sequencing run class."""
 
     __tablename__ = 'sequencing_runs'
 
