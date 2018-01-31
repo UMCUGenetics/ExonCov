@@ -21,14 +21,16 @@
         </tr>
     </thead>
     <tbody>
-        {% for exon in exons %}
+        {% for exon_measurement in exon_measurements %}
+        {% set exon = exon_measurement[0] %}
+        {% set measurement = exon_measurement[1] %}
         <tr>
-            <td>{{exons[exon]['chr']}}</td>
-            <td>{{exons[exon]['start']}}</td>
-            <td>{{exons[exon]['end']}}</td>
-            <td>{{exons[exon]['end'] - exons[exon]['start']}}</td>
+            <td>{{exon.chr}}</td>
+            <td>{{exon.start}}</td>
+            <td>{{exon.end}}</td>
+            <td>{{exon.len}}</td>
             {% for type in measurement_types %}
-                <td>{{exons[exon][type]}}</td>
+                <td>{{measurement[type]}}</td>
             {% endfor %}
         </tr>
         {% endfor %}

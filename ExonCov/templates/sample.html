@@ -17,12 +17,12 @@
         </tr>
     </thead>
     <tbody>
-        {% for measurement in measurements %}
+        {% for panel in panels %}
         <tr>
-            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_name=measurement) }}">{{measurement}}</a></td>
-            <td>{{measurements[measurement][measurement_types[0]]['len']}}</td>
+            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_name=panel) }}">{{panel}}</a></td>
+            <td>{{panels[panel]['len']}}</td>
             {% for type in measurement_types %}
-                <td>{{measurements[measurement][type]['value']}}</td>
+                <td>{{panels[panel][type]}}</td>
             {% endfor %}
         </tr>
         {% endfor %}

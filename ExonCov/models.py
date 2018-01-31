@@ -4,6 +4,7 @@ import datetime
 
 from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.dialects.mysql import BIGINT
 
 from . import db
 
@@ -50,14 +51,24 @@ class Transcript(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True, unique=True)
+    chr = db.Column(db.String(2))  # Based on exon.chr
+    start = db.Column(db.Integer)  # Based on smallest exon.start
+    end = db.Column(db.Integer)  # Based on largest exon.end
+
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
-    exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
+    exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts', lazy='joined')
     gene = db.relationship('Gene', back_populates='transcripts')
     panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
+    transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
 
     def __repr__(self):
         return "Transcript({0})".format(self.name)
+
+    @hybrid_property
+    def exon_count(self):
+        """Calculate exon length."""
+        return len(self.exons)
 
 
 class Gene(db.Model):
@@ -94,24 +105,24 @@ class Sample(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
-    import_date = db.Column(db.Date, default=datetime.datetime.today)
+    import_date = db.Column(db.Date, default=datetime.date.today)
     sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'), index=True)
 
-    sequencing_run = db.relationship('SequencingRun', back_populates='samples')
+    sequencing_run = db.relationship('SequencingRun', back_populates='samples', lazy='joined')
     exon_measurements = db.relationship('ExonMeasurement', back_populates='sample')
+    transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='sample')
 
     __table_args__ = (
         UniqueConstraint('name', 'sequencing_run_id'),
         Index('sample_run', 'name', 'sequencing_run_id')
     )
 
-
     def __repr__(self):
         return "Sample({0})".format(self.name)
 
 
 class SequencingRun(db.Model):
-    """Sample class."""
+    """Sequencing run class."""
 
     __tablename__ = 'sequencing_runs'
 
@@ -125,13 +136,19 @@ class SequencingRun(db.Model):
 
 
 class ExonMeasurement(db.Model):
-    """Exon measurement class, stores sample (coverage) measurements per exon."""
+    """Exon measurement class, stores sample measurements per exon."""
 
     __tablename__ = 'exon_measurements'
 
-    id = db.Column(db.Integer, primary_key=True)
-    measurement = db.Column(db.Float)
-    measurement_type = db.Column(db.String(25), index=True)  # e.g. percentage20
+    id = db.Column(BIGINT(unsigned=True), primary_key=True)
+
+    measurement_mean_coverage = db.Column(db.Float)
+    measurement_percentage10 = db.Column(db.Float)
+    measurement_percentage15 = db.Column(db.Float)
+    measurement_percentage20 = db.Column(db.Float)
+    measurement_percentage30 = db.Column(db.Float)
+    measurement_percentage50 = db.Column(db.Float)
+    measurement_percentage100 = db.Column(db.Float)
 
     exon_id = db.Column(db.String(25), db.ForeignKey('exons.id'), index=True)
     sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
@@ -140,8 +157,43 @@ class ExonMeasurement(db.Model):
     exon = db.relationship('Exon', back_populates='exon_measurements')
 
     __table_args = (
-        UniqueConstraint('exon_id', 'sample_id', 'measurement_type')
+        UniqueConstraint('exon_id', 'sample_id')
     )
 
     def __repr__(self):
-        return "ExonMeasurement({0}-{1}-{2})".format(self.measurement_type, self.sample, self.exon)
+        return "ExonMeasurement({0}-{1})".format(self.sample, self.exon)
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
+class TranscriptMeasurement(db.Model):
+    """Transcript measurement class, stores sample measurements per transcript."""
+
+    __tablename__ = 'transcript_measurements'
+
+    id = db.Column(BIGINT(unsigned=True), primary_key=True)
+    len = db.Column(db.Integer)  # Store length used to calculate weighted average
+    measurement_mean_coverage = db.Column(db.Float)
+    measurement_percentage10 = db.Column(db.Float)
+    measurement_percentage15 = db.Column(db.Float)
+    measurement_percentage20 = db.Column(db.Float)
+    measurement_percentage30 = db.Column(db.Float)
+    measurement_percentage50 = db.Column(db.Float)
+    measurement_percentage100 = db.Column(db.Float)
+
+    transcript_id = db.Column(db.Integer, db.ForeignKey('transcripts.id'), index=True)
+    sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
+
+    sample = db.relationship('Sample', back_populates='transcript_measurements')
+    transcript = db.relationship('Transcript', back_populates='transcript_measurements')
+
+    __table_args = (
+        UniqueConstraint('transcript_id', 'sample_id')
+    )
+
+    def __repr__(self):
+        return "TranscriptMeasurement({0}-{1})".format(self.sample, self.transcript)
+
+    def __getitem__(self, item):
+        return getattr(self, item)
