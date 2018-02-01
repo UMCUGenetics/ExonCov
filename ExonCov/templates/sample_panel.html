@@ -33,7 +33,7 @@
             <td>{{transcript.end}}</td>
             <td>{{transcript.exon_count}}</td>
             {% for type in measurement_types %}
-                <td>{{measurement[type]}}</td>
+                <td>{{measurement[type]|round(1)}}</td>
             {% endfor %}
         </tr>
         {% endfor %}
