@@ -22,7 +22,7 @@
             <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_name=panel) }}">{{panel}}</a></td>
             <td>{{panels[panel]['len']}}</td>
             {% for type in measurement_types %}
-                <td>{{panels[panel][type]}}</td>
+                <td>{{panels[panel][type]|round(1)}}</td>
             {% endfor %}
         </tr>
         {% endfor %}
