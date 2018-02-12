@@ -55,7 +55,7 @@ def sample_transcript(sample_id, transcript_name):
     transcript = Transcript.query.filter_by(name=transcript_name).first()
 
     measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
-    exon_measurements = db.session.query(Exon, ExonMeasurement).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).join(ExonMeasurement).filter_by(sample_id=sample.id).all()
+    exon_measurements = db.session.query(Exon, ExonMeasurement).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).join(ExonMeasurement).filter_by(sample_id=sample.id).order_by(Exon.start).all()
 
     return render_template('sample_transcript.html', sample=sample, transcript=transcript, exon_measurements=exon_measurements, measurement_types=measurement_types)
 
