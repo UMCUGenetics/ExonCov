@@ -58,7 +58,7 @@ class Transcript(db.Model):
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts', lazy='joined')
-    gene = db.relationship('Gene', back_populates='transcripts')
+    gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id])
     panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
     transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
 
@@ -77,8 +77,10 @@ class Gene(db.Model):
     __tablename__ = 'genes'
 
     id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
+    default_transcript_id = db.Column(db.Integer, db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), index=True)
 
-    transcripts = db.relationship('Transcript', back_populates='gene')
+    #transcripts = db.relationship('Transcript', back_populates='gene')
+    default_transcript = db.relationship('Transcript', foreign_keys=[default_transcript_id])
 
     def __repr__(self):
         return "Gene({0})".format(self.id)
