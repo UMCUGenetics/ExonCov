@@ -1,0 +1,57 @@
+{% macro render_field(field) %}
+{% if field.errors %}
+<div class="form-group has-error {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }} <div class="col-sm-5">{{ field(class_='form-control', **kwargs) }}</div>
+    {% for error in field.errors %}
+    <span class="help-block">{{error}}</span>
+    {% endfor %}
+</div>
+{% else %}
+<div class="form-group {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }} <div class="col-sm-5">{{ field(class_='form-control', **kwargs) }}</div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro render_large_field(field) %}
+{% if field.errors %}
+<div class="form-group has-error {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }} <div class="col-sm-8">{{ field(class_='form-control', **kwargs) }}</div>
+    {% for error in field.errors %}
+    <span class="help-block">{{error}}</span>
+    {% endfor %}
+</div>
+{% else %}
+<div class="form-group {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }} <div class="col-sm-8">{{ field(class_='form-control', **kwargs) }}</div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro render_checkbox_field(field) -%}
+<div class="form-group {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }}
+    <div class="col-sm-2">
+        <div class="checkbox">
+            <label>
+                {{ field(type='checkbox', **kwargs) }}
+            </label>
+        </div>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro render_table_field(field) %}
+{% if field.errors %}
+<div class="has-error">
+    {{ field(class_='form-control', **kwargs) }}
+    {% for error in field.errors %}
+    <span class="help-block">{{error}}</span>
+    {% endfor %}
+</div>
+{% else %}
+<div>
+    {{ field(class_='form-control', **kwargs) }}
+</div>
+{% endif %}
+{% endmacro %}

@@ -67,7 +67,7 @@ class Transcript(db.Model):
 
     @hybrid_property
     def exon_count(self):
-        """Calculate exon length."""
+        """Count number of exons."""
         return len(self.exons)
 
 
@@ -98,6 +98,11 @@ class Panel(db.Model):
 
     def __repr__(self):
         return "Panel({0})".format(self.name)
+
+    @hybrid_property
+    def gene_count(self):
+        """Calculate number of genes."""
+        return len(self.transcripts)
 
 
 class Sample(db.Model):

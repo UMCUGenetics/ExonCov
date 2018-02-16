@@ -1,0 +1,17 @@
+{% from "_formhelpers.html" import render_field, render_checkbox_field %}
+{% extends 'base.html' %}
+{% block header %}Custom gene panel{% endblock %}
+{% block body %}
+<div class="well">
+    <form method="POST" action="{{ url_for('custom_panel') }}" class="form-horizontal">
+        {{ form.csrf_token }}
+        {{ render_field(form.sample) }}
+        {{ render_field(form.genes) }}
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-10">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

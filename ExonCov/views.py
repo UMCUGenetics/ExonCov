@@ -4,6 +4,7 @@ from flask import render_template
 
 from ExonCov import app, db
 from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .forms import CustomPanelForm
 
 
 @app.route('/')
@@ -70,3 +71,25 @@ def sample_gene(sample_id, gene_id):
     transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
 
     return render_template('sample_gene.html', sample=sample, gene=gene, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
+
+
+@app.route('/panel')
+def panels():
+    """Panel overview page."""
+    panels = Panel.query.all()
+    return render_template('panels.html', panels=panels)
+
+
+@app.route('/panel/<int:id>')
+def panel(id):
+    """Panel page."""
+    panel = Panel.query.get(id)
+    return render_template('panel.html', panel=panel)
+
+
+@app.route('/panel/custom')
+def custom_panel():
+    """Custom panel page."""
+    custom_panel_form = CustomPanelForm()
+
+    return render_template('custom_panel.html', form=custom_panel_form)
