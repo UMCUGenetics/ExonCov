@@ -21,3 +21,10 @@ class CustomPanelForm(FlaskForm):
 
     sample = QuerySelectField('Sample', validators=[InputRequired()], query_factory=all_samples)
     genes = QuerySelectMultipleField('Genes', validators=[InputRequired()], query_factory=all_genes)
+
+
+class CustomPanelForm2(FlaskForm):
+    """Custom Panel form."""
+
+    samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
+    genes = QuerySelectMultipleField('Genes', validators=[InputRequired()], query_factory=all_genes)

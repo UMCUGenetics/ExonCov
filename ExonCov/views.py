@@ -4,7 +4,7 @@ from flask import render_template
 
 from ExonCov import app, db
 from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm
+from .forms import CustomPanelForm, CustomPanelForm2
 
 
 @app.route('/')
@@ -87,9 +87,53 @@ def panel(id):
     return render_template('panel.html', panel=panel)
 
 
-@app.route('/panel/custom')
-def custom_panel():
+@app.route('/panel/custom_sample', methods=['GET', 'POST'])
+def custom_panel_sample():
     """Custom panel page."""
     custom_panel_form = CustomPanelForm()
+    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    transcript_measurements = []
+    sample = ''
 
-    return render_template('custom_panel.html', form=custom_panel_form)
+    if custom_panel_form.validate_on_submit():
+        print custom_panel_form.data
+        sample = custom_panel_form.data['sample']
+        genes = custom_panel_form.data['genes']
+
+        for gene in genes:
+            transcript_measurement = TranscriptMeasurement.query.filter_by(transcript_id=gene.default_transcript_id).filter_by(sample_id=sample.id).first()
+            transcript_measurements.append([gene.default_transcript, transcript_measurement])
+
+    return render_template('custom_panel.html', form=custom_panel_form, measurement_types=measurement_types, transcript_measurements=transcript_measurements, sample=sample)
+
+
+@app.route('/panel/custom_multi', methods=['GET', 'POST'])
+def custom_panel_multisample():
+    """Custom panel page."""
+    custom_panel_form = CustomPanelForm2()
+    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    sample_measurements = {}
+    samples = ''
+
+    if custom_panel_form.validate_on_submit():
+        samples = custom_panel_form.data['samples']
+        genes = custom_panel_form.data['genes']
+        transcript_ids = [gene.default_transcript_id for gene in genes]
+        sample_ids = [sample.id for sample in samples]
+
+        query = db.session.query(Sample, TranscriptMeasurement).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).all()
+        print query
+
+        for sample, transcript_measurement in query:
+            if sample not in sample_measurements:
+                sample_measurements[sample] = {
+                    'len': transcript_measurement.len
+                }
+                for measurement_type in measurement_types:
+                    sample_measurements[sample][measurement_type] = transcript_measurement[measurement_type]
+            else:
+                for measurement_type in measurement_types:
+                    sample_measurements[sample][measurement_type] = ((sample_measurements[sample]['len'] * sample_measurements[sample][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
+                sample_measurements[sample]['len'] += transcript_measurement.len
+        print sample_measurements
+    return render_template('custom_panel_multi.html', form=custom_panel_form, measurement_types=measurement_types, sample_measurements=sample_measurements, samples=samples)

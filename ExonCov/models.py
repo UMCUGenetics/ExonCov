@@ -58,7 +58,7 @@ class Transcript(db.Model):
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts', lazy='joined')
-    gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id])
+    gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id], lazy='joined')
     panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
     transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
 
