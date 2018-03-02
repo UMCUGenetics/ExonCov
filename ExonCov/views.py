@@ -96,7 +96,6 @@ def custom_panel_sample():
     sample = ''
 
     if custom_panel_form.validate_on_submit():
-        print custom_panel_form.data
         sample = custom_panel_form.data['sample']
         genes = custom_panel_form.data['genes']
 
