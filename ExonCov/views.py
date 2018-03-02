@@ -122,7 +122,6 @@ def custom_panel_multisample():
         sample_ids = [sample.id for sample in samples]
 
         query = db.session.query(Sample, TranscriptMeasurement).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).all()
-        print query
 
         for sample, transcript_measurement in query:
             if sample not in sample_measurements:
@@ -135,5 +134,4 @@ def custom_panel_multisample():
                 for measurement_type in measurement_types:
                     sample_measurements[sample][measurement_type] = ((sample_measurements[sample]['len'] * sample_measurements[sample][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
                 sample_measurements[sample]['len'] += transcript_measurement.len
-        print sample_measurements
     return render_template('custom_panel_multi.html', form=custom_panel_form, measurement_types=measurement_types, sample_measurements=sample_measurements, samples=samples)
