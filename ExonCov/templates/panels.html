@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block header %}Gene panels{% endblock %}
+{% block body %}
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Gene panel</th>
+            <th># Genes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel in panels %}
+        <tr>
+            <td><a href="{{ url_for('panel', id=panel.id) }}">{{panel.name}}</a></td>
+            <td>{{panel.gene_count}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

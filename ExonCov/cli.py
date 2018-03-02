@@ -109,9 +109,6 @@ class LoadDesign(Command):
                     gene.transcripts.append(transcripts[transcript_name])
                 genes[gene_name] = gene
 
-        db.session.add_all(genes.values())
-        db.session.commit()
-
         # Setup preferred transcript dictonary
         preferred_transcripts = {}  # key = gene, value = transcript
         with open(preferred_transcripts_file, 'r') as f:
@@ -120,7 +117,14 @@ class LoadDesign(Command):
                 if line.startswith('#'):
                     continue
                 data = line.rstrip().split('\t')
-                preferred_transcripts[data[1]] = data[0]
+                transcript_name = data[0]
+                gene_name = data[1]
+                preferred_transcripts[gene_name] = transcript_name
+
+                genes[gene_name].default_transcript_id = transcripts[transcript_name].id
+
+        db.session.add_all(genes.values())
+        db.session.commit()
 
         # Setup gene panel
         with open(gene_panel_file, 'r') as f:
