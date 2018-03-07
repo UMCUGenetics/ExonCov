@@ -55,3 +55,18 @@
 </div>
 {% endif %}
 {% endmacro %}
+
+{% macro render_select2_field(field) %}
+{% if field.errors %}
+<div class="form-group has-error {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }} <div class="col-sm-5">{{ field(class_='form-control select2-form-field', **kwargs) }}</div>
+    {% for error in field.errors %}
+    <span class="help-block">{{error}}</span>
+    {% endfor %}
+</div>
+{% else %}
+<div class="form-group {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }} <div class="col-sm-5">{{ field(class_='form-control select2-form-field', **kwargs) }}</div>
+</div>
+{% endif %}
+{% endmacro %}
