@@ -19,8 +19,12 @@ class CustomPanelForm(FlaskForm):
     samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
     gene_list = TextAreaField('Gene list', validators=[InputRequired()])
     measurement_type = SelectField('Measurement type', choices=[
+        ('measurement_percentage10', '>10'),
         ('measurement_percentage15', '>15'),
+        ('measurement_percentage20', '>20'),
         ('measurement_percentage30', '>30'),
+        ('measurement_percentage50', '>50'),
+        ('measurement_percentage100', '>100'),
         ('measurement_mean_coverage', 'Mean coverage')
     ])
     transcript_ids = []  # Filled in validate function
