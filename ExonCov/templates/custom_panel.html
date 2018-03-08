@@ -5,9 +5,9 @@
 <div class="well">
     <form method="POST" action="{{ url_for('custom_panel') }}" class="form-horizontal">
         {{ form.csrf_token }}
-        {{ render_select2_field(form.samples) }}
-        {{ render_field(form.genes) }}
         {{ render_field(form.measurement_type) }}
+        {{ render_select2_field(form.samples) }}
+        {{ render_field(form.gene_list, rows="5") }}
         <div class="form-group">
             <div class="col-sm-offset-1 col-sm-10">
                 <button type="submit" class="btn btn-primary">Submit</button>
@@ -24,7 +24,7 @@
             <th># Samples</th>
             <th># Genes</th>
             {% for sample in samples %}
-            <th>{{sample.name}}</th>
+            <th>{{sample.name}} - {{measurement_type[1]}}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -47,9 +47,8 @@
         <tr>
             <th>Gene</th>
             <th>Transcript</th>
-            <th>Total size(bp)</th>
             {% for sample in samples %}
-            <th>{{sample.name}}</th>
+            <th>{{sample.name}} - {{measurement_type[1]}}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -58,9 +57,8 @@
         <tr>
             <td>{{transcript.gene.id}}</td>
             <td>{{transcript.name}}</td>
-            <td>Total_size(bp)</td>
             {% for sample in samples %}
-            <td>{{transcript_measurements[transcript][sample][measurement_type]|round(1)}}</td>
+            <td>{{transcript_measurements[transcript][sample][measurement_type[0]]|round(1)}}</td>
             {% endfor %}
         </tr>
         {% endfor %}

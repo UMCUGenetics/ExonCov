@@ -91,15 +91,14 @@ def custom_panel():
     """Custom panel page."""
     custom_panel_form = CustomPanelForm()
     samples = []
-    measurement_type = ''
+    measurement_type = []
     sample_measurements = {}
     transcript_measurements = {}
 
     if custom_panel_form.validate_on_submit():
         samples = custom_panel_form.data['samples']
-        genes = custom_panel_form.data['genes']
-        measurement_type = custom_panel_form.data['measurement_type']
-        transcript_ids = [gene.default_transcript_id for gene in genes]
+        measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
+        transcript_ids = custom_panel_form.transcript_ids
         sample_ids = [sample.id for sample in samples]
 
         query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).all()
@@ -116,10 +115,10 @@ def custom_panel():
             if sample not in sample_measurements:
                 sample_measurements[sample] = {
                     'len': transcript_measurement.len,
-                    'measurement': transcript_measurement[measurement_type]
+                    'measurement': transcript_measurement[measurement_type[0]]
                 }
             else:
-                sample_measurements[sample]['measurement'] = ((sample_measurements[sample]['len'] * sample_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
+                sample_measurements[sample]['measurement'] = ((sample_measurements[sample]['len'] * sample_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
                 sample_measurements[sample]['len'] += transcript_measurement.len
 
     return render_template('custom_panel.html', form=custom_panel_form, samples=samples, measurement_type=measurement_type, transcript_measurements=transcript_measurements, sample_measurements=sample_measurements)
