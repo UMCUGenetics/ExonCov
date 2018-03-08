@@ -4,7 +4,7 @@ from flask import render_template
 
 from ExonCov import app, db
 from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm, CustomPanelForm2
+from .forms import CustomPanelForm
 
 
 @app.route('/')
@@ -86,48 +86,39 @@ def panel(id):
     return render_template('panel.html', panel=panel)
 
 
-@app.route('/panel/custom_sample', methods=['GET', 'POST'])
-def custom_panel_sample():
+@app.route('/panel/custom', methods=['GET', 'POST'])
+def custom_panel():
     """Custom panel page."""
     custom_panel_form = CustomPanelForm()
-    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
-    transcript_measurements = []
-    sample = ''
-
-    if custom_panel_form.validate_on_submit():
-        sample = custom_panel_form.data['sample']
-        genes = custom_panel_form.data['genes']
-        transcript_ids = [gene.default_transcript_id for gene in genes]
-
-        transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.id.in_(transcript_ids)).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
-
-    return render_template('custom_panel.html', form=custom_panel_form, measurement_types=measurement_types, transcript_measurements=transcript_measurements, sample=sample)
-
-
-@app.route('/panel/custom_multi', methods=['GET', 'POST'])
-def custom_panel_multisample():
-    """Custom panel page."""
-    custom_panel_form = CustomPanelForm2()
-    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    samples = []
+    measurement_type = []
     sample_measurements = {}
-    samples = ''
+    transcript_measurements = {}
 
     if custom_panel_form.validate_on_submit():
         samples = custom_panel_form.data['samples']
-        genes = custom_panel_form.data['genes']
-        transcript_ids = [gene.default_transcript_id for gene in genes]
+        measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
+        transcript_ids = custom_panel_form.transcript_ids
         sample_ids = [sample.id for sample in samples]
 
-        query = db.session.query(Sample, TranscriptMeasurement).filter(Sample.id.in_(sample_ids)).join(TranscriptMeasurement).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).all()
-        for sample, transcript_measurement in query:
+        query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).all()
+        for transcript_measurement in query:
+            sample = transcript_measurement.sample
+            transcript = transcript_measurement.transcript
+
+            # Store transcript_measurements per transcript and sample
+            if transcript not in transcript_measurements:
+                transcript_measurements[transcript] = {}
+            transcript_measurements[transcript][sample] = transcript_measurement
+
+            # Calculate weighted average per sample for entire panel
             if sample not in sample_measurements:
                 sample_measurements[sample] = {
-                    'len': transcript_measurement.len
+                    'len': transcript_measurement.len,
+                    'measurement': transcript_measurement[measurement_type[0]]
                 }
-                for measurement_type in measurement_types:
-                    sample_measurements[sample][measurement_type] = transcript_measurement[measurement_type]
             else:
-                for measurement_type in measurement_types:
-                    sample_measurements[sample][measurement_type] = ((sample_measurements[sample]['len'] * sample_measurements[sample][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
+                sample_measurements[sample]['measurement'] = ((sample_measurements[sample]['len'] * sample_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
                 sample_measurements[sample]['len'] += transcript_measurement.len
-    return render_template('custom_panel_multi.html', form=custom_panel_form, measurement_types=measurement_types, sample_measurements=sample_measurements, samples=samples)
+
+    return render_template('custom_panel.html', form=custom_panel_form, samples=samples, measurement_type=measurement_type, transcript_measurements=transcript_measurements, sample_measurements=sample_measurements)

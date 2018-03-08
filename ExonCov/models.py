@@ -192,8 +192,8 @@ class TranscriptMeasurement(db.Model):
     transcript_id = db.Column(db.Integer, db.ForeignKey('transcripts.id'), index=True)
     sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
 
-    sample = db.relationship('Sample', back_populates='transcript_measurements')
-    transcript = db.relationship('Transcript', back_populates='transcript_measurements')
+    sample = db.relationship('Sample', back_populates='transcript_measurements', lazy='joined')
+    transcript = db.relationship('Transcript', back_populates='transcript_measurements', lazy='joined')
 
     __table_args = (
         UniqueConstraint('transcript_id', 'sample_id')
