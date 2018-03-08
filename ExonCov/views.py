@@ -103,8 +103,8 @@ def custom_panel():
 
         query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).all()
         for transcript_measurement in query:
-            sample = transcript_measurement.sample
-            transcript = transcript_measurement.transcript
+            sample = transcript_measurement.sample  # Add join?
+            transcript = transcript_measurement.transcript  # Add Join??
 
             # Store transcript_measurements per transcript and sample
             if transcript not in transcript_measurements:
