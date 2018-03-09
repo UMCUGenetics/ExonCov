@@ -6,6 +6,6 @@ from flask_wtf.csrf import CSRFProtect
 app = Flask(__name__)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-CSRFProtect(app)
+csrf = CSRFProtect(app)
 
 from . import views, models

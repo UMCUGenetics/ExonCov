@@ -1,6 +1,6 @@
 """ExonCov views."""
 
-from flask import render_template
+from flask import render_template, request
 
 from ExonCov import app, db
 from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
@@ -86,16 +86,16 @@ def panel(id):
     return render_template('panel.html', panel=panel)
 
 
-@app.route('/panel/custom', methods=['GET', 'POST'])
+@app.route('/panel/custom', methods=['GET'])
 def custom_panel():
     """Custom panel page."""
-    custom_panel_form = CustomPanelForm()
+    custom_panel_form = CustomPanelForm(request.args, csrf_enabled=False)
     samples = []
     measurement_type = []
     sample_measurements = {}
     transcript_measurements = {}
 
-    if custom_panel_form.validate_on_submit():
+    if request.args and custom_panel_form.validate():
         samples = custom_panel_form.data['samples']
         measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
         transcript_ids = custom_panel_form.transcript_ids
