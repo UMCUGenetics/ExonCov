@@ -1,5 +1,7 @@
 """ExonCov views."""
 
+from collections import OrderedDict
+
 from flask import render_template, request
 
 from ExonCov import app, db
@@ -20,8 +22,8 @@ def sample(id):
     """Sample page."""
     sample = Sample.query.get(id)
     measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
-    query = db.session.query(Panel.name, TranscriptMeasurement).join(Transcript, Panel.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
-    panels = {}
+    query = db.session.query(Panel.name, TranscriptMeasurement).join(Transcript, Panel.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(Panel.name).all()
+    panels = OrderedDict()
 
     for panel_name, transcript_measurement in query:
         if panel_name not in panels:
