@@ -17,7 +17,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for panel in panels|dictsort %}
+        {% for panel in panels %}
         <tr>
             <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_name=panel) }}">{{panel}}</a></td>
             <td>{{panels[panel]['len']}}</td>
