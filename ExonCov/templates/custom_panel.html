@@ -3,8 +3,7 @@
 {% block header %}Custom gene panel{% endblock %}
 {% block body %}
 <div class="well">
-    <form method="POST" action="{{ url_for('custom_panel') }}" class="form-horizontal">
-        {{ form.csrf_token }}
+    <form method="GET" action="{{ url_for('custom_panel') }}" class="form-horizontal">
         {{ render_field(form.measurement_type) }}
         {{ render_select2_field(form.samples) }}
         {{ render_field(form.gene_list, rows="5") }}
