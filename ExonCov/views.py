@@ -91,7 +91,7 @@ def panel(id):
 @app.route('/panel/custom', methods=['GET'])
 def custom_panel():
     """Custom panel page."""
-    custom_panel_form = CustomPanelForm(request.args, csrf_enabled=False)
+    custom_panel_form = CustomPanelForm(request.args, meta={'csrf': False})
     samples = []
     measurement_type = []
     sample_measurements = {}
