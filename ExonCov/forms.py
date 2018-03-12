@@ -36,6 +36,7 @@ class CustomPanelForm(FlaskForm):
             return False
 
         # Parse gene_list
+        self.transcript_ids = []  # Reset transcript_ids on validation
         for gene_id in self.gene_list.data.splitlines():
             gene_id = gene_id.strip().lower()
             gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
