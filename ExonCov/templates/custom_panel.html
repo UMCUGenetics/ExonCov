@@ -7,6 +7,7 @@
         {{ render_field(form.measurement_type) }}
         {{ render_select2_field(form.samples) }}
         {{ render_field(form.gene_list, rows="5") }}
+
         <div class="form-group">
             <div class="col-sm-offset-1 col-sm-10">
                 <button type="submit" class="btn btn-primary">Submit</button>
@@ -22,6 +23,9 @@
         <tr>
             <th># Samples</th>
             <th># Genes</th>
+            <th>Min.</th>
+            <th>Mean</th>
+            <th>Max.</th>
             {% for sample in samples %}
             <th>{{sample.name}} - {{measurement_type[1]}}</th>
             {% endfor %}
@@ -31,6 +35,9 @@
         <tr>
             <td>{{samples|count}}</td>
             <td>{{transcript_measurements|count}}</td>
+            <td>{{sample_measurements['min']|round(1)}}</td>
+            <td>{{sample_measurements['mean']|round(1)}}</td>
+            <td>{{sample_measurements['max']|round(1)}}</td>
             {% for sample in samples %}
             <td>{{sample_measurements[sample]['measurement']|round(1)}}</td>
             {% endfor %}
@@ -46,6 +53,9 @@
         <tr>
             <th>Gene</th>
             <th>Transcript</th>
+            <th>Min.</th>
+            <th>Mean</th>
+            <th>Max.</th>
             {% for sample in samples %}
             <th>{{sample.name}} - {{measurement_type[1]}}</th>
             {% endfor %}
@@ -56,8 +66,11 @@
         <tr>
             <td>{{transcript.gene.id}}</td>
             <td>{{transcript.name}}</td>
+            <td>{{transcript_measurements[transcript]['min']|round(1)}}</td>
+            <td>{{transcript_measurements[transcript]['mean']|round(1)}}</td>
+            <td>{{transcript_measurements[transcript]['max']|round(1)}}</td>
             {% for sample in samples %}
-            <td>{{transcript_measurements[transcript][sample][measurement_type[0]]|round(1)}}</td>
+            <td>{{transcript_measurements[transcript][sample]|round(1)}}</td>
             {% endfor %}
         </tr>
         {% endfor %}

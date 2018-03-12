@@ -91,7 +91,7 @@ def panel(id):
 @app.route('/panel/custom', methods=['GET'])
 def custom_panel():
     """Custom panel page."""
-    custom_panel_form = CustomPanelForm(request.args, csrf_enabled=False)
+    custom_panel_form = CustomPanelForm(request.args, meta={'csrf': False})
     samples = []
     measurement_type = []
     sample_measurements = {}
@@ -111,7 +111,7 @@ def custom_panel():
             # Store transcript_measurements per transcript and sample
             if transcript not in transcript_measurements:
                 transcript_measurements[transcript] = {}
-            transcript_measurements[transcript][sample] = transcript_measurement
+            transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
             # Calculate weighted average per sample for entire panel
             if sample not in sample_measurements:
@@ -122,5 +122,18 @@ def custom_panel():
             else:
                 sample_measurements[sample]['measurement'] = ((sample_measurements[sample]['len'] * sample_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
                 sample_measurements[sample]['len'] += transcript_measurement.len
+
+    # Calculate min, mean, max
+    for transcript in transcript_measurements:
+        values = transcript_measurements[transcript].values()
+        transcript_measurements[transcript]['min'] = min(values)
+        transcript_measurements[transcript]['max'] = max(values)
+        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+
+    values = [sample_measurements[sample]['measurement'] for sample in sample_measurements]
+    sample_measurements['min'] = min(values)
+    sample_measurements['max'] = max(values)
+    sample_measurements['mean'] = float(sum(values)) / len(values)
+
 
     return render_template('custom_panel.html', form=custom_panel_form, samples=samples, measurement_type=measurement_type, transcript_measurements=transcript_measurements, sample_measurements=sample_measurements)
