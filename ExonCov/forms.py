@@ -1,4 +1,6 @@
 """Flask app forms."""
+import re
+
 from flask_wtf import FlaskForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.fields import SelectField, TextAreaField
@@ -37,7 +39,7 @@ class CustomPanelForm(FlaskForm):
 
         # Parse gene_list
         self.transcript_ids = []  # Reset transcript_ids on validation
-        for gene_id in self.gene_list.data.splitlines():
+        for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
             gene_id = gene_id.strip().lower()
             gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
             if gene is None:
