@@ -123,17 +123,17 @@ def custom_panel():
                 sample_measurements[sample]['measurement'] = ((sample_measurements[sample]['len'] * sample_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
                 sample_measurements[sample]['len'] += transcript_measurement.len
 
-    # Calculate min, mean, max
-    for transcript in transcript_measurements:
-        values = transcript_measurements[transcript].values()
-        transcript_measurements[transcript]['min'] = min(values)
-        transcript_measurements[transcript]['max'] = max(values)
-        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+        # Calculate min, mean, max
+        for transcript in transcript_measurements:
+            values = transcript_measurements[transcript].values()
+            transcript_measurements[transcript]['min'] = min(values)
+            transcript_measurements[transcript]['max'] = max(values)
+            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
 
-    values = [sample_measurements[sample]['measurement'] for sample in sample_measurements]
-    sample_measurements['min'] = min(values)
-    sample_measurements['max'] = max(values)
-    sample_measurements['mean'] = float(sum(values)) / len(values)
+        values = [sample_measurements[sample]['measurement'] for sample in sample_measurements]
+        sample_measurements['min'] = min(values)
+        sample_measurements['max'] = max(values)
+        sample_measurements['mean'] = float(sum(values)) / len(values)
 
 
     return render_template('custom_panel.html', form=custom_panel_form, samples=samples, measurement_type=measurement_type, transcript_measurements=transcript_measurements, sample_measurements=sample_measurements)

@@ -1,4 +1,5 @@
-{% from "_formhelpers.html" import render_field, render_select2_field %}
+{% from "macros/forms.html" import render_field, render_select2_field %}
+{% from "macros/tables.html" import render_measurment_td %}
 {% extends 'base.html' %}
 {% block header %}Custom gene panel{% endblock %}
 {% block body %}
@@ -27,19 +28,19 @@
             <th>Mean</th>
             <th>Max.</th>
             {% for sample in samples %}
-            <th>{{sample.name}} - {{measurement_type[1]}}</th>
+            <th>{{ sample.name }} - {{ measurement_type[1] }}</th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>{{samples|count}}</td>
-            <td>{{transcript_measurements|count}}</td>
-            <td>{{sample_measurements['min']|round(1)}}</td>
-            <td>{{sample_measurements['mean']|round(1)}}</td>
-            <td>{{sample_measurements['max']|round(1)}}</td>
+            <td>{{ samples|count }}</td>
+            <td>{{ transcript_measurements|count }}</td>
+            {{ render_measurment_td(sample_measurements['min']) }}
+            {{ render_measurment_td(sample_measurements['mean']) }}
+            {{ render_measurment_td(sample_measurements['max']) }}
             {% for sample in samples %}
-            <td>{{sample_measurements[sample]['measurement']|round(1)}}</td>
+            {{ render_measurment_td(sample_measurements[sample]['measurement']) }}
             {% endfor %}
         </tr>
     </tbody>
@@ -57,20 +58,20 @@
             <th>Mean</th>
             <th>Max.</th>
             {% for sample in samples %}
-            <th>{{sample.name}} - {{measurement_type[1]}}</th>
+            <th>{{ sample.name }} - {{ measurement_type[1] }}</th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
         {% for transcript in transcript_measurements %}
         <tr>
-            <td>{{transcript.gene.id}}</td>
-            <td>{{transcript.name}}</td>
-            <td>{{transcript_measurements[transcript]['min']|round(1)}}</td>
-            <td>{{transcript_measurements[transcript]['mean']|round(1)}}</td>
-            <td>{{transcript_measurements[transcript]['max']|round(1)}}</td>
+            <td>{{ transcript.gene.id }}</td>
+            <td>{{ transcript.name }}</td>
+            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
             {% for sample in samples %}
-            <td>{{transcript_measurements[transcript][sample]|round(1)}}</td>
+            {{ render_measurment_td(transcript_measurements[transcript][sample]) }}
             {% endfor %}
         </tr>
         {% endfor %}

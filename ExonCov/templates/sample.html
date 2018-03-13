@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
-{% block header %}{{sample.name}}{% endblock %}
+{% from "macros/tables.html" import render_measurment_td %}
+{% block header %}{{ sample.name }}{% endblock %}
 
 {% block body %}
 <dl class="dl-horizontal">
-  <dt>Sequencing run</dt><dd>{{sample.sequencing_run.name}}</dd>
+  <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
 </dl>
 
 <table class="table table-bordered table-hover">
@@ -12,17 +13,17 @@
             <th>Gene Panel</th>
             <th>Total_size(bp)</th>
             {% for type in measurement_types %}
-                <th>{{type}}</th>
+                <th>{{ type }}</th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
         {% for panel in panels %}
         <tr>
-            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_name=panel) }}">{{panel}}</a></td>
-            <td>{{panels[panel]['len']}}</td>
+            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_name=panel) }}">{{ panel }}</a></td>
+            <td>{{ panels[panel]['len'] }}</td>
             {% for type in measurement_types %}
-                <td>{{panels[panel][type]|round(1)}}</td>
+                {{ render_measurment_td(panels[panel][type]) }}
             {% endfor %}
         </tr>
         {% endfor %}

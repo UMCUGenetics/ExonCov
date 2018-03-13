@@ -1,0 +1,9 @@
+{% macro render_measurment_td(measurement) %}
+{% if measurement > 90 %}
+    <td class="success">{{measurement|round(1)}}</td>
+{% elif measurement > 80 %}
+    <td class="warning">{{measurement|round(1)}}</td>
+{% else %}
+    <td class="danger">{{measurement|round(1)}}</td>
+{% endif %}
+{% endmacro %}

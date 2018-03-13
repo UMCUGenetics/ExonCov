@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
-{% block header %}{{gene.id}} - {{sample.name}}{% endblock %}
+{% from "macros/tables.html" import render_measurment_td %}
+{% block header %}{{ gene.id }} - {{ sample.name }}{% endblock %}
 
 {% block body %}
 <dl class="dl-horizontal">
-  <dt>Sequencing run</dt><dd>{{sample.sequencing_run.name}}</dd>
-  <dt>Gene</dt><dd>{{gene.id}}</dd>
+  <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
+  <dt>Gene</dt><dd>{{ gene.id }}</dd>
 </dl>
 <table class="table table-bordered table-hover">
     <thead>
@@ -15,7 +16,7 @@
             <th>End</th>
             <th># Exons</th>
             {% for type in measurement_types %}
-                <th>{{type}}</th>
+                <th>{{ type }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -24,13 +25,13 @@
         {% set transcript = transcript_measurement[0] %}
         {% set measurement = transcript_measurement[1] %}
         <tr>
-            <td><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=transcript.name) }}">{{transcript.name}}</a></td>
-            <td>{{transcript.chr}}</td>
-            <td>{{transcript.start}}</td>
-            <td>{{transcript.end}}</td>
-            <td>{{transcript.exon_count}}</td>
+            <td><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            <td>{{ transcript.chr }}</td>
+            <td>{{ transcript.start }}</td>
+            <td>{{ transcript.end }}</td>
+            <td>{{ transcript.exon_count }}</td>
             {% for type in measurement_types %}
-                <td>{{measurement[type]|round(1)}}</td>
+                {{ render_measurment_td(measurement[type]) }}
             {% endfor %}
         </tr>
         {% endfor %}

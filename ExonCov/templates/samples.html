@@ -20,9 +20,9 @@
     <tbody>
         {% for sample in samples %}
         <tr>
-            <td><a href="{{ url_for('sample', id=sample.id) }}">{{sample.name}}</a></td>
-            <td>{{sample.sequencing_run.name}}</td>
-            <td>{{sample.import_date}}</td>
+            <td><a href="{{ url_for('sample', id=sample.id) }}">{{ sample.name }}</a></td>
+            <td>{{ sample.sequencing_run.name }}</td>
+            <td>{{ sample.import_date }}</td>
         </tr>
         {% endfor %}
     </tbody>
