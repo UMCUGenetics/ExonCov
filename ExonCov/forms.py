@@ -1,4 +1,6 @@
 """Flask app forms."""
+import re
+
 from flask_wtf import FlaskForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.fields import SelectField, TextAreaField
@@ -17,7 +19,7 @@ class CustomPanelForm(FlaskForm):
     """Custom Panel form."""
 
     samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
-    gene_list = TextAreaField('Gene list', validators=[InputRequired()])
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
     measurement_type = SelectField('Measurement type', choices=[
         ('measurement_percentage10', '>10'),
         ('measurement_percentage15', '>15'),
@@ -37,7 +39,7 @@ class CustomPanelForm(FlaskForm):
 
         # Parse gene_list
         self.transcript_ids = []  # Reset transcript_ids on validation
-        for gene_id in self.gene_list.data.splitlines():
+        for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
             gene_id = gene_id.strip().lower()
             gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
             if gene is None:
