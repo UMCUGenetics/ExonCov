@@ -149,16 +149,18 @@ class LoadSample(Command):
 
     option_list = (
         Option('run_name'),
+        Option('sequencer'),
         Option('sample_name'),
         Option('exoncov_file'),
     )
 
-    def run(self, run_name, sample_name, exoncov_file):
+    def run(self, run_name, sequencer, sample_name, exoncov_file):
         """Run function."""
         sequencing_run = utils.get_one_or_create(
             db.session,
             SequencingRun,
-            name=run_name
+            name=run_name,
+            sequencer=sequencer
         )[0]  # returns object and exists bool
 
         sample = Sample.query.filter_by(name=sample_name).filter_by(sequencing_run=sequencing_run).first()

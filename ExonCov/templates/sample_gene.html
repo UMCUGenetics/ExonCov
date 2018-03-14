@@ -5,6 +5,7 @@
 {% block body %}
 <dl class="dl-horizontal">
   <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
+  <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
   <dt>Gene</dt><dd>{{ gene.id }}</dd>
 </dl>
 <table class="table table-bordered table-hover">

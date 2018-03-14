@@ -135,6 +135,7 @@ class SequencingRun(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
+    sequencer = db.Column(db.String(50), index=True)
 
     samples = db.relationship('Sample', back_populates='sequencing_run')
 
