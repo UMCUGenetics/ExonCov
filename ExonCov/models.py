@@ -38,6 +38,9 @@ class Exon(db.Model):
     def __repr__(self):
         return "Exon({0}:{1}-{2})".format(self.chr, self.start, self.end)
 
+    def __str__(self):
+        return "{0}:{1}-{2}".format(self.chr, self.start, self.end)
+
     @hybrid_property
     def len(self):
         """Calculate exon length."""
@@ -65,6 +68,9 @@ class Transcript(db.Model):
     def __repr__(self):
         return "Transcript({0})".format(self.name)
 
+    def __str__(self):
+        return self.name
+
     @hybrid_property
     def exon_count(self):
         """Count number of exons."""
@@ -85,6 +91,9 @@ class Gene(db.Model):
     def __repr__(self):
         return "Gene({0})".format(self.id)
 
+    def __str__(self):
+        return self.id
+
 
 class Panel(db.Model):
     """Panel class."""
@@ -98,6 +107,9 @@ class Panel(db.Model):
 
     def __repr__(self):
         return "Panel({0})".format(self.name)
+
+    def __str__(self):
+        return self.name
 
     @hybrid_property
     def gene_count(self):
@@ -127,6 +139,9 @@ class Sample(db.Model):
     def __repr__(self):
         return "Sample({0})".format(self.name)
 
+    def __str__(self):
+        return self.name
+
 
 class SequencingRun(db.Model):
     """Sequencing run class."""
@@ -141,6 +156,9 @@ class SequencingRun(db.Model):
 
     def __repr__(self):
         return "SequencingRun({0})".format(self.name)
+
+    def __str__(self):
+        return self.name
 
 
 class ExonMeasurement(db.Model):
