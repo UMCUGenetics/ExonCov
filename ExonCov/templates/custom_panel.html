@@ -17,13 +17,13 @@
     </form>
 </div>
 
-{% if sample_measurements %}
+{% if panel_measurements %}
 <h2>Panel Statistics</h2>
 <table class="table table-bordered table-hover">
     <thead>
         <tr>
-            <th># Samples</th>
             <th># Genes</th>
+            <th># Samples</th>
             <th>Min.</th>
             <th>Mean</th>
             <th>Max.</th>
@@ -34,13 +34,13 @@
     </thead>
     <tbody>
         <tr>
-            <td>{{ samples|count }}</td>
             <td>{{ transcript_measurements|count }}</td>
-            {{ render_measurment_td(sample_measurements['min']) }}
-            {{ render_measurment_td(sample_measurements['mean']) }}
-            {{ render_measurment_td(sample_measurements['max']) }}
+            <td>{{ samples|count }}</td>
+            {{ render_measurment_td(panel_measurements['min']) }}
+            {{ render_measurment_td(panel_measurements['mean']) }}
+            {{ render_measurment_td(panel_measurements['max']) }}
             {% for sample in samples %}
-            {{ render_measurment_td(sample_measurements[sample]['measurement']) }}
+            {{ render_measurment_td(panel_measurements[sample]['measurement']) }}
             {% endfor %}
         </tr>
     </tbody>
@@ -66,7 +66,7 @@
         {% for transcript in transcript_measurements %}
         <tr>
             <td>{{ transcript.gene.id }}</td>
-            <td>{{ transcript.name }}</td>
+            <td><a href="{{ url_for('custom_panel_transcript', transcript_name=transcript.name, sample=sample_ids, measurement_type=measurement_type[0]) }}">{{ transcript.name }}</a></td>
             {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['max']) }}

@@ -41,11 +41,12 @@ class CustomPanelForm(FlaskForm):
         self.transcript_ids = []  # Reset transcript_ids on validation
         for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
             gene_id = gene_id.strip().lower()
-            gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
-            if gene is None:
-                self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
-            else:
-                self.transcript_ids.append(gene.default_transcript_id)
+            if gene_id:
+                gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                if gene is None:
+                    self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                else:
+                    self.transcript_ids.append(gene.default_transcript_id)
 
         if self.gene_list.errors:
             return False
