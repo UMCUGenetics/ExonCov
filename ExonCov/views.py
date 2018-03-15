@@ -3,6 +3,7 @@
 from collections import OrderedDict
 
 from flask import render_template, request
+from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
 from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
@@ -77,7 +78,7 @@ def sample_gene(sample_id, gene_id):
 @app.route('/panel')
 def panels():
     """Panel overview page."""
-    panels = Panel.query.all()
+    panels = Panel.query.options(joinedload('transcripts')).all()
     return render_template('panels.html', panels=panels)
 
 
