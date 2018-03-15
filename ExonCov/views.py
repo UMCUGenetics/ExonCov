@@ -93,8 +93,9 @@ def custom_panel():
     """Custom panel page."""
     custom_panel_form = CustomPanelForm(request.args, meta={'csrf': False})
     samples = []
+    sample_ids = []
     measurement_type = []
-    sample_measurements = {}
+    panel_measurements = {}
     transcript_measurements = {}
 
     if request.args and custom_panel_form.validate():
@@ -114,14 +115,14 @@ def custom_panel():
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
             # Calculate weighted average per sample for entire panel
-            if sample not in sample_measurements:
-                sample_measurements[sample] = {
+            if sample not in panel_measurements:
+                panel_measurements[sample] = {
                     'len': transcript_measurement.len,
                     'measurement': transcript_measurement[measurement_type[0]]
                 }
             else:
-                sample_measurements[sample]['measurement'] = ((sample_measurements[sample]['len'] * sample_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (sample_measurements[sample]['len'] + transcript_measurement.len)
-                sample_measurements[sample]['len'] += transcript_measurement.len
+                panel_measurements[sample]['measurement'] = ((panel_measurements[sample]['len'] * panel_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (panel_measurements[sample]['len'] + transcript_measurement.len)
+                panel_measurements[sample]['len'] += transcript_measurement.len
 
         # Calculate min, mean, max
         for transcript in transcript_measurements:
@@ -130,10 +131,56 @@ def custom_panel():
             transcript_measurements[transcript]['max'] = max(values)
             transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
 
-        values = [sample_measurements[sample]['measurement'] for sample in sample_measurements]
-        sample_measurements['min'] = min(values)
-        sample_measurements['max'] = max(values)
-        sample_measurements['mean'] = float(sum(values)) / len(values)
+        values = [panel_measurements[sample]['measurement'] for sample in panel_measurements]
+        panel_measurements['min'] = min(values)
+        panel_measurements['max'] = max(values)
+        panel_measurements['mean'] = float(sum(values)) / len(values)
+
+    return render_template('custom_panel.html', form=custom_panel_form, samples=samples, sample_ids=sample_ids, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
 
 
-    return render_template('custom_panel.html', form=custom_panel_form, samples=samples, measurement_type=measurement_type, transcript_measurements=transcript_measurements, sample_measurements=sample_measurements)
+@app.route('/panel/custom/<string:transcript_name>', methods=['GET'])
+def custom_panel_transcript(transcript_name):
+    """Custom panel transcript page."""
+    transcript = Transcript.query.filter_by(name=transcript_name).first()
+    sample_ids = request.args.getlist('sample')
+    samples = []
+    measurement_type = request.args['measurement_type']
+    exon_measurements = OrderedDict()
+    transcript_measurements = {}
+
+    if sample_ids and measurement_type:
+        # Get transcript measurements
+        query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id == transcript.id).all()
+        for transcript_measurement in query:
+            sample = transcript_measurement.sample  # Add join?
+            transcript_measurements[sample] = transcript_measurement[measurement_type]
+
+            # Store sample
+            if sample not in samples:
+                samples.append(sample)
+
+        # Get exon measurements
+        query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).all()
+        for exon_measurement in query:
+            sample = exon_measurement.sample  # Add join?
+            exon = exon_measurement.exon  # Add Join??
+
+            # Store exon_measurement per exon and sample
+            if exon not in exon_measurements:
+                exon_measurements[exon] = {}
+            exon_measurements[exon][sample] = exon_measurement[measurement_type]
+
+        # Calculate min, mean, max
+        values = transcript_measurements.values()
+        transcript_measurements['min'] = min(values)
+        transcript_measurements['max'] = max(values)
+        transcript_measurements['mean'] = float(sum(values)) / len(values)
+
+        for exon in exon_measurements:
+            values = exon_measurements[exon].values()
+            exon_measurements[exon]['min'] = min(values)
+            exon_measurements[exon]['max'] = max(values)
+            exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
+
+    return render_template('custom_panel_transcript.html', transcript=transcript, samples=samples, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
