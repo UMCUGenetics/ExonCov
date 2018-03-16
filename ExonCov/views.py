@@ -140,7 +140,7 @@ def custom_panel():
     return render_template('custom_panel.html', form=custom_panel_form, samples=samples, sample_ids=sample_ids, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
 
 
-@app.route('/panel/custom/<string:transcript_name>', methods=['GET'])
+@app.route('/panel/custom/transcript/<string:transcript_name>', methods=['GET'])
 def custom_panel_transcript(transcript_name):
     """Custom panel transcript page."""
     transcript = Transcript.query.filter_by(name=transcript_name).first()
@@ -185,3 +185,34 @@ def custom_panel_transcript(transcript_name):
             exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
 
     return render_template('custom_panel_transcript.html', transcript=transcript, samples=samples, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
+
+
+@app.route('/panel/custom/gene/<string:gene_id>', methods=['GET'])
+def custom_panel_gene(gene_id):
+    """Custom panel gene page."""
+    gene = Gene.query.get(gene_id)
+    sample_ids = request.args.getlist('sample')
+    samples = []
+    measurement_type = request.args['measurement_type']
+    transcript_measurements = {}
+
+    if sample_ids and measurement_type:
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).join(Transcript).filter_by(gene_id=gene_id).options(joinedload('sample')).options(joinedload('transcript')).all()
+        for transcript_measurement in query:
+            sample = transcript_measurement.sample
+            transcript = transcript_measurement.transcript
+
+            if transcript not in transcript_measurements:
+                transcript_measurements[transcript] = {}
+            transcript_measurements[transcript][sample] = transcript_measurement[measurement_type]
+
+            if sample not in samples:
+                samples.append(sample)
+
+        for transcript in transcript_measurements:
+            values = transcript_measurements[transcript].values()
+            transcript_measurements[transcript]['min'] = min(values)
+            transcript_measurements[transcript]['max'] = max(values)
+            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+
+    return render_template('custom_panel_gene.html', gene=gene, samples=samples, sample_ids=sample_ids, measurement_type=measurement_type, transcript_measurements=transcript_measurements)

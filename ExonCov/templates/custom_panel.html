@@ -65,7 +65,7 @@
     <tbody>
         {% for transcript in transcript_measurements %}
         <tr>
-            <td>{{ transcript.gene.id }}</td>
+            <td><a href="{{ url_for('custom_panel_gene', gene_id=transcript.gene_id, sample=sample_ids, measurement_type=measurement_type[0]) }}">{{ transcript.gene.id }}</td>
             <td><a href="{{ url_for('custom_panel_transcript', transcript_name=transcript.name, sample=sample_ids, measurement_type=measurement_type[0]) }}">{{ transcript.name }}</a></td>
             {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
