@@ -105,10 +105,10 @@ def custom_panel():
         transcript_ids = custom_panel_form.transcript_ids
         sample_ids = [sample.id for sample in samples]
 
-        query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).all()
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript')).all()
         for transcript_measurement in query:
-            sample = transcript_measurement.sample  # Add join?
-            transcript = transcript_measurement.transcript  # Add Join??
+            sample = transcript_measurement.sample
+            transcript = transcript_measurement.transcript
 
             # Store transcript_measurements per transcript and sample
             if transcript not in transcript_measurements:
@@ -140,7 +140,7 @@ def custom_panel():
     return render_template('custom_panel.html', form=custom_panel_form, samples=samples, sample_ids=sample_ids, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
 
 
-@app.route('/panel/custom/<string:transcript_name>', methods=['GET'])
+@app.route('/panel/custom/transcript/<string:transcript_name>', methods=['GET'])
 def custom_panel_transcript(transcript_name):
     """Custom panel transcript page."""
     transcript = Transcript.query.filter_by(name=transcript_name).first()
@@ -152,9 +152,9 @@ def custom_panel_transcript(transcript_name):
 
     if sample_ids and measurement_type:
         # Get transcript measurements
-        query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id == transcript.id).all()
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter_by(transcript_id=transcript.id).options(joinedload('sample')).all()
         for transcript_measurement in query:
-            sample = transcript_measurement.sample  # Add join?
+            sample = transcript_measurement.sample
             transcript_measurements[sample] = transcript_measurement[measurement_type]
 
             # Store sample
@@ -164,8 +164,8 @@ def custom_panel_transcript(transcript_name):
         # Get exon measurements
         query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).all()
         for exon_measurement in query:
-            sample = exon_measurement.sample  # Add join?
-            exon = exon_measurement.exon  # Add Join??
+            sample = exon_measurement.sample
+            exon = exon_measurement.exon
 
             # Store exon_measurement per exon and sample
             if exon not in exon_measurements:
@@ -185,3 +185,34 @@ def custom_panel_transcript(transcript_name):
             exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
 
     return render_template('custom_panel_transcript.html', transcript=transcript, samples=samples, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
+
+
+@app.route('/panel/custom/gene/<string:gene_id>', methods=['GET'])
+def custom_panel_gene(gene_id):
+    """Custom panel gene page."""
+    gene = Gene.query.get(gene_id)
+    sample_ids = request.args.getlist('sample')
+    samples = []
+    measurement_type = request.args['measurement_type']
+    transcript_measurements = {}
+
+    if sample_ids and measurement_type:
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).join(Transcript).filter_by(gene_id=gene_id).options(joinedload('sample')).options(joinedload('transcript')).all()
+        for transcript_measurement in query:
+            sample = transcript_measurement.sample
+            transcript = transcript_measurement.transcript
+
+            if transcript not in transcript_measurements:
+                transcript_measurements[transcript] = {}
+            transcript_measurements[transcript][sample] = transcript_measurement[measurement_type]
+
+            if sample not in samples:
+                samples.append(sample)
+
+        for transcript in transcript_measurements:
+            values = transcript_measurements[transcript].values()
+            transcript_measurements[transcript]['min'] = min(values)
+            transcript_measurements[transcript]['max'] = max(values)
+            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+
+    return render_template('custom_panel_gene.html', gene=gene, samples=samples, sample_ids=sample_ids, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
