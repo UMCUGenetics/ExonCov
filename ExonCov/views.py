@@ -105,10 +105,10 @@ def custom_panel():
         transcript_ids = custom_panel_form.transcript_ids
         sample_ids = [sample.id for sample in samples]
 
-        query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).all()
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript')).all()
         for transcript_measurement in query:
-            sample = transcript_measurement.sample  # Add join?
-            transcript = transcript_measurement.transcript  # Add Join??
+            sample = transcript_measurement.sample
+            transcript = transcript_measurement.transcript
 
             # Store transcript_measurements per transcript and sample
             if transcript not in transcript_measurements:
@@ -152,9 +152,9 @@ def custom_panel_transcript(transcript_name):
 
     if sample_ids and measurement_type:
         # Get transcript measurements
-        query = db.session.query(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id == transcript.id).all()
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter_by(transcript_id=transcript.id).options(joinedload('sample')).all()
         for transcript_measurement in query:
-            sample = transcript_measurement.sample  # Add join?
+            sample = transcript_measurement.sample
             transcript_measurements[sample] = transcript_measurement[measurement_type]
 
             # Store sample
@@ -164,8 +164,8 @@ def custom_panel_transcript(transcript_name):
         # Get exon measurements
         query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).all()
         for exon_measurement in query:
-            sample = exon_measurement.sample  # Add join?
-            exon = exon_measurement.exon  # Add Join??
+            sample = exon_measurement.sample
+            exon = exon_measurement.exon
 
             # Store exon_measurement per exon and sample
             if exon not in exon_measurements:
