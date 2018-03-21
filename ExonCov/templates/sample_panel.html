@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% from "macros/tables.html" import render_measurment_td %}
+
 {% block header %}{{ panel.name }} - {{ sample.name }}{% endblock %}
 
 {% block body %}
@@ -9,7 +10,7 @@
   <dt>Panel</dt><dd>{{ panel.name }}</dd>
 </dl>
 
-<table class="table table-bordered table-hover">
+<table class="table table-bordered table-hover" id="transcript_table">
     <thead>
         <tr>
             <th>Transcript</th>
@@ -41,4 +42,16 @@
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        $('#transcript_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "searching": false
+        });
+    });
+</script>
 {% endblock %}

@@ -12,6 +12,7 @@
         <link href="{{ url_for('static', filename='css/exoncov.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='css/select2.min.css') }}" rel="stylesheet" />
         <link href="{{ url_for('static', filename='css/select2-bootstrap.min.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/datatables.min.css') }}" rel="stylesheet"/>
     </head>
     <body>
         <div class="container-fluid">
@@ -46,10 +47,8 @@
         <!-- Include all compiled plugins (below), or include individual files as needed -->
         <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/select2.min.js') }}"></script>
-        <script> // In your Javascript (external .js resource or <script> tag
-            $(document).ready(function() {
-                $('.select2-form-field').select2();
-            });
-        </script>
+        <script src="{{ url_for('static', filename='js/datatables.min.js') }}"></script>
+
+        {% block custom_javascript %}{% endblock %}
     </body>
 </html>
