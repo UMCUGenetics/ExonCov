@@ -1,4 +1,5 @@
 """Utility functions."""
+from flask import request, url_for
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 
@@ -32,3 +33,9 @@ class WSGIMiddleware(object):
     def __call__(self, environ, start_response):
         environ['SCRIPT_NAME'] = self.prefix
         return self.app(environ, start_response)
+
+
+def url_for_other_page(page):
+    args = request.args.copy()
+    args['page'] = page
+    return url_for(request.endpoint, **args)

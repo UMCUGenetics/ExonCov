@@ -2,20 +2,35 @@
 
 from collections import OrderedDict
 
-from flask import render_template, request
+from flask import render_template, request, redirect
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
-from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm
+from .models import Sample, SequencingRun, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .forms import CustomPanelForm, SampleForm
 
 
 @app.route('/')
 @app.route('/sample')
 def samples():
     """Sample overview page."""
-    samples = Sample.query.all()
-    return render_template('samples.html', samples=samples)
+    sample_form = SampleForm(request.args, meta={'csrf': False})
+    page = request.args.get('page', default=1, type=int)
+    sample = request.args.get('sample')
+    run = request.args.get('run')
+    samples_per_page = 5
+
+    if (sample or run) and sample_form.validate():
+        samples = Sample.query
+        if sample:
+            samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
+        if run:
+            samples = samples.join(SequencingRun).filter(SequencingRun.name.like('%{0}%'.format(run)))
+        samples = samples.paginate(page=page, per_page=samples_per_page)
+    else:
+        samples = Sample.query.paginate(page=page, per_page=samples_per_page)
+
+    return render_template('samples.html', form=sample_form, samples=samples)
 
 
 @app.route('/sample/<int:id>')

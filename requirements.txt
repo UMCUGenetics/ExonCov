@@ -4,3 +4,4 @@ Flask-SQLAlchemy==2.2
 Flask-WTF==0.14.2
 Flask-DebugToolbar==0.10.1
 MySQL-python==1.2.5
+sqlalchemy==1.1.6
