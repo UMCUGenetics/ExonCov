@@ -2,27 +2,42 @@
 
 from collections import OrderedDict
 
-from flask import render_template, request
+from flask import render_template, request, redirect
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
-from .models import Sample, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm
+from .models import Sample, SequencingRun, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .forms import CustomPanelForm, SampleForm
 
 
 @app.route('/')
 @app.route('/sample')
 def samples():
     """Sample overview page."""
-    samples = Sample.query.all()
-    return render_template('samples.html', samples=samples)
+    sample_form = SampleForm(request.args, meta={'csrf': False})
+    page = request.args.get('page', default=1, type=int)
+    sample = request.args.get('sample')
+    run = request.args.get('run')
+    samples_per_page = 5
+
+    if (sample or run) and sample_form.validate():
+        samples = Sample.query
+        if sample:
+            samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
+        if run:
+            samples = samples.join(SequencingRun).filter(SequencingRun.name.like('%{0}%'.format(run)))
+        samples = samples.paginate(page=page, per_page=samples_per_page)
+    else:
+        samples = Sample.query.paginate(page=page, per_page=samples_per_page)
+
+    return render_template('samples.html', form=sample_form, samples=samples)
 
 
 @app.route('/sample/<int:id>')
 def sample(id):
     """Sample page."""
     sample = Sample.query.get(id)
-    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage30']
     query = db.session.query(Panel.name, TranscriptMeasurement).join(Transcript, Panel.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(Panel.name).all()
     panels = OrderedDict()
 
@@ -46,7 +61,7 @@ def sample_panel(sample_id, panel_name):
     sample = Sample.query.get(sample_id)
     panel = Panel.query.filter_by(name=panel_name).first()
 
-    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage30']
     transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
     return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
 
@@ -57,7 +72,7 @@ def sample_transcript(sample_id, transcript_name):
     sample = Sample.query.get(sample_id)
     transcript = Transcript.query.filter_by(name=transcript_name).first()
 
-    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage30']
     exon_measurements = db.session.query(Exon, ExonMeasurement).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).join(ExonMeasurement).filter_by(sample_id=sample.id).order_by(Exon.start).all()
 
     return render_template('sample_transcript.html', sample=sample, transcript=transcript, exon_measurements=exon_measurements, measurement_types=measurement_types)
@@ -69,7 +84,7 @@ def sample_gene(sample_id, gene_id):
     sample = Sample.query.get(sample_id)
     gene = Gene.query.get(gene_id)
 
-    measurement_types = ['measurement_mean_coverage', 'measurement_percentage15', 'measurement_percentage30']
+    measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage30']
     transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
 
     return render_template('sample_gene.html', sample=sample, gene=gene, transcript_measurements=transcript_measurements, measurement_types=measurement_types)

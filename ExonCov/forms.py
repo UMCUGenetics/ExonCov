@@ -3,7 +3,7 @@ import re
 
 from flask_wtf import FlaskForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField
-from wtforms.fields import SelectField, TextAreaField
+from wtforms.fields import SelectField, TextAreaField, StringField
 from wtforms.validators import InputRequired
 from sqlalchemy import func
 
@@ -13,6 +13,12 @@ from .models import Sample, Gene
 def all_samples():
     """Query factory for all samples."""
     return Sample.query.all()
+
+
+class SampleForm(FlaskForm):
+    """Query samples by run or samplename field"""
+    run = StringField('Run')
+    sample = StringField('Sample')
 
 
 class CustomPanelForm(FlaskForm):
