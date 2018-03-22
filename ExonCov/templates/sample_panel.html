@@ -20,7 +20,7 @@
             <th>End</th>
             <th># Exons</th>
             {% for type in measurement_types %}
-                <th>{{ type }}</th>
+                <th>{{ measurement_types[type] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -50,7 +50,9 @@
         $('#transcript_table').DataTable( {
             "paging": false,
             "info": false,
-            "searching": false
+            "searching": true,
+            "order": [[ 1, 'asc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         });
     });
 </script>
