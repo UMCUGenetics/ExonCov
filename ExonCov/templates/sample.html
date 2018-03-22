@@ -1,5 +1,6 @@
-{% extends 'base.html' %}
 {% from "macros/tables.html" import render_measurment_td %}
+{% extends 'base.html' %}
+
 {% block header %}{{ sample.name }}{% endblock %}
 
 {% block body %}
@@ -8,13 +9,13 @@
   <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
 </dl>
 
-<table class="table table-bordered table-hover">
+<table class="table table-bordered table-hover" id="panel_table">
     <thead>
         <tr>
             <th>Gene Panel</th>
-            <th>Total_size(bp)</th>
+            <th>Size (bp)</th>
             {% for type in measurement_types %}
-                <th>{{ type }}</th>
+                <th>{{ measurement_types[type] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -30,4 +31,18 @@
         {% endfor %}
     </tbody>
 </table>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        $('#panel_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "searching": true,
+            "order": [[ 0, 'asc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+    });
+</script>
 {% endblock %}

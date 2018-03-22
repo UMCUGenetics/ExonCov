@@ -19,7 +19,7 @@
             <th>End</th>
             <th>Total Bases</th>
             {% for type in measurement_types %}
-                <th>{{ type }}</th>
+                <th>{{ measurement_types[type] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -47,7 +47,8 @@
         $('#transcript_table').DataTable( {
             "paging": false,
             "info": false,
-            "searching": false
+            "searching": false,
+            "order": [[ 1, 'asc' ]],
         });
     });
 </script>
