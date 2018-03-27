@@ -5,10 +5,28 @@
 
 {% block body %}
 <dl class="dl-horizontal">
-  <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
-  <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
-  <dt>Panel</dt><dd>{{ panel.name }}</dd>
+    <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
+    <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
+    <dt>Panel</dt><dd>{{ panel.name }}</dd>
+    <dt>Filter</dt><dd>
+        <form class="form-inline">
+            <div class="form-group">
+                <select id="measurementType" class="form-control input-sm">
+                    <option value=6>Mean Coverage</option>
+                    <option value=7>>10</option>
+                    <option value=8>>15</option>
+                    <option value=9>>30</option>
+                </select>
+                <div class="input-group">
+                    <div class="input-group-addon">></div>
+                    <input id="cutoff" placeholder="Filter value" class="form-control input-sm">
+                </div>
+            </div>
+        </form>
+    </dd>
 </dl>
+
+
 
 <table class="table table-bordered table-hover" id="transcript_table">
     <thead>
@@ -46,13 +64,32 @@
 
 {% block custom_javascript %}
 <script>
+$.fn.dataTable.ext.search.push(
+function( settings, data, dataIndex ) {
+    var cutoff = parseFloat( $('#cutoff').val());
+    var measurementType = parseInt( $('#measurementType').val());
+    var measurement = parseFloat( data[measurementType] );
+
+    if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
+    {
+        return true;
+    }
+    return false;
+}
+);
+
     $(document).ready(function() {
-        $('#transcript_table').DataTable( {
+        var table = $('#transcript_table').DataTable( {
             "paging": false,
             "info": false,
             "searching": true,
             "order": [[ 1, 'asc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        // Event listener for filtering inputs to redraw on input
+        $('#cutoff, #measurementType').bind("change keyup", function() {
+            table.draw();
         });
     });
 </script>
