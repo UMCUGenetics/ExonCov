@@ -4,12 +4,16 @@
 {% block header %}{{ gene.id }} - {{ sample.name }}{% endblock %}
 
 {% block body %}
-<dl class="dl-horizontal">
-  <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
-  <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
-  <dt>Gene</dt><dd>{{ gene.id }}</dd>
-</dl>
-<table class="table table-bordered table-hover" id="transcript_table">
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>Sample</dt><dd>{{ sample.name }}</dd>
+        <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
+        <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
+        <dt>Gene</dt><dd>{{ gene.id }}</dd>
+    </dl>
+</div>
+
+<table class="table table-bordered table-hover table-condensed" id="transcript_table">
     <thead>
         <tr>
             <th>Transcript</th>
@@ -35,7 +39,7 @@
             <td>{{ transcript.exon_count }}</td>
             <td>{{ measurement.len }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(measurement[type]) }}
+                {{ render_measurment_td(measurement[type], type) }}
             {% endfor %}
         </tr>
         {% endfor %}

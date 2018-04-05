@@ -4,31 +4,18 @@
 {% block header %}{{ panel.name }} - {{ sample.name }}{% endblock %}
 
 {% block body %}
-<dl class="dl-horizontal">
-    <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
-    <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
-    <dt>Panel</dt><dd>{{ panel.name }}</dd>
-    <dt>Filter</dt><dd>
-        <form class="form-inline">
-            <div class="form-group">
-                <select id="measurementType" class="form-control input-sm">
-                    <option value=6>Mean Coverage</option>
-                    <option value=7>>10</option>
-                    <option value=8>>15</option>
-                    <option value=9>>30</option>
-                </select>
-                <div class="input-group">
-                    <div class="input-group-addon">></div>
-                    <input id="cutoff" placeholder="Filter value" class="form-control input-sm">
-                </div>
-            </div>
-        </form>
-    </dd>
-</dl>
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>Sample</dt><dd>{{ sample.name }}</dd>
+        <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
+        <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
+        <dt>Panel</dt><dd>{{ panel.name }}</dd>
+    </dl>
+</div>
 
 
 
-<table class="table table-bordered table-hover" id="transcript_table">
+<table class="table table-bordered table-hover table-condensed" id="transcript_table">
     <thead>
         <tr>
             <th>Transcript</th>
@@ -54,7 +41,7 @@
             <td>{{ transcript.end }}</td>
             <td>{{ transcript.exon_count }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(measurement[type]) }}
+                {{ render_measurment_td(measurement[type], type) }}
             {% endfor %}
         </tr>
         {% endfor %}
