@@ -1,4 +1,5 @@
 {% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/forms.html" import render_sample_datatable_form %}
 {% extends 'base.html' %}
 
 {% block header %}{{ sample.name }}{% endblock %}
@@ -12,7 +13,9 @@
     </dl>
 </div>
 
-<table class="table table-bordered table-hover table-condensed" id="panel_table">
+{{ render_sample_datatable_form(filter=false) }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
             <th>Gene Panel</th>
@@ -39,12 +42,18 @@
 {% block custom_javascript %}
 <script>
     $(document).ready(function() {
-        $('#panel_table').DataTable( {
+        var dataTable = $('#data_table').DataTable( {
             "paging": false,
             "info": false,
-            "searching": true,
             "order": [[ 0, 'asc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            console.log(this.value)
+            dataTable.search(this.value).draw();
         });
     });
 </script>

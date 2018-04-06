@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/forms.html" import render_sample_datatable_form %}
 
 {% block header %}{{ panel.name }} - {{ sample.name }}{% endblock %}
 
@@ -13,9 +14,9 @@
     </dl>
 </div>
 
+{{ render_sample_datatable_form() }}
 
-
-<table class="table table-bordered table-hover table-condensed" id="transcript_table">
+<table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
             <th>Transcript</th>
@@ -52,31 +53,35 @@
 {% block custom_javascript %}
 <script>
 $.fn.dataTable.ext.search.push(
-function( settings, data, dataIndex ) {
-    var cutoff = parseFloat( $('#cutoff').val());
-    var measurementType = parseInt( $('#measurementType').val());
-    var measurement = parseFloat( data[measurementType] );
+    function( settings, data, dataIndex ) {
+        var cutoff = parseFloat( $('#cutoff').val());
+        var measurementType = parseInt( $('#measurementType').val());
+        var measurement = parseFloat( data[measurementType] );
 
-    if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
-    {
-        return true;
+        if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
+        {
+            return true;
+        }
+        return false;
     }
-    return false;
-}
 );
 
     $(document).ready(function() {
-        var table = $('#transcript_table').DataTable( {
+        var dataTable = $('#data_table').DataTable( {
             "paging": false,
             "info": false,
-            "searching": true,
             "order": [[ 1, 'asc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         });
 
-        // Event listener for filtering inputs to redraw on input
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            dataTable.search(this.value).draw();
+        });
+
         $('#cutoff, #measurementType').bind("change keyup", function() {
-            table.draw();
+            dataTable.draw();
         });
     });
 </script>
