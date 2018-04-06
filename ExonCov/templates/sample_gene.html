@@ -1,15 +1,22 @@
 {% extends 'base.html' %}
 {% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/forms.html" import render_sample_datatable_form %}
 
 {% block header %}{{ gene.id }} - {{ sample.name }}{% endblock %}
 
 {% block body %}
-<dl class="dl-horizontal">
-  <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
-  <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
-  <dt>Gene</dt><dd>{{ gene.id }}</dd>
-</dl>
-<table class="table table-bordered table-hover" id="transcript_table">
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>Sample</dt><dd>{{ sample.name }}</dd>
+        <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
+        <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
+        <dt>Gene</dt><dd>{{ gene.id }}</dd>
+    </dl>
+</div>
+
+{{ render_sample_datatable_form() }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
             <th>Transcript</th>
@@ -35,7 +42,7 @@
             <td>{{ transcript.exon_count }}</td>
             <td>{{ measurement.len }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(measurement[type]) }}
+                {{ render_measurment_td(measurement[type], type) }}
             {% endfor %}
         </tr>
         {% endfor %}
@@ -45,13 +52,36 @@
 
 {% block custom_javascript %}
 <script>
+$.fn.dataTable.ext.search.push(
+    function( settings, data, dataIndex ) {
+        var cutoff = parseFloat( $('#cutoff').val());
+        var measurementType = parseInt( $('#measurementType').val());
+        var measurement = parseFloat( data[measurementType] );
+
+        if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
+        {
+            return true;
+        }
+        return false;
+    }
+);
+
     $(document).ready(function() {
-        $('#transcript_table').DataTable( {
+        var dataTable = $('#data_table').DataTable( {
             "paging": false,
             "info": false,
-            "searching": true,
-            "order": [[ 5, 'desc' ]],
+            "order": [[ 5, 'asc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            dataTable.search(this.value).draw();
+        });
+
+        $('#cutoff, #measurementType').bind("change keyup", function() {
+            dataTable.draw();
         });
     });
 </script>
