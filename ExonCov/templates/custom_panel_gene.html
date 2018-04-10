@@ -7,7 +7,7 @@
 
 {% if transcript_measurements %}
 <h2>Transcript Statistics</h2>
-<table class="table table-bordered table-hover table-condensed">
+<table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
             <th>Transcript</th>
@@ -35,4 +35,17 @@
 </table>
 {% endif %}
 
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "searching": false,
+            "order": [[ 0, 'asc' ]],
+        });
+    });
+</script>
 {% endblock %}

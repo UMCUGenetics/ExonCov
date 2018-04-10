@@ -2,17 +2,22 @@
 import re
 
 from flask_wtf import FlaskForm
-from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField
+from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
 from wtforms.fields import SelectField, TextAreaField, StringField
 from wtforms.validators import InputRequired
 from sqlalchemy import func
 
-from .models import Sample, Gene
+from .models import Sample, Gene, Panel
 
-
+# Query factories
 def all_samples():
     """Query factory for all samples."""
     return Sample.query.all()
+
+
+def all_panels():
+    """Query factory for all panels."""
+    return Panel.query.all()
 
 
 class SampleForm(FlaskForm):
@@ -25,7 +30,8 @@ class CustomPanelForm(FlaskForm):
     """Custom Panel form."""
 
     samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    panel = QuerySelectField('Panel', validators=[], query_factory=all_panels, allow_blank=True, blank_text='Custom panel')
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
     measurement_type = SelectField('Measurement type', choices=[
         ('measurement_percentage10', '>10'),
         ('measurement_percentage15', '>15'),
@@ -40,21 +46,34 @@ class CustomPanelForm(FlaskForm):
     def validate(self):
         """Extra validation, used to validate gene list."""
         # Default validation as defined in field validators
+        self.transcript_ids = []  # Reset transcript_ids on validation
+
         if not FlaskForm.validate(self):
             return False
 
-        # Parse gene_list
-        self.transcript_ids = []  # Reset transcript_ids on validation
-        for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
-            gene_id = gene_id.strip().lower()
-            if gene_id:
-                gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
-                if gene is None:
-                    self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
-                else:
-                    self.transcript_ids.append(gene.default_transcript_id)
-
-        if self.gene_list.errors:
+        if not self.panel.data and not self.gene_list.data:
+            message = 'Panel and/or gene list must be set.'
+            self.panel.errors.append(message)
+            self.gene_list.errors.append(message)
             return False
+
+        else:
+            if self.panel.data:
+                # Get panel transcript_ids
+                self.transcript_ids.extend([transcript.id for transcript in self.panel.data.transcripts])
+
+            if self.gene_list.data:
+                # Parse gene_list
+                for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
+                    gene_id = gene_id.strip().lower()
+                    if gene_id:
+                        gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                        if gene is None:
+                            self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                        else:
+                            self.transcript_ids.append(gene.default_transcript_id)
+
+                if self.gene_list.errors:
+                    return False
 
         return True

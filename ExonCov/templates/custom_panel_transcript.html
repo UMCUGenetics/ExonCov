@@ -37,7 +37,7 @@
 
 {% if exon_measurements %}
 <h2>Exon Statistics</h2>
-<table class="table table-bordered table-hover table-condensed">
+<table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
             <th>Chr</th>
@@ -69,4 +69,17 @@
 </table>
 {% endif %}
 
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "searching": false,
+            "order": [[ 1, 'asc' ]],
+        });
+    });
+</script>
 {% endblock %}
