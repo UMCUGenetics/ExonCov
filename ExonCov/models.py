@@ -85,7 +85,6 @@ class Gene(db.Model):
     id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
     default_transcript_id = db.Column(db.Integer, db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), index=True)
 
-    #transcripts = db.relationship('Transcript', back_populates='gene')
     default_transcript = db.relationship('Transcript', foreign_keys=[default_transcript_id])
 
     def __repr__(self):
