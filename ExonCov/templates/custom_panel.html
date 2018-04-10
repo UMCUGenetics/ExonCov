@@ -9,6 +9,7 @@
     <form method="GET" action="{{ url_for('custom_panel') }}" class="form-horizontal">
         {{ render_field(form.measurement_type) }}
         {{ render_select2_field(form.samples) }}
+        {{ render_select2_field(form.panel) }}
         {{ render_field(form.gene_list, rows="5") }}
 
         <div class="form-group">
@@ -51,7 +52,7 @@
 
 {% if transcript_measurements %}
 <h2>Gene Statistics</h2>
-<table class="table table-bordered table-hover table-condensed">
+<table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
             <th>Gene</th>
@@ -87,6 +88,13 @@
 <script>
     $(document).ready(function() {
         $('.select2-form-field').select2();
+
+        $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "searching": false,
+            "order": [[ 0, 'asc' ]],
+        });
     });
 </script>
 {% endblock %}
