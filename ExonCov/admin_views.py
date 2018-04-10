@@ -120,7 +120,7 @@ class SequencingRunAdminView(CustomModelView):
         'sequencer': [
             ('nextseq_umc01', 'Nextseq UMC01'),
             ('nextseq_umc02', 'Nextseq UMC02'),
-            ('novaseq_umc02', 'Novaseq UMC01')
+            ('novaseq_umc01', 'Novaseq UMC01')
         ],
     }
 
