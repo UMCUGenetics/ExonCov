@@ -53,7 +53,7 @@ $.fn.dataTable.ext.search.push(
     function( settings, data, dataIndex ) {
         var cutoff = parseFloat( $('#cutoff').val());
         var measurementType = parseInt( $('#measurementType').val());
-        var measurement = parseFloat( data[measurementType] );
+        var measurement = parseFloat( data[measurementType + 4]); // correct for other columns
 
         if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
         {
