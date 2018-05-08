@@ -1,8 +1,10 @@
 """ExonCov admin views."""
+from flask import redirect, abort, url_for, request
 from flask_admin.contrib.sqla import ModelView
+from flask_security import current_user
 
 from . import db, admin
-from .models import Exon, Transcript, Gene, Panel, Sample, SequencingRun
+from .models import Exon, Transcript, Gene, Panel, Sample, SequencingRun, User, Role
 
 
 class CustomModelView(ModelView):
@@ -11,25 +13,25 @@ class CustomModelView(ModelView):
     can_delete = False
 
     # Required for flask-login implementation -> depends on authorization method
-    # def is_accessible(self):
-    #     """Check whether user has acces to admin panel."""
-    #     if not current_user.is_active or not current_user.is_authenticated:
-    #         return False
-    #
-    #     if current_user.has_role('admin'):
-    #         return True
-    #
-    #     return False
-    #
-    # def _handle_view(self, name, **kwargs):
-    #     """Redirect users when a view is not accessible."""
-    #     if not self.is_accessible():
-    #         if current_user.is_authenticated:
-    #             # permission denied
-    #             abort(403)
-    #         else:
-    #             # login
-    #             return redirect(url_for('security.login', next=request.url))
+    def is_accessible(self):
+        """Check whether user has acces to admin panel."""
+        if not current_user.is_active or not current_user.is_authenticated:
+            return False
+
+        if current_user.has_role('admin'):
+            return True
+
+        return False
+
+    def _handle_view(self, name, **kwargs):
+        """Redirect users when a view is not accessible."""
+        if not self.is_accessible():
+            if current_user.is_authenticated:
+                # permission denied
+                abort(403)
+            else:
+                # login
+                return redirect(url_for('security.login', next=request.url))
 
 
 class PanelAdminView(CustomModelView):
@@ -125,6 +127,16 @@ class SequencingRunAdminView(CustomModelView):
     }
 
 
+class UserAdmin(CustomModelView):
+    """User admin model."""
+
+    can_create = False
+
+    column_list = ('first_name', 'last_name', 'email', 'roles', 'active')
+
+    form_columns = ('first_name', 'last_name', 'email', 'roles', 'active', 'password')
+
+
 # Link view classes and models
 admin.add_view(PanelAdminView(Panel, db.session))
 admin.add_view(GeneAdminView(Gene, db.session))
@@ -132,3 +144,6 @@ admin.add_view(TranscriptAdminView(Transcript, db.session))
 admin.add_view(ExonAdminView(Exon, db.session))
 admin.add_view(SampleAdminView(Sample, db.session))
 admin.add_view(SequencingRunAdminView(SequencingRun, db.session))
+
+admin.add_view(UserAdmin(User, db.session))
+admin.add_view(CustomModelView(Role, db.session))
