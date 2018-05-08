@@ -15,13 +15,10 @@ class CustomModelView(ModelView):
     # Required for flask-login implementation -> depends on authorization method
     def is_accessible(self):
         """Check whether user has acces to admin panel."""
-        if not current_user.is_active or not current_user.is_authenticated:
-            return False
-
-        if current_user.has_role('admin'):
+        if current_user.is_active and current_user.is_authenticated and current_user.has_role('admin'):
             return True
-
-        return False
+        else:
+            return False
 
     def _handle_view(self, name, **kwargs):
         """Redirect users when a view is not accessible."""

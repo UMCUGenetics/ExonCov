@@ -2,7 +2,8 @@
 
 from collections import OrderedDict
 
-from flask import render_template, request, redirect
+from flask import render_template, request
+from flask_security import login_required
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
@@ -12,6 +13,7 @@ from .forms import CustomPanelForm, SampleForm
 
 @app.route('/')
 @app.route('/sample')
+@login_required
 def samples():
     """Sample overview page."""
     sample_form = SampleForm(request.args, meta={'csrf': False})
@@ -34,6 +36,7 @@ def samples():
 
 
 @app.route('/sample/<int:id>')
+@login_required
 def sample(id):
     """Sample page."""
     sample = Sample.query.get(id)
@@ -61,6 +64,7 @@ def sample(id):
 
 
 @app.route('/sample/<int:sample_id>/panel/<string:panel_name>')
+@login_required
 def sample_panel(sample_id, panel_name):
     """Sample panel page."""
     sample = Sample.query.get(sample_id)
@@ -77,6 +81,7 @@ def sample_panel(sample_id, panel_name):
 
 
 @app.route('/sample/<int:sample_id>/transcript/<string:transcript_name>')
+@login_required
 def sample_transcript(sample_id, transcript_name):
     """Sample transcript page."""
     sample = Sample.query.get(sample_id)
@@ -94,6 +99,7 @@ def sample_transcript(sample_id, transcript_name):
 
 
 @app.route('/sample/<int:sample_id>/gene/<string:gene_id>')
+@login_required
 def sample_gene(sample_id, gene_id):
     """Sample gene page."""
     sample = Sample.query.get(sample_id)
@@ -111,6 +117,7 @@ def sample_gene(sample_id, gene_id):
 
 
 @app.route('/panel')
+@login_required
 def panels():
     """Panel overview page."""
     panels = Panel.query.options(joinedload('transcripts')).all()
@@ -118,6 +125,7 @@ def panels():
 
 
 @app.route('/panel/<int:id>')
+@login_required
 def panel(id):
     """Panel page."""
     panel = Panel.query.get(id)
@@ -125,6 +133,7 @@ def panel(id):
 
 
 @app.route('/panel/custom', methods=['GET'])
+@login_required
 def custom_panel():
     """Custom panel page."""
     custom_panel_form = CustomPanelForm(request.args, meta={'csrf': False})
@@ -176,6 +185,7 @@ def custom_panel():
 
 
 @app.route('/panel/custom/transcript/<string:transcript_name>', methods=['GET'])
+@login_required
 def custom_panel_transcript(transcript_name):
     """Custom panel transcript page."""
     transcript = Transcript.query.filter_by(name=transcript_name).first()
@@ -223,6 +233,7 @@ def custom_panel_transcript(transcript_name):
 
 
 @app.route('/panel/custom/gene/<string:gene_id>', methods=['GET'])
+@login_required
 def custom_panel_gene(gene_id):
     """Custom panel gene page."""
     gene = Gene.query.get(gene_id)
