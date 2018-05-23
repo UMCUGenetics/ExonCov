@@ -2,6 +2,7 @@
 import re
 
 from flask_wtf import FlaskForm
+from flask_security.forms import RegisterForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
 from wtforms.fields import SelectField, TextAreaField, StringField
 from wtforms.validators import InputRequired
@@ -77,3 +78,10 @@ class CustomPanelForm(FlaskForm):
                     return False
 
         return True
+
+
+class ExtendedRegisterForm(RegisterForm):
+    """Extend default register form."""
+
+    first_name = StringField('First name', [InputRequired()])
+    last_name = StringField('Last name', [InputRequired()])

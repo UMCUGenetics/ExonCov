@@ -2,6 +2,7 @@
 
 import datetime
 
+from flask_security import UserMixin, RoleMixin
 from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.mysql import BIGINT
@@ -19,6 +20,12 @@ panels_transcripts = db.Table(
     'panels_transcripts',
     db.Column('panel_id', db.ForeignKey('panels.id'), primary_key=True),
     db.Column('transcript_id', db.ForeignKey('transcripts.id'), primary_key=True)
+)
+
+roles_users = db.Table(
+    'roles_users',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
 )
 
 
@@ -222,3 +229,44 @@ class TranscriptMeasurement(db.Model):
 
     def __getitem__(self, item):
         return getattr(self, item)
+
+
+class User(db.Model, UserMixin):
+    """User model."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True, index=True, nullable=False)
+    password = db.Column(db.String(255))
+    first_name = db.Column(db.String(255), nullable=False)
+    last_name = db.Column(db.String(255), nullable=False)
+    active = db.Column(db.Boolean(), index=True)
+
+    roles = db.relationship(
+        'Role', secondary=roles_users,
+        backref=db.backref('users', lazy='dynamic')
+    )
+
+    def __str__(self):
+        """Return string representation."""
+        return self.email
+
+    @hybrid_property
+    def name_email(self):
+        """Return full name and email."""
+        return "{0} {1} ({2})".format(
+            self.first_name,
+            self.last_name,
+            self.email
+        )
+
+
+class Role(db.Model, RoleMixin):
+    """Role model."""
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    description = db.Column(db.String(255))
+
+    def __str__(self):
+        """Return string representation."""
+        return self.name

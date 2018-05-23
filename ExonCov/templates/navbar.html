@@ -1,0 +1,48 @@
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('samples') }}">ExonCov</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar">
+            <ul class="nav navbar-nav">
+            {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('samples') }}">Samples</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Panels <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ url_for('panels') }}">Overview</a></li>
+                        <li><a href="{{ url_for('custom_panel') }}">Custom</a></li>
+                    </ul>
+                 </li>
+                 {% if current_user.has_role('admin') %}
+                 <li><a href="{{ url_for('admin.index') }}">Admin</a></li>
+                 {% endif %}
+            {% endif %}
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if current_user.is_authenticated %}
+                <li>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                        <i class="glyphicon glyphicon-user"></i>
+                        {{ current_user.first_name }} {{ current_user.last_name }} ({{ current_user.email }})
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="{{ url_for('security.logout') }}">Log out</a></li>
+                        <li><a href="{{ url_for('security.change_password') }}">Change password</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li><a href="{{ url_for('security.login') }}">Login</a></li>
+                <li><a href="{{ url_for('security.register') }}">Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
