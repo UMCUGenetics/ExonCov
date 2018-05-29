@@ -33,7 +33,7 @@ class CustomPanelForm(FlaskForm):
     samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
     panel = QuerySelectField('Panel', validators=[], query_factory=all_panels, allow_blank=True, blank_text='Custom panel')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
-    measurement_type = SelectField('Measurement type', choices=[
+    measurement_type = SelectField('Measurement type', default='measurement_percentage15', choices=[
         ('measurement_percentage10', '>10'),
         ('measurement_percentage15', '>15'),
         ('measurement_percentage20', '>20'),
