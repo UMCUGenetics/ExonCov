@@ -10,6 +10,7 @@ from sqlalchemy import func
 
 from .models import Sample, Gene, Panel
 
+
 # Query factories
 def all_samples():
     """Query factory for all samples."""

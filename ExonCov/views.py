@@ -46,29 +46,31 @@ def sample(id):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    query = db.session.query(Panel.name, TranscriptMeasurement).join(Transcript, Panel.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(Panel.name).all()
+    query = db.session.query(Panel, TranscriptMeasurement).join(Transcript, Panel.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(Panel.name).all()
     panels = OrderedDict()
 
-    for panel_name, transcript_measurement in query:
-        if panel_name not in panels:
-            panels[panel_name] = {
-                'len': transcript_measurement.len
+    for panel, transcript_measurement in query:
+        if panel.id not in panels:
+            panels[panel.id] = {
+                'len': transcript_measurement.len,
+                'panel_name': panel.name,
+                'panel_version': panel.version
             }
             for measurement_type in measurement_types:
-                panels[panel_name][measurement_type] = transcript_measurement[measurement_type]
+                panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
         else:
             for measurement_type in measurement_types:
-                panels[panel_name][measurement_type] = ((panels[panel_name]['len'] * panels[panel_name][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (panels[panel_name]['len'] + transcript_measurement.len)
-            panels[panel_name]['len'] += transcript_measurement.len
+                panels[panel.id][measurement_type] = ((panels[panel.id]['len'] * panels[panel.id][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (panels[panel.id]['len'] + transcript_measurement.len)
+            panels[panel.id]['len'] += transcript_measurement.len
     return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types)
 
 
-@app.route('/sample/<int:sample_id>/panel/<string:panel_name>')
+@app.route('/sample/<int:sample_id>/panel/<int:panel_id>')
 @login_required
-def sample_panel(sample_id, panel_name):
+def sample_panel(sample_id, panel_id):
     """Sample panel page."""
     sample = Sample.query.get(sample_id)
-    panel = Panel.query.filter_by(name=panel_name).first()
+    panel = Panel.query.get(panel_id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -76,7 +78,7 @@ def sample_panel(sample_id, panel_name):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
+    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
     return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
 
 
@@ -111,7 +113,7 @@ def sample_gene(sample_id, gene_id):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
+    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
 
     return render_template('sample_gene.html', sample=sample, gene=gene, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
 
@@ -207,7 +209,7 @@ def custom_panel_transcript(transcript_name):
                 samples.append(sample)
 
         # Get exon measurements
-        query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).all()
+        query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).options(joinedload(ExonMeasurement.exon, innerjoin=True)).all()
         for exon_measurement in query:
             sample = exon_measurement.sample
             exon = exon_measurement.exon

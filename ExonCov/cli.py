@@ -1,6 +1,8 @@
 """CLI functions."""
 
 import sys
+import re
+import time
 
 from flask_script import Command, Option
 
@@ -132,15 +134,25 @@ class LoadDesign(Command):
             f.readline()  # skip header
             for line in f:
                 data = line.rstrip().split('\t')
-                panel_name = data[0]
-                genes = data[2].split(',')
+                panel = data[0]
 
-                panel = Panel(name=panel_name)
+                if 'elid' not in panel:  # Skip old elid panel designs
+                    panel_match = re.search('(\w+)v(1\d.\d)', panel)  # look for [panel_name]v[version] pattern
+                    if panel_match:
+                        panel_name = panel_match.group(1)
+                        panel_version = panel_match.group(2)
+                    else:
+                        panel_name = panel
+                        panel_version = '{year}.1'.format(year=time.strftime('%y'))
 
-                for gene in set(genes):
-                    transcript = transcripts[preferred_transcripts[gene]]
-                    panel.transcripts.append(transcript)
-                db.session.add(panel)
+                    genes = data[2].split(',')
+
+                    panel = Panel(name=panel_name, version=panel_version, active=True)
+
+                    for gene in set(genes):
+                        transcript = transcripts[preferred_transcripts[gene]]
+                        panel.transcripts.append(transcript)
+                    db.session.add(panel)
         db.session.commit()
 
 

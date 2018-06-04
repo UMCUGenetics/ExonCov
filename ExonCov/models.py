@@ -67,7 +67,7 @@ class Transcript(db.Model):
 
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
-    exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts', lazy='joined')
+    exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
     gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id], lazy='joined')
     panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
     transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
@@ -107,15 +107,26 @@ class Panel(db.Model):
     __tablename__ = 'panels'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), index=True, unique=True)
+    name = db.Column(db.String(50), index=True)
+    version = db.Column(db.String(6), index=True)
+    active = db.Column(db.Boolean, index=True)
 
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
 
+    __table_args__ = (
+        UniqueConstraint('name', 'version'),
+    )
+
     def __repr__(self):
-        return "Panel({0})".format(self.name)
+        return "Panel({0}({1}))".format(self.name, self.version)
 
     def __str__(self):
-        return self.name
+        return "{0}({1})".format(self.name, self.version)
+
+    @hybrid_property
+    def name_version(self):
+        """Return panel and version."""
+        return "{0}({1})".format(self.name, self.version)
 
     @hybrid_property
     def gene_count(self):
