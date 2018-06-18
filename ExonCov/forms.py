@@ -8,7 +8,7 @@ from wtforms.fields import SelectField, TextAreaField, StringField
 from wtforms.validators import InputRequired
 from sqlalchemy import func
 
-from .models import Sample, Gene, Panel
+from .models import Sample, Gene, PanelVersion
 
 
 # Query factories
@@ -19,7 +19,7 @@ def all_samples():
 
 def all_panels():
     """Query factory for all panels."""
-    return Panel.query.all()
+    return PanelVersion.query.all()
 
 
 class SampleForm(FlaskForm):

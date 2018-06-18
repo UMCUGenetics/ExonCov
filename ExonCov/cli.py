@@ -7,7 +7,7 @@ import time
 from flask_script import Command, Option
 
 from . import db, utils
-from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel
+from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
 
 
 class LoadDesign(Command):
@@ -147,12 +147,18 @@ class LoadDesign(Command):
 
                     genes = data[2].split(',')
 
-                    panel = Panel(name=panel_name, version=panel_version, active=True)
+                    panel = utils.get_one_or_create(
+                        db.session,
+                        Panel,
+                        name=panel_name,
+                    )[0]
+
+                    panel_version = PanelVersion(panel_name=panel_name, version=panel_version, active=True)
 
                     for gene in set(genes):
                         transcript = transcripts[preferred_transcripts[gene]]
-                        panel.transcripts.append(transcript)
-                    db.session.add(panel)
+                        panel_version.transcripts.append(transcript)
+                    db.session.add(panel_version)
         db.session.commit()
 
 

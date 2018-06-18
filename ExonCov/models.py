@@ -18,7 +18,7 @@ exons_transcripts = db.Table(
 
 panels_transcripts = db.Table(
     'panels_transcripts',
-    db.Column('panel_id', db.ForeignKey('panels.id'), primary_key=True),
+    db.Column('panel_id', db.ForeignKey('panel_versions.id'), primary_key=True),
     db.Column('transcript_id', db.ForeignKey('transcripts.id'), primary_key=True)
 )
 
@@ -64,12 +64,11 @@ class Transcript(db.Model):
     chr = db.Column(db.String(2))  # Based on exon.chr
     start = db.Column(db.Integer)  # Based on smallest exon.start
     end = db.Column(db.Integer)  # Based on largest exon.end
-
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
-    gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id], lazy='joined')
-    panels = db.relationship('Panel', secondary=panels_transcripts, back_populates='transcripts')
+    gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id], lazy='joined')  # Why backref?
+    panels = db.relationship('PanelVersion', secondary=panels_transcripts, back_populates='transcripts')
     transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
 
     def __repr__(self):
@@ -106,27 +105,40 @@ class Panel(db.Model):
 
     __tablename__ = 'panels'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), index=True)
-    version = db.Column(db.String(6), index=True)
-    active = db.Column(db.Boolean, index=True)
+    name = db.Column(db.String(50), primary_key=True)
 
-    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
-
-    __table_args__ = (
-        UniqueConstraint('name', 'version'),
-    )
+    versions = db.relationship('PanelVersion', back_populates='panel')
 
     def __repr__(self):
-        return "Panel({0}({1}))".format(self.name, self.version)
+        return "Panel({0})".format(self.name)
 
     def __str__(self):
-        return "{0}({1})".format(self.name, self.version)
+        return "{0}".format(self.name)
+
+
+class PanelVersion(db.Model):
+    """Panel version class."""
+
+    __tablename__ = 'panel_versions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    version = db.Column(db.String(6), index=True)
+    active = db.Column(db.Boolean, index=True)
+    panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), index=True)
+
+    panel = db.relationship('Panel', back_populates='versions')
+    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
+
+    def __repr__(self):
+        return "PanelVersion({0}({1}))".format(self.panel_name, self.version)
+
+    def __str__(self):
+        return "{0}({1})".format(self.panel_name, self.version)
 
     @hybrid_property
     def name_version(self):
         """Return panel and version."""
-        return "{0}({1})".format(self.name, self.version)
+        return "{0}({1})".format(self.panel_name, self.version)
 
     @hybrid_property
     def gene_count(self):
@@ -184,7 +196,6 @@ class ExonMeasurement(db.Model):
     __tablename__ = 'exon_measurements'
 
     id = db.Column(BIGINT(unsigned=True), primary_key=True)
-
     measurement_mean_coverage = db.Column(db.Float)
     measurement_percentage10 = db.Column(db.Float)
     measurement_percentage15 = db.Column(db.Float)
@@ -192,7 +203,6 @@ class ExonMeasurement(db.Model):
     measurement_percentage30 = db.Column(db.Float)
     measurement_percentage50 = db.Column(db.Float)
     measurement_percentage100 = db.Column(db.Float)
-
     exon_id = db.Column(db.String(25), db.ForeignKey('exons.id'), index=True)
     sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
 
@@ -224,7 +234,6 @@ class TranscriptMeasurement(db.Model):
     measurement_percentage30 = db.Column(db.Float)
     measurement_percentage50 = db.Column(db.Float)
     measurement_percentage100 = db.Column(db.Float)
-
     transcript_id = db.Column(db.Integer, db.ForeignKey('transcripts.id'), index=True)
     sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
 

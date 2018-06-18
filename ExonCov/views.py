@@ -7,7 +7,7 @@ from flask_security import login_required
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
-from .models import Sample, SequencingRun, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .models import Sample, SequencingRun, PanelVersion, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
 from .forms import CustomPanelForm, SampleForm
 
 
@@ -46,14 +46,14 @@ def sample(id):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    query = db.session.query(Panel, TranscriptMeasurement).join(Transcript, Panel.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(Panel.name).all()
+    query = db.session.query(PanelVersion, TranscriptMeasurement).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
     panels = OrderedDict()
 
     for panel, transcript_measurement in query:
         if panel.id not in panels:
             panels[panel.id] = {
                 'len': transcript_measurement.len,
-                'panel_name': panel.name,
+                'panel_name': panel.panel_name,
                 'panel_version': panel.version
             }
             for measurement_type in measurement_types:
@@ -70,7 +70,7 @@ def sample(id):
 def sample_panel(sample_id, panel_id):
     """Sample panel page."""
     sample = Sample.query.get(sample_id)
-    panel = Panel.query.get(panel_id)
+    panel = PanelVersion.query.get(panel_id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -122,7 +122,7 @@ def sample_gene(sample_id, gene_id):
 @login_required
 def panels():
     """Panel overview page."""
-    panels = Panel.query.options(joinedload('transcripts')).all()
+    panels = PanelVersion.query.options(joinedload('transcripts')).all()
     return render_template('panels.html', panels=panels)
 
 
@@ -130,7 +130,7 @@ def panels():
 @login_required
 def panel(id):
     """Panel page."""
-    panel = Panel.query.get(id)
+    panel = PanelVersion.query.get(id)
     return render_template('panel.html', panel=panel)
 
 
