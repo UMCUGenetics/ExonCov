@@ -1,11 +1,13 @@
 """CLI functions."""
 
 import sys
+import re
+import time
 
 from flask_script import Command, Option
 
 from . import db, utils
-from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel
+from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
 
 
 class LoadDesign(Command):
@@ -132,15 +134,33 @@ class LoadDesign(Command):
             f.readline()  # skip header
             for line in f:
                 data = line.rstrip().split('\t')
-                panel_name = data[0]
-                genes = data[2].split(',')
+                panel = data[0]
 
-                panel = Panel(name=panel_name)
+                if 'elid' not in panel:  # Skip old elid panel designs
+                    panel_match = re.search('(\w+)v(1\d).(\d)', panel)  # look for [panel_name]v[version] pattern
+                    if panel_match:
+                        panel_name = panel_match.group(1)
+                        panel_version_year = panel_match.group(2)
+                        panel_version_revision = panel_match.group(3)
+                    else:
+                        panel_name = panel
+                        panel_version_year = time.strftime('%y')
+                        panel_version_revision = 1
 
-                for gene in set(genes):
-                    transcript = transcripts[preferred_transcripts[gene]]
-                    panel.transcripts.append(transcript)
-                db.session.add(panel)
+                    genes = data[2].split(',')
+
+                    panel = utils.get_one_or_create(
+                        db.session,
+                        Panel,
+                        name=panel_name,
+                    )[0]
+
+                    panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True)
+
+                    for gene in set(genes):
+                        transcript = transcripts[preferred_transcripts[gene]]
+                        panel_version.transcripts.append(transcript)
+                    db.session.add(panel_version)
         db.session.commit()
 
 

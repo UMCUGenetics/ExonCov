@@ -1,7 +1,7 @@
 """ExonCov configuration."""
 
 # SQLAlchemy
-SQLALCHEMY_DATABASE_URI = 'sqlite:///../db.sqlite'
+SQLALCHEMY_DATABASE_URI = 'mysql://exoncov3:exoncov3@localhost/exoncov3'
 SQLALCHEMY_ECHO = False
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -25,6 +25,6 @@ SECURITY_SEND_PASSWORD_CHANGE_EMAIL = False
 TEMPLATES_AUTO_RELOAD = True
 
 # Debug toolbar
-DEBUG_TB_ENABLED = False
+DEBUG_TB_ENABLED = True
 DEBUG_TB_PROFILER_ENABLED = False
 DEBUG_TB_INTERCEPT_REDIRECTS = False

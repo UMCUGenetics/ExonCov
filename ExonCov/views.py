@@ -1,14 +1,15 @@
 """ExonCov views."""
 
 from collections import OrderedDict
+import time
 
-from flask import render_template, request
+from flask import render_template, request, redirect, url_for, flash
 from flask_security import login_required
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
-from .models import Sample, SequencingRun, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm, SampleForm
+from .models import Sample, SequencingRun, PanelVersion, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .forms import CustomPanelForm, SampleForm, CreatePanelForm, UpdatePanelForm
 
 
 @app.route('/')
@@ -46,29 +47,31 @@ def sample(id):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    query = db.session.query(Panel.name, TranscriptMeasurement).join(Transcript, Panel.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(Panel.name).all()
+    query = db.session.query(PanelVersion, TranscriptMeasurement).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
     panels = OrderedDict()
 
-    for panel_name, transcript_measurement in query:
-        if panel_name not in panels:
-            panels[panel_name] = {
-                'len': transcript_measurement.len
+    for panel, transcript_measurement in query:
+        if panel.id not in panels:
+            panels[panel.id] = {
+                'len': transcript_measurement.len,
+                'panel_name': panel.panel_name,
+                'panel_version': panel.version
             }
             for measurement_type in measurement_types:
-                panels[panel_name][measurement_type] = transcript_measurement[measurement_type]
+                panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
         else:
             for measurement_type in measurement_types:
-                panels[panel_name][measurement_type] = ((panels[panel_name]['len'] * panels[panel_name][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (panels[panel_name]['len'] + transcript_measurement.len)
-            panels[panel_name]['len'] += transcript_measurement.len
+                panels[panel.id][measurement_type] = ((panels[panel.id]['len'] * panels[panel.id][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (panels[panel.id]['len'] + transcript_measurement.len)
+            panels[panel.id]['len'] += transcript_measurement.len
     return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types)
 
 
-@app.route('/sample/<int:sample_id>/panel/<string:panel_name>')
+@app.route('/sample/<int:sample_id>/panel/<int:panel_id>')
 @login_required
-def sample_panel(sample_id, panel_name):
+def sample_panel(sample_id, panel_id):
     """Sample panel page."""
     sample = Sample.query.get(sample_id)
-    panel = Panel.query.filter_by(name=panel_name).first()
+    panel = PanelVersion.query.get(panel_id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -76,7 +79,7 @@ def sample_panel(sample_id, panel_name):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
+    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
     return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
 
 
@@ -111,7 +114,7 @@ def sample_gene(sample_id, gene_id):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).all()
+    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
 
     return render_template('sample_gene.html', sample=sample, gene=gene, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
 
@@ -120,7 +123,7 @@ def sample_gene(sample_id, gene_id):
 @login_required
 def panels():
     """Panel overview page."""
-    panels = Panel.query.options(joinedload('transcripts')).all()
+    panels = PanelVersion.query.options(joinedload('transcripts')).all()
     return render_template('panels.html', panels=panels)
 
 
@@ -128,8 +131,56 @@ def panels():
 @login_required
 def panel(id):
     """Panel page."""
-    panel = Panel.query.get(id)
+    panel = PanelVersion.query.get(id)
     return render_template('panel.html', panel=panel)
+
+
+@app.route('/panel/<int:id>/update', methods=['GET', 'POST'])
+@login_required
+def panel_update(id):
+    """Panel page."""
+    panel = PanelVersion.query.get(id)
+    genes = '\n'.join([transcript.gene_id for transcript in panel.transcripts])
+    update_panel_form = UpdatePanelForm(gene_list=genes)
+
+    if update_panel_form.validate_on_submit():
+        transcripts = update_panel_form.transcripts
+
+        if sorted(transcripts) == sorted(panel.transcripts):
+            update_panel_form.gene_list.errors.append('No changes.')
+        else:
+            # Determine version number
+            year = int(time.strftime('%y'))
+            if panel.version_year == year:
+                revision = panel.version_revision + 1
+            else:
+                revision = 1
+
+            new_panel_version = PanelVersion(panel_name=panel.panel_name, version_year=year, version_revision=revision, active=True, transcripts=transcripts)
+            db.session.add(new_panel_version)
+            db.session.commit()
+            return redirect(url_for('panel', id=new_panel_version.id))
+    return render_template('panel_update.html', form=update_panel_form, panel=panel)
+
+
+@app.route('/panel/new', methods=['GET', 'POST'])
+@login_required
+def panel_new():
+    """Create new panel page."""
+    new_panel_form = CreatePanelForm()
+
+    if new_panel_form.validate_on_submit():
+        panel_name = new_panel_form.data['name']
+        transcripts = new_panel_form.transcripts
+
+        new_panel = Panel(name=panel_name)
+        new_panel_version = PanelVersion(panel_name=panel_name, version_year=time.strftime('%y'), version_revision=1, active=True, transcripts=transcripts)
+
+        db.session.add(new_panel)
+        db.session.add(new_panel_version)
+        db.session.commit()
+        return redirect(url_for('panel', id=new_panel_version.id))
+    return render_template('panel_new.html', form=new_panel_form)
 
 
 @app.route('/panel/custom', methods=['GET'])
@@ -207,7 +258,7 @@ def custom_panel_transcript(transcript_name):
                 samples.append(sample)
 
         # Get exon measurements
-        query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).all()
+        query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).options(joinedload(ExonMeasurement.exon, innerjoin=True)).all()
         for exon_measurement in query:
             sample = exon_measurement.sample
             exon = exon_measurement.exon

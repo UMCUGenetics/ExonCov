@@ -8,7 +8,8 @@ from wtforms.fields import SelectField, TextAreaField, StringField
 from wtforms.validators import InputRequired
 from sqlalchemy import func
 
-from .models import Sample, Gene, Panel
+from .models import Sample, Gene, PanelVersion, Panel
+
 
 # Query factories
 def all_samples():
@@ -18,7 +19,7 @@ def all_samples():
 
 def all_panels():
     """Query factory for all panels."""
-    return Panel.query.all()
+    return PanelVersion.query.all()
 
 
 class SampleForm(FlaskForm):
@@ -33,7 +34,7 @@ class CustomPanelForm(FlaskForm):
     samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
     panel = QuerySelectField('Panel', validators=[], query_factory=all_panels, allow_blank=True, blank_text='Custom panel')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
-    measurement_type = SelectField('Measurement type', choices=[
+    measurement_type = SelectField('Measurement type', default='measurement_percentage15', choices=[
         ('measurement_percentage10', '>10'),
         ('measurement_percentage15', '>15'),
         ('measurement_percentage20', '>20'),
@@ -83,5 +84,73 @@ class CustomPanelForm(FlaskForm):
 class ExtendedRegisterForm(RegisterForm):
     """Extend default register form."""
 
-    first_name = StringField('First name', [InputRequired()])
-    last_name = StringField('Last name', [InputRequired()])
+    first_name = StringField('First name', validators=[InputRequired()])
+    last_name = StringField('Last name', validators=[InputRequired()])
+
+
+class CreatePanelForm(FlaskForm):
+    """Create / Update Panel form."""
+
+    name = StringField('Name', validators=[InputRequired()])
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    transcript = []  # Filled in validate function
+
+    def validate(self):
+        """Extra validation, used to validate gene list and panel name."""
+        # Default validation as defined in field validators
+        self.transcripts = []  # Reset transcripts on validation
+
+        if not FlaskForm.validate(self):
+            return False
+
+        if self.gene_list.data:
+            # Parse gene_list
+            for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
+                gene_id = gene_id.strip().lower()
+                if gene_id:
+                    gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                    if gene is None:
+                        self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                    else:
+                        self.transcripts.append(gene.default_transcript)
+
+        if self.name.data:
+            panel = Panel.query.filter_by(name=self.name.data).first()
+            if panel:
+                self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.'.format(gene_id))
+
+        if self.gene_list.errors or self.name.errors:
+            return False
+
+        return True
+
+
+class UpdatePanelForm(FlaskForm):
+    """Update Panel form."""
+
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    transcript = []  # Filled in validate function
+
+    def validate(self):
+        """Extra validation, used to validate gene list."""
+        # Default validation as defined in field validators
+        self.transcripts = []  # Reset transcripts on validation
+
+        if not FlaskForm.validate(self):
+            return False
+
+        if self.gene_list.data:
+            # Parse gene_list
+            for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
+                gene_id = gene_id.strip().lower()
+                if gene_id:
+                    gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                    if gene is None:
+                        self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                    else:
+                        self.transcripts.append(gene.default_transcript)
+
+        if self.gene_list.errors:
+            return False
+
+        return True

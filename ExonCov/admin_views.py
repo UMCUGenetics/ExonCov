@@ -4,7 +4,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
 from . import db, admin
-from .models import Exon, Transcript, Gene, Panel, Sample, SequencingRun, User, Role
+from .models import Exon, Transcript, Gene, Panel, PanelVersion, Sample, SequencingRun, User, Role
 
 
 class CustomModelView(ModelView):
@@ -33,9 +33,17 @@ class CustomModelView(ModelView):
 
 class PanelAdminView(CustomModelView):
     """Panel admin view."""
+    column_list = ['name']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'transcripts']
+    form_columns = ['name']
+
+
+class PanelVersionAdminView(CustomModelView):
+    """Panel admin view."""
+    column_searchable_list = ['panel_name']
+
+    form_columns = ['panel', 'version_year', 'version_revision', 'active', 'transcripts']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
@@ -49,7 +57,6 @@ class GeneAdminView(CustomModelView):
     column_list = ['id', 'default_transcript']
     column_sortable_list = ['id']
     column_searchable_list = ['id']
-
 
     form_columns = ['id', 'transcripts', 'default_transcript']
     form_ajax_refs = {
@@ -136,6 +143,7 @@ class UserAdmin(CustomModelView):
 
 # Link view classes and models
 admin.add_view(PanelAdminView(Panel, db.session))
+admin.add_view(PanelVersionAdminView(PanelVersion, db.session))
 admin.add_view(GeneAdminView(Gene, db.session))
 admin.add_view(TranscriptAdminView(Transcript, db.session))
 admin.add_view(ExonAdminView(Exon, db.session))

@@ -2,7 +2,7 @@
 {% from "macros/tables.html" import render_measurment_td %}
 {% from "macros/forms.html" import render_sample_datatable_form %}
 
-{% block header %}{{ panel.name }} - {{ sample.name }}{% endblock %}
+{% block header %}{{ panel.name_version }} - {{ sample.name }}{% endblock %}
 
 {% block body %}
 <div class="well">
@@ -10,7 +10,7 @@
         <dt>Sample</dt><dd>{{ sample.name }}</dd>
         <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
         <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
-        <dt>Panel</dt><dd>{{ panel.name }}</dd>
+        <dt>Panel</dt><dd>{{ panel.name_version }} </dd>
     </dl>
 </div>
 

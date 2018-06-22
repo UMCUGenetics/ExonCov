@@ -15,7 +15,7 @@
     <tbody>
         {% for panel in panels %}
         <tr>
-            <td><a href="{{ url_for('panel', id=panel.id) }}">{{ panel.name }}</a></td>
+            <td><a href="{{ url_for('panel', id=panel.id) }}">{{ panel.name_version }}</a></td>
             <td>{{ panel.gene_count }}</td>
         </tr>
         {% endfor %}
