@@ -1,6 +1,9 @@
 {% from "macros/forms.html" import render_sample_datatable_form %}
 {% extends 'base.html' %}
-{% block header %}Panel - {{ panel.name_version }}{% endblock %}
+{% block header %}
+Panel - {{ panel.name_version }}
+<small><a href="{{ url_for('panel_update', id=panel.id) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+{% endblock %}
 
 {% block body %}
 {{ render_sample_datatable_form(filter=false) }}

@@ -43,7 +43,7 @@ class PanelVersionAdminView(CustomModelView):
     """Panel admin view."""
     column_searchable_list = ['panel_name']
 
-    form_columns = ['panel', 'version', 'active', 'transcripts']
+    form_columns = ['panel', 'version_year', 'version_revision', 'active', 'transcripts']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],

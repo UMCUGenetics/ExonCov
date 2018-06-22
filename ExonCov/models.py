@@ -122,7 +122,8 @@ class PanelVersion(db.Model):
     __tablename__ = 'panel_versions'
 
     id = db.Column(db.Integer, primary_key=True)
-    version = db.Column(db.String(6), index=True)
+    version_year = db.Column(db.Integer, index=True)
+    version_revision = db.Column(db.Integer, index=True)
     active = db.Column(db.Boolean, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), index=True)
 
@@ -130,10 +131,15 @@ class PanelVersion(db.Model):
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
 
     def __repr__(self):
-        return "PanelVersion({0}({1}))".format(self.panel_name, self.version)
+        return "PanelVersion({0})".format(self.name_version)
 
     def __str__(self):
-        return "{0}({1})".format(self.panel_name, self.version)
+        return "{0}".format(self.name_version)
+
+    @hybrid_property
+    def version(self):
+        """Return version."""
+        return "{0}.{1}".format(self.version_year, self.version_revision)
 
     @hybrid_property
     def name_version(self):

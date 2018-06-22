@@ -137,13 +137,15 @@ class LoadDesign(Command):
                 panel = data[0]
 
                 if 'elid' not in panel:  # Skip old elid panel designs
-                    panel_match = re.search('(\w+)v(1\d.\d)', panel)  # look for [panel_name]v[version] pattern
+                    panel_match = re.search('(\w+)v(1\d).(\d)', panel)  # look for [panel_name]v[version] pattern
                     if panel_match:
                         panel_name = panel_match.group(1)
-                        panel_version = panel_match.group(2)
+                        panel_version_year = panel_match.group(2)
+                        panel_version_revision = panel_match.group(3)
                     else:
                         panel_name = panel
-                        panel_version = '{year}.1'.format(year=time.strftime('%y'))
+                        panel_version_year = time.strftime('%y')
+                        panel_version_revision = 1
 
                     genes = data[2].split(',')
 
@@ -153,7 +155,7 @@ class LoadDesign(Command):
                         name=panel_name,
                     )[0]
 
-                    panel_version = PanelVersion(panel_name=panel_name, version=panel_version, active=True)
+                    panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True)
 
                     for gene in set(genes):
                         transcript = transcripts[preferred_transcripts[gene]]

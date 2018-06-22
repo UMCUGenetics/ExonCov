@@ -8,7 +8,7 @@ from wtforms.fields import SelectField, TextAreaField, StringField
 from wtforms.validators import InputRequired
 from sqlalchemy import func
 
-from .models import Sample, Gene, PanelVersion
+from .models import Sample, Gene, PanelVersion, Panel
 
 
 # Query factories
@@ -84,5 +84,73 @@ class CustomPanelForm(FlaskForm):
 class ExtendedRegisterForm(RegisterForm):
     """Extend default register form."""
 
-    first_name = StringField('First name', [InputRequired()])
-    last_name = StringField('Last name', [InputRequired()])
+    first_name = StringField('First name', validators=[InputRequired()])
+    last_name = StringField('Last name', validators=[InputRequired()])
+
+
+class CreatePanelForm(FlaskForm):
+    """Create / Update Panel form."""
+
+    name = StringField('Name', validators=[InputRequired()])
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    transcript = []  # Filled in validate function
+
+    def validate(self):
+        """Extra validation, used to validate gene list and panel name."""
+        # Default validation as defined in field validators
+        self.transcripts = []  # Reset transcripts on validation
+
+        if not FlaskForm.validate(self):
+            return False
+
+        if self.gene_list.data:
+            # Parse gene_list
+            for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
+                gene_id = gene_id.strip().lower()
+                if gene_id:
+                    gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                    if gene is None:
+                        self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                    else:
+                        self.transcripts.append(gene.default_transcript)
+
+        if self.name.data:
+            panel = Panel.query.filter_by(name=self.name.data).first()
+            if panel:
+                self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.'.format(gene_id))
+
+        if self.gene_list.errors or self.name.errors:
+            return False
+
+        return True
+
+
+class UpdatePanelForm(FlaskForm):
+    """Update Panel form."""
+
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    transcript = []  # Filled in validate function
+
+    def validate(self):
+        """Extra validation, used to validate gene list."""
+        # Default validation as defined in field validators
+        self.transcripts = []  # Reset transcripts on validation
+
+        if not FlaskForm.validate(self):
+            return False
+
+        if self.gene_list.data:
+            # Parse gene_list
+            for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
+                gene_id = gene_id.strip().lower()
+                if gene_id:
+                    gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                    if gene is None:
+                        self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                    else:
+                        self.transcripts.append(gene.default_transcript)
+
+        if self.gene_list.errors:
+            return False
+
+        return True

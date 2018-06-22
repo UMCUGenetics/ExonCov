@@ -1,14 +1,15 @@
 """ExonCov views."""
 
 from collections import OrderedDict
+import time
 
-from flask import render_template, request
+from flask import render_template, request, redirect, url_for, flash
 from flask_security import login_required
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
-from .models import Sample, SequencingRun, PanelVersion, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm, SampleForm
+from .models import Sample, SequencingRun, PanelVersion, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .forms import CustomPanelForm, SampleForm, CreatePanelForm, UpdatePanelForm
 
 
 @app.route('/')
@@ -132,6 +133,54 @@ def panel(id):
     """Panel page."""
     panel = PanelVersion.query.get(id)
     return render_template('panel.html', panel=panel)
+
+
+@app.route('/panel/<int:id>/update', methods=['GET', 'POST'])
+@login_required
+def panel_update(id):
+    """Panel page."""
+    panel = PanelVersion.query.get(id)
+    genes = '\n'.join([transcript.gene_id for transcript in panel.transcripts])
+    update_panel_form = UpdatePanelForm(gene_list=genes)
+
+    if update_panel_form.validate_on_submit():
+        transcripts = update_panel_form.transcripts
+
+        if sorted(transcripts) == sorted(panel.transcripts):
+            update_panel_form.gene_list.errors.append('No changes.')
+        else:
+            # Determine version number
+            year = int(time.strftime('%y'))
+            if panel.version_year == year:
+                revision = panel.version_revision + 1
+            else:
+                revision = 1
+
+            new_panel_version = PanelVersion(panel_name=panel.panel_name, version_year=year, version_revision=revision, active=True, transcripts=transcripts)
+            db.session.add(new_panel_version)
+            db.session.commit()
+            return redirect(url_for('panel', id=new_panel_version.id))
+    return render_template('panel_update.html', form=update_panel_form, panel=panel)
+
+
+@app.route('/panel/new', methods=['GET', 'POST'])
+@login_required
+def panel_new():
+    """Create new panel page."""
+    new_panel_form = CreatePanelForm()
+
+    if new_panel_form.validate_on_submit():
+        panel_name = new_panel_form.data['name']
+        transcripts = new_panel_form.transcripts
+
+        new_panel = Panel(name=panel_name)
+        new_panel_version = PanelVersion(panel_name=panel_name, version_year=time.strftime('%y'), version_revision=1, active=True, transcripts=transcripts)
+
+        db.session.add(new_panel)
+        db.session.add(new_panel_version)
+        db.session.commit()
+        return redirect(url_for('panel', id=new_panel_version.id))
+    return render_template('panel_new.html', form=new_panel_form)
 
 
 @app.route('/panel/custom', methods=['GET'])
