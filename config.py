@@ -21,6 +21,8 @@ SECURITY_CHANGEABLE = True
 SECURITY_SEND_REGISTER_EMAIL = False
 SECURITY_SEND_PASSWORD_CHANGE_EMAIL = False
 
+SECURITY_MSG_DISABLED_ACCOUNT = ('Please contact admins to activate your account.', 'error')
+
 # JINJA template
 TEMPLATES_AUTO_RELOAD = True
 

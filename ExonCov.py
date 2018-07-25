@@ -23,16 +23,20 @@ def create():
     db.create_all()
 
     # Create admin role and first user
-    admin_role = Role(name='admin')
-    db.session.add(admin_role)
+    site_admin_role = Role(name='site_admin')
+    db.session.add(site_admin_role)
+    panel_admin_role = Role(name='panel_admin')
+    db.session.add(panel_admin_role)
+
     db.session.commit()
 
     user_datastore.create_user(
         first_name='First',
         last_name='Admin',
-        email='admin',
+        email='admin@admin.nl',
         password=encrypt_password('admin'),
-        roles=[admin_role]
+        active=True,
+        roles=[site_admin_role, panel_admin_role]
     )
     db.session.commit()
 

@@ -3,8 +3,8 @@
 from collections import OrderedDict
 import time
 
-from flask import render_template, request, redirect, url_for, flash
-from flask_security import login_required
+from flask import render_template, request, redirect, url_for
+from flask_security import login_required, roles_required
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
@@ -54,8 +54,7 @@ def sample(id):
         if panel.id not in panels:
             panels[panel.id] = {
                 'len': transcript_measurement.len,
-                'panel_name': panel.panel_name,
-                'panel_version': panel.version
+                'name_version': panel.name_version,
             }
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
@@ -137,6 +136,7 @@ def panel(id):
 
 @app.route('/panel/<int:id>/update', methods=['GET', 'POST'])
 @login_required
+@roles_required('panel_admin')
 def panel_update(id):
     """Panel page."""
     panel = PanelVersion.query.get(id)
@@ -165,6 +165,7 @@ def panel_update(id):
 
 @app.route('/panel/new', methods=['GET', 'POST'])
 @login_required
+@roles_required('panel_admin')
 def panel_new():
     """Create new panel page."""
     new_panel_form = CreatePanelForm()

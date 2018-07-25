@@ -2,7 +2,9 @@
 {% extends 'base.html' %}
 {% block header %}
 Panel - {{ panel.name_version }}
+{% if current_user.has_role('panel_admin') %}
 <small><a href="{{ url_for('panel_update', id=panel.id) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+{% endif %}
 {% endblock %}
 
 {% block body %}

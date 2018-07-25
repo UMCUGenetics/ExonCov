@@ -144,7 +144,7 @@ class PanelVersion(db.Model):
     @hybrid_property
     def name_version(self):
         """Return panel and version."""
-        return "{0}({1})".format(self.panel_name, self.version)
+        return "{0}v{1}".format(self.panel_name, self.version)
 
     @hybrid_property
     def gene_count(self):
@@ -262,15 +262,26 @@ class User(db.Model, UserMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, index=True, nullable=False)
-    password = db.Column(db.String(255))
+    password = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(255), nullable=False)
     last_name = db.Column(db.String(255), nullable=False)
-    active = db.Column(db.Boolean(), index=True)
+    active = db.Column(db.Boolean(), index=True, nullable=False)
 
     roles = db.relationship(
         'Role', secondary=roles_users,
         backref=db.backref('users', lazy='dynamic')
     )
+
+    def __init__(self, email, password, first_name, last_name, active, roles):
+        self.email = email
+        self.password = password
+        self.first_name = first_name
+        self.last_name = last_name
+        self.active = False
+        self.roles = roles
+
+    def __repr__(self):
+        return "User({0}-{1})".format(self.id, self.email)
 
     def __str__(self):
         """Return string representation."""
@@ -286,12 +297,16 @@ class User(db.Model, UserMixin):
         )
 
 
+
 class Role(db.Model, RoleMixin):
     """Role model."""
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
     description = db.Column(db.String(255))
+
+    def __repr__(self):
+        return "Role({0}-{1})".format(self.id, self.name)
 
     def __str__(self):
         """Return string representation."""
