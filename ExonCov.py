@@ -30,7 +30,7 @@ def create():
 
     db.session.commit()
 
-    user_datastore.create_user(
+    admin = user_datastore.create_user(
         first_name='First',
         last_name='Admin',
         email='admin@admin.nl',
@@ -38,6 +38,8 @@ def create():
         active=True,
         roles=[site_admin_role, panel_admin_role]
     )
+    admin.active = True
+    db.session.add(admin)
     db.session.commit()
 
 
