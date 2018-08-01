@@ -25,6 +25,16 @@
 {% endif %}
 {% endmacro %}
 
+{% macro render_checkbox(field) %}
+<div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+        <label>
+            {{ field(type='checkbox', **kwargs) }} {{field.label.text}}
+        </label>
+    </div>
+</div>
+{% endmacro %}
+
 {% macro render_select2_field(field) %}
 {% if field.errors %}
 <div class="form-group has-error {% if field.flags.required %}required{% endif %}">
@@ -61,6 +71,14 @@
     {{ field(class_='form-control', size=40, **kwargs) }}
 </div>
 {% endif %}
+{% endmacro %}
+
+{% macro render_inline_checkbox(field) %}
+<div class="checkbox">
+    <label>
+        {{ field(type='checkbox', **kwargs) }} {{field.label.text}}
+    </label>
+</div>
 {% endmacro %}
 
 {% macro render_sample_datatable_form(search=true, filter=true) %}

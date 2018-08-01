@@ -155,7 +155,7 @@ class LoadDesign(Command):
                         name=panel_name,
                     )[0]
 
-                    panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True)
+                    panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True)
 
                     for gene in set(genes):
                         transcript = transcripts[preferred_transcripts[gene]]

@@ -146,9 +146,12 @@ def panel_update(id):
     if update_panel_form.validate_on_submit():
         transcripts = update_panel_form.transcripts
 
+        # Check for panel changes
         if sorted(transcripts) == sorted(panel.transcripts):
             update_panel_form.gene_list.errors.append('No changes.')
+
         else:
+            # Create new panel if confirmed or show confirm page.
             # Determine version number
             year = int(time.strftime('%y'))
             if panel.version_year == year:
@@ -156,10 +159,14 @@ def panel_update(id):
             else:
                 revision = 1
 
-            new_panel_version = PanelVersion(panel_name=panel.panel_name, version_year=year, version_revision=revision, active=True, transcripts=transcripts)
-            db.session.add(new_panel_version)
-            db.session.commit()
-            return redirect(url_for('panel', id=new_panel_version.id))
+            if update_panel_form.confirm.data:
+                new_panel_version = PanelVersion(panel_name=panel.panel_name, version_year=year, version_revision=revision, active=True, transcripts=transcripts)
+                db.session.add(new_panel_version)
+                db.session.commit()
+                return redirect(url_for('panel', id=new_panel_version.id))
+            else:
+                return render_template('panel_update_confirm.html', form=update_panel_form, panel=panel, year=year, revision=revision)
+
     return render_template('panel_update.html', form=update_panel_form, panel=panel)
 
 

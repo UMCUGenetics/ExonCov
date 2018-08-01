@@ -125,6 +125,7 @@ class PanelVersion(db.Model):
     version_year = db.Column(db.Integer, index=True)
     version_revision = db.Column(db.Integer, index=True)
     active = db.Column(db.Boolean, index=True)
+    validated = db.Column(db.Boolean, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), index=True)
 
     panel = db.relationship('Panel', back_populates='versions')

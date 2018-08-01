@@ -1,0 +1,48 @@
+{% from "macros/forms.html" import render_field, render_inline_checkbox %}
+{% extends 'base.html' %}
+
+{% block header %}{{panel.panel_name}}v{{year}}.{{revision}}{% endblock %}
+
+{% block body %}
+
+<h2>Panel Gene list</h2>
+<div class="well">
+    <ul class="list-unstyled">
+        {% for transcript in form.transcripts %}
+        <li>{{transcript.gene}}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<h2>Added genes</h2>
+<div class="well">
+    <ul class="list-unstyled">
+        {% for transcript in form.transcripts %}
+        {% if transcript not in panel.transcripts %}
+        <li class="text-success"><strong>{{transcript.gene}}</strong></li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
+<h2>Removed genes</h2>
+<div class="well">
+    <ul class="list-unstyled">
+        {% for transcript in panel.transcripts %}
+        {% if transcript not in form.transcripts %}
+        <li class="strong text-danger"><strong>{{transcript.gene}}</strong></li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+
+<h2>Confirm panel update</h2>
+<div class="well">
+    <form method="POST" action="{{ url_for('panel_update', id=panel.id) }}" class="form-inline">
+        {{ form.csrf_token }}
+        {{ form.gene_list(rows="12", hidden=True) }}
+        {{ render_inline_checkbox(form.confirm) }}
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+{% endblock %}

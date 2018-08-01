@@ -4,7 +4,7 @@ import re
 from flask_wtf import FlaskForm
 from flask_security.forms import RegisterForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
-from wtforms.fields import SelectField, TextAreaField, StringField
+from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField
 from wtforms.validators import InputRequired
 from sqlalchemy import func
 
@@ -111,6 +111,8 @@ class CreatePanelForm(FlaskForm):
                     gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
                     if gene is None:
                         self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                    elif gene.default_transcript in self.transcripts:
+                        self.gene_list.errors.append('Multiple entries for gene: {0}'.format(gene_id))
                     else:
                         self.transcripts.append(gene.default_transcript)
 
@@ -129,6 +131,7 @@ class UpdatePanelForm(FlaskForm):
     """Update Panel form."""
 
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    confirm = BooleanField('Confirm')
     transcript = []  # Filled in validate function
 
     def validate(self):
@@ -147,6 +150,8 @@ class UpdatePanelForm(FlaskForm):
                     gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
                     if gene is None:
                         self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
+                    elif gene.default_transcript in self.transcripts:
+                        self.gene_list.errors.append('Multiple entries for gene: {0}'.format(gene_id))
                     else:
                         self.transcripts.append(gene.default_transcript)
 
