@@ -122,16 +122,24 @@ def sample_gene(sample_id, gene_id):
 @login_required
 def panels():
     """Panel overview page."""
-    panels = PanelVersion.query.options(joinedload('transcripts')).all()
+    panels = Panel.query.options(joinedload('versions')).all()
     return render_template('panels.html', panels=panels)
 
 
-@app.route('/panel/<int:id>')
+@app.route('/panel/<string:name>')
 @login_required
-def panel(id):
+def panel(name):
     """Panel page."""
-    panel = PanelVersion.query.get(id)
+    panel = Panel.query.filter_by(name=name).options(joinedload('versions')).first()
     return render_template('panel.html', panel=panel)
+
+
+@app.route('/panel_version/<int:id>')
+@login_required
+def panel_version(id):
+    """PanelVersion page."""
+    panel = PanelVersion.query.get(id)
+    return render_template('panel_version.html', panel=panel)
 
 
 @app.route('/panel/<int:id>/update', methods=['GET', 'POST'])

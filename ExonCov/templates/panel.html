@@ -1,9 +1,10 @@
 {% from "macros/forms.html" import render_sample_datatable_form %}
 {% extends 'base.html' %}
+
 {% block header %}
-Panel - {{ panel.name_version }}
+Panel - {{ panel.name }}
 {% if current_user.has_role('panel_admin') %}
-<small><a href="{{ url_for('panel_update', id=panel.id) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+<small><a href=""><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
 {% endif %}
 {% endblock %}
 
@@ -13,23 +14,19 @@ Panel - {{ panel.name_version }}
 <table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
-            <th>Transcript</th>
-            <th>Gene</th>
-            <th>Chr</th>
-            <th>Start</th>
-            <th>End</th>
-            <th># Exons</th>
+            <th>Version</th>
+            <th># Genes</th>
+            <th>Active</th>
+            <th>Validated</th>
         </tr>
     </thead>
     <tbody>
-        {% for transcript in panel.transcripts %}
+        {% for panel_version in panel.versions %}
         <tr>
-            <td>{{ transcript.name }}</td>
-            <td>{{ transcript.gene.id }}</td>
-            <td>{{ transcript.chr }}</td>
-            <td>{{ transcript.start }}</td>
-            <td>{{ transcript.end }}</td>
-            <td>{{ transcript.exon_count }}</td>
+            <td><a href="{{ url_for('panel_version', id=panel_version.id) }}">{{ panel_version }}</a></td>
+            <td>{{ panel_version.gene_count }}</td>
+            <td>{{ panel_version.active }}</td>
+            <td>{{ panel_version.validated }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -42,7 +39,7 @@ Panel - {{ panel.name_version }}
         var dataTable = $('#data_table').DataTable( {
             "paging": false,
             "info": false,
-            "order": [[ 1, 'asc' ]],
+            "order": [[ 0, 'desc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         });
 

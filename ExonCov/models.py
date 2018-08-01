@@ -107,13 +107,17 @@ class Panel(db.Model):
 
     name = db.Column(db.String(50), primary_key=True)
 
-    versions = db.relationship('PanelVersion', back_populates='panel')
+    versions = db.relationship('PanelVersion', back_populates='panel', order_by="PanelVersion.id")
 
     def __repr__(self):
         return "Panel({0})".format(self.name)
 
     def __str__(self):
         return "{0}".format(self.name)
+
+    @hybrid_property
+    def last_version(self):
+        return self.versions[-1]
 
 
 class PanelVersion(db.Model):
@@ -124,12 +128,12 @@ class PanelVersion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     version_year = db.Column(db.Integer, index=True)
     version_revision = db.Column(db.Integer, index=True)
-    active = db.Column(db.Boolean, index=True)
-    validated = db.Column(db.Boolean, index=True)
+    active = db.Column(db.Boolean, index=True, default=False)
+    validated = db.Column(db.Boolean, index=True, default=False)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
-    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
+    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels', lazy='joined')  # Check query speed!
 
     def __repr__(self):
         return "PanelVersion({0})".format(self.name_version)
@@ -296,7 +300,6 @@ class User(db.Model, UserMixin):
             self.last_name,
             self.email
         )
-
 
 
 class Role(db.Model, RoleMixin):

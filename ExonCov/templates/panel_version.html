@@ -1,29 +1,37 @@
 {% from "macros/forms.html" import render_sample_datatable_form %}
 {% extends 'base.html' %}
 
-{% block header %}Gene panels{% endblock %}
+{% block header %}
+Panel - {{ panel.name_version }}
+{% endblock %}
 
 {% block body %}
-
 {{ render_sample_datatable_form(filter=false) }}
 
 <table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
-            <th>Gene panel</th>
-            <th>Last version</th>
+            <th>Transcript</th>
+            <th>Gene</th>
+            <th>Chr</th>
+            <th>Start</th>
+            <th>End</th>
+            <th># Exons</th>
         </tr>
     </thead>
     <tbody>
-        {% for panel in panels %}
+        {% for transcript in panel.transcripts %}
         <tr>
-            <td><a href="{{ url_for('panel', name=panel.name) }}">{{ panel.name }}</a></td>
-            <td><a href="{{ url_for('panel_version', id=panel.last_version.id) }}">{{ panel.last_version }}</a></td>
+            <td>{{ transcript.name }}</td>
+            <td>{{ transcript.gene.id }}</td>
+            <td>{{ transcript.chr }}</td>
+            <td>{{ transcript.start }}</td>
+            <td>{{ transcript.end }}</td>
+            <td>{{ transcript.exon_count }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
 {% endblock %}
 
 {% block custom_javascript %}
@@ -32,7 +40,7 @@
         var dataTable = $('#data_table').DataTable( {
             "paging": false,
             "info": false,
-            "order": [[ 0, 'asc' ]],
+            "order": [[ 1, 'asc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
         });
 
