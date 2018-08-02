@@ -1,10 +1,11 @@
 {% from "macros/forms.html" import render_sample_datatable_form %}
+{% from "macros/typography.html" import render_bool_glyph %}
 {% extends 'base.html' %}
 
 {% block header %}
-Panel - {{ panel.name }}
+Gene panel - {{ panel.name }}
 {% if current_user.has_role('panel_admin') %}
-<small><a href=""><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+<small><a href="{{ url_for('panel_update', name=panel.name) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
 {% endif %}
 {% endblock %}
 
@@ -25,8 +26,8 @@ Panel - {{ panel.name }}
         <tr>
             <td><a href="{{ url_for('panel_version', id=panel_version.id) }}">{{ panel_version }}</a></td>
             <td>{{ panel_version.gene_count }}</td>
-            <td>{{ panel_version.active }}</td>
-            <td>{{ panel_version.validated }}</td>
+            <td>{{ render_bool_glyph(panel_version.active) }}</td>
+            <td>{{ render_bool_glyph(panel_version.validated) }}</td>
         </tr>
         {% endfor %}
     </tbody>

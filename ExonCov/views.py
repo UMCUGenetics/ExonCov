@@ -134,48 +134,42 @@ def panel(name):
     return render_template('panel.html', panel=panel)
 
 
-@app.route('/panel_version/<int:id>')
-@login_required
-def panel_version(id):
-    """PanelVersion page."""
-    panel = PanelVersion.query.get(id)
-    return render_template('panel_version.html', panel=panel)
-
-
-@app.route('/panel/<int:id>/update', methods=['GET', 'POST'])
+@app.route('/panel/<string:name>/update', methods=['GET', 'POST'])
 @login_required
 @roles_required('panel_admin')
-def panel_update(id):
-    """Panel page."""
-    panel = PanelVersion.query.get(id)
-    genes = '\n'.join([transcript.gene_id for transcript in panel.transcripts])
+def panel_update(name):
+    """Update panel page."""
+    panel = Panel.query.filter_by(name=name).first()
+    panel_last_version = panel.last_version
+
+    genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
     update_panel_form = UpdatePanelForm(gene_list=genes)
 
     if update_panel_form.validate_on_submit():
         transcripts = update_panel_form.transcripts
 
         # Check for panel changes
-        if sorted(transcripts) == sorted(panel.transcripts):
+        if sorted(transcripts) == sorted(panel_last_version.transcripts):
             update_panel_form.gene_list.errors.append('No changes.')
 
         else:
             # Create new panel if confirmed or show confirm page.
             # Determine version number
             year = int(time.strftime('%y'))
-            if panel.version_year == year:
-                revision = panel.version_revision + 1
+            if panel_last_version.version_year == year:
+                revision = panel_last_version.version_revision + 1
             else:
                 revision = 1
 
             if update_panel_form.confirm.data:
-                new_panel_version = PanelVersion(panel_name=panel.panel_name, version_year=year, version_revision=revision, active=True, transcripts=transcripts)
-                db.session.add(new_panel_version)
+                panel_new_version = PanelVersion(panel_name=panel.name, version_year=year, version_revision=revision, active=True, transcripts=transcripts)
+                db.session.add(panel_new_version)
                 db.session.commit()
-                return redirect(url_for('panel', id=new_panel_version.id))
+                return redirect(url_for('panel', name=panel.name))
             else:
-                return render_template('panel_update_confirm.html', form=update_panel_form, panel=panel, year=year, revision=revision)
+                return render_template('panel_update_confirm.html', form=update_panel_form, panel=panel_last_version, year=year, revision=revision)
 
-    return render_template('panel_update.html', form=update_panel_form, panel=panel)
+    return render_template('panel_update.html', form=update_panel_form, panel=panel_last_version)
 
 
 @app.route('/panel/new', methods=['GET', 'POST'])
@@ -195,8 +189,16 @@ def panel_new():
         db.session.add(new_panel)
         db.session.add(new_panel_version)
         db.session.commit()
-        return redirect(url_for('panel', id=new_panel_version.id))
+        return redirect(url_for('panel', name=new_panel.name))
     return render_template('panel_new.html', form=new_panel_form)
+
+
+@app.route('/panel_version/<int:id>')
+@login_required
+def panel_version(id):
+    """PanelVersion page."""
+    panel = PanelVersion.query.get(id)
+    return render_template('panel_version.html', panel=panel)
 
 
 @app.route('/panel/custom', methods=['GET'])
