@@ -5,9 +5,68 @@ import re
 import time
 
 from flask_script import Command, Option
+from flask_security.utils import encrypt_password
 
-from . import db, utils
-from .models import Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
+from . import db, utils, user_datastore
+from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
+
+
+# DB CLI
+class Drop(Command):
+    """Drop database."""
+
+    def run(self):
+        db.drop_all()
+
+
+class Create(Command):
+    """Create database tables."""
+
+    def run(self):
+        db.create_all()
+
+        # Create admin role and first user
+        site_admin_role = Role(name='site_admin')
+        db.session.add(site_admin_role)
+        panel_admin_role = Role(name='panel_admin')
+        db.session.add(panel_admin_role)
+
+        db.session.commit()
+
+        admin = user_datastore.create_user(
+            first_name='First',
+            last_name='Admin',
+            email='admin@admin.nl',
+            password=encrypt_password('admin'),
+            active=True,
+            roles=[site_admin_role, panel_admin_role]
+        )
+        admin.active = True
+        db.session.add(admin)
+        db.session.commit()
+
+
+class Reset(Command):
+    """Reset (drop and create) database tables."""
+
+    def run(self):
+        drop = Drop()
+        drop.run()
+
+        create = Create()
+        create.run()
+
+
+class PrintStats(Command):
+    """Print database stats."""
+
+    def run(self):
+        """Run function."""
+        print "Number of genes: {0}".format(Gene.query.count())
+        print "Number of transcripts: {0}".format(Transcript.query.count())
+        print "Number of exons: {0}".format(Exon.query.count())
+        print "Number of panels: {0}".format(Panel.query.count())
+        print "Number of samples: {0}".format(Sample.query.count())
 
 
 class LoadDesign(Command):
@@ -164,6 +223,7 @@ class LoadDesign(Command):
         db.session.commit()
 
 
+# Sample CLI
 class LoadSample(Command):
     """Load sample from exoncov file."""
 
@@ -269,15 +329,3 @@ class LoadSample(Command):
             for i in range(0, len(transcript_values), bulk_insert_n):
                 db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
                 db.session.commit()
-
-
-class PrintStats(Command):
-    """Print database stats."""
-
-    def run(self):
-        """Run function."""
-        print "Number of genes: {0}".format(Gene.query.count())
-        print "Number of transcripts: {0}".format(Transcript.query.count())
-        print "Number of exons: {0}".format(Exon.query.count())
-        print "Number of panels: {0}".format(Panel.query.count())
-        print "Number of samples: {0}".format(Sample.query.count())
