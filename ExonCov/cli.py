@@ -6,6 +6,7 @@ import time
 
 from flask_script import Command, Option
 from flask_security.utils import encrypt_password
+from sqlalchemy.orm.exc import NoResultFound
 
 from . import db, utils, user_datastore
 from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
@@ -224,6 +225,48 @@ class LoadDesign(Command):
 
 
 # Sample CLI
+class ImportBam(Command):
+    """Import sample from bam file."""
+
+    option_list = (
+        Option('bam_file'),
+    )
+
+    def run(self, bam_file):
+        print bam_file
+
+        # TODO: implement function
+        #   Parse bam header to get sample meta information.
+        #       run name, sequencer, sample_name, more?
+        #   Run sambamba or samtools
+        #       Compare speed
+        #       Outpit exoncov file or read+write immediately to database?
+
+
+class RemoveSample(Command):
+    """Remove sample from database."""
+
+    option_list = (
+        Option('sample_name'),
+        Option('sequencing_run_name'),
+    )
+
+    def run(self, sample_name, sequencing_run_name):
+        try:
+            sequencing_run = SequencingRun.query.filter_by(name=sequencing_run_name).one()
+        except NoResultFound:
+            sys.exit("Sequencing run not found in the database.")
+
+        try:
+            sample = Sample.query.filter_by(name=sample_name).filter_by(sequencing_run=sequencing_run).one()
+        except NoResultFound:
+            sys.exit("Sample and Sequencing run combination not found in the database.")
+
+        db.session.delete(sample)
+        db.session.commit()
+
+
+
 class LoadSample(Command):
     """Load sample from exoncov file."""
 

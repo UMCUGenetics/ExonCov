@@ -133,7 +133,7 @@ class PanelVersion(db.Model):
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
-    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels', lazy='joined')  # Check query speed!
+    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels', lazy='joined')  # TODO Check query speed!
 
     def __repr__(self):
         return "PanelVersion({0})".format(self.name_version)
@@ -168,8 +168,8 @@ class Sample(db.Model):
     sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'), index=True)
 
     sequencing_run = db.relationship('SequencingRun', back_populates='samples', lazy='joined')
-    exon_measurements = db.relationship('ExonMeasurement', back_populates='sample')
-    transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='sample')
+    exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
+    transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
 
     __table_args__ = (
         UniqueConstraint('name', 'sequencing_run_id'),
