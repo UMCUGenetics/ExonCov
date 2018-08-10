@@ -241,21 +241,37 @@ class ImportBam(Command):
         except IOError as e:
             sys.exit(e)
 
-        sample = None
-        platform_units = None
+        sample_name = None
+        sequencing_runs = {}
+        sequencing_run_ids = []
         exon_measurements = []
 
         # Parse read groups
         for read_group in bam_file.header['RG']:
-            if not sample:
-                sample = read_group['SM']
-            elif sample != read_group['SM']:
+            if not sample_name:
+                sample_name = read_group['SM']
+            elif sample_name != read_group['SM']:
                 sys.exit("Exoncov does not support bam files containing multiple samples.")
 
-            if not platform_units:
-                platform_units = read_group['PU']
-            elif read_group['PU'] not in platform_units:
-                platform_units = '{0};{1}'.format(platform_units, read_group['PU'])
+            if read_group['PU'] not in sequencing_runs:
+                sequencing_run = utils.get_one_or_create(
+                    db.session,
+                    SequencingRun,
+                    name=read_group['PU'],
+                    platform_unit=read_group['PU']
+                )[0]  # returns object and exists bool
+                sequencing_runs[read_group['PU']] = sequencing_run
+                sequencing_run_ids.append(sequencing_run.id)
+        bam_file.close()
+
+        # Create sample
+        sample = Sample.query.filter_by(name=sample_name).filter(Sample.sequencing_runs.any(SequencingRun.id.in_(sequencing_run_ids))).first()   # TODO: Make sure to only find sample if it is connected to all sequencing runs.
+        if not sample:
+            sample = Sample(name=sample_name, file_name=bam, sequencing_runs=sequencing_runs.values())
+            db.session.add(sample)
+            db.session.commit()
+        else:
+            sys.exit("ERROR: Sample and run combination already exists.")
 
         # Run sambamba
         sambamba_command = "{sambamba} depth region {bam_file} -m -q 10 -F '{filter}' -L {bed_file} {T_settings}".format(

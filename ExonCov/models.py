@@ -199,7 +199,8 @@ class SequencingRun(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
-    sequencer = db.Column(db.String(50), index=True)
+    sequencer = db.Column(db.String(50), index=True)  # NOTE: Do we need this?
+    platform_unit = db.Column(db.String(50), index=True)
 
     def __repr__(self):
         return "SequencingRun({0})".format(self.name)
