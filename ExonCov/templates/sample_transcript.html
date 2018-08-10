@@ -8,8 +8,8 @@
 <div class="well">
     <dl class="dl-horizontal">
         <dt>Sample</dt><dd>{{ sample.name }}</dd>
-        <dt>Sequencing run</dt><dd>{{ sample.sequencing_run.name }}</dd>
-        <dt>Sequencer</dt><dd>{{ sample.sequencing_run.sequencer }}</dd>
+        <dt>Sequencing run</dt><dd>{{ sample.sequencing_runs }}</dd>
+        <dt>Sequencer</dt><dd>{{ sample.sequencing_runs }}</dd>
         <dt>Transcript</dt><dd>{{ transcript.name }}</dd>
         <dt>Gene</dt><dd><a href="{{ url_for('sample_gene', sample_id=sample.id, gene_id=transcript.gene_id) }}">{{ transcript.gene_id }}</a></dd>
     </dl>

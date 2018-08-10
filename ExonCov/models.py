@@ -28,6 +28,12 @@ roles_users = db.Table(
     db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
 )
 
+samples_sequencingRun = db.Table(
+    'samples_sequencingRun',
+    db.Column('sample_id', db.Integer, db.ForeignKey('samples.id')),
+    db.Column('sequencingRun_id', db.Integer, db.ForeignKey('sequencing_runs.id'))
+)
+
 
 class Exon(db.Model):
     """Exon class."""
@@ -163,18 +169,21 @@ class Sample(db.Model):
     __tablename__ = 'samples'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), index=True)
-    import_date = db.Column(db.Date, default=datetime.date.today)
-    sequencing_run_id = db.Column(db.Integer, db.ForeignKey('sequencing_runs.id'), index=True)
+    name = db.Column(db.String(255), index=True)
+    import_date = db.Column(db.Date, default=datetime.date.today, index=True)
+    file_name = db.Column(db.String(255))
 
-    sequencing_run = db.relationship('SequencingRun', back_populates='samples', lazy='joined')
     exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
-
-    __table_args__ = (
-        UniqueConstraint('name', 'sequencing_run_id'),
-        Index('sample_run', 'name', 'sequencing_run_id')
+    sequencing_runs = db.relationship(
+        'SequencingRun', secondary=samples_sequencingRun,
+        backref=db.backref('samples', lazy='joined')
     )
+
+    # __table_args__ = (
+    #     UniqueConstraint('name', 'sequencing_run_id'),
+    #     Index('sample_run', 'name', 'sequencing_run_id')
+    # )
 
     def __repr__(self):
         return "Sample({0})".format(self.name)
@@ -191,8 +200,6 @@ class SequencingRun(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
     sequencer = db.Column(db.String(50), index=True)
-
-    samples = db.relationship('Sample', back_populates='sequencing_run')
 
     def __repr__(self):
         return "SequencingRun({0})".format(self.name)

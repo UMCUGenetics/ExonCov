@@ -102,13 +102,13 @@ class ExonAdminView(CustomModelView):
 
 class SampleAdminView(CustomModelView):
     """Sample admin view."""
-    column_list = ['name', 'sequencing_run', 'import_date']
+    column_list = ['name', 'sequencing_runs', 'import_date']
     column_sortable_list = ['name', 'import_date']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'sequencing_run', 'import_date']
+    form_columns = ['name', 'sequencing_runs', 'import_date']
     form_ajax_refs = {
-        'sequencing_run': {
+        'sequencing_runs': {
             'fields': ['name'],
             'page_size': 10
         },

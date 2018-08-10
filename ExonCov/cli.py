@@ -3,12 +3,15 @@
 import sys
 import re
 import time
+import subprocess
+import shlex
 
 from flask_script import Command, Option
 from flask_security.utils import encrypt_password
 from sqlalchemy.orm.exc import NoResultFound
+import pysam
 
-from . import db, utils, user_datastore
+from . import app, db, utils, user_datastore
 from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
 
 
@@ -229,18 +232,115 @@ class ImportBam(Command):
     """Import sample from bam file."""
 
     option_list = (
-        Option('bam_file'),
+        Option('bam'),
     )
 
-    def run(self, bam_file):
-        print bam_file
+    def run(self, bam):
+        try:
+            bam_file = pysam.AlignmentFile(bam, "rb")
+        except IOError as e:
+            sys.exit(e)
 
-        # TODO: implement function
-        #   Parse bam header to get sample meta information.
-        #       run name, sequencer, sample_name, more?
-        #   Run sambamba or samtools
-        #       Compare speed
-        #       Outpit exoncov file or read+write immediately to database?
+        sample = None
+        platform_units = None
+        exon_measurements = []
+
+        # Parse read groups
+        for read_group in bam_file.header['RG']:
+            if not sample:
+                sample = read_group['SM']
+            elif sample != read_group['SM']:
+                sys.exit("Exoncov does not support bam files containing multiple samples.")
+
+            if not platform_units:
+                platform_units = read_group['PU']
+            elif read_group['PU'] not in platform_units:
+                platform_units = '{0};{1}'.format(platform_units, read_group['PU'])
+
+        # Run sambamba
+        sambamba_command = "{sambamba} depth region {bam_file} -m -q 10 -F '{filter}' -L {bed_file} {T_settings}".format(
+            sambamba=app.config['SAMBAMBA'],
+            bam_file=bam,
+            filter=app.config['SAMBAMBA_FILTER'],
+            bed_file=app.config['SAMBAMBA_BED'],
+            T_settings='-T 10 -T 15 -T 20 -T 30 -T 50 -T 100',
+        )
+        p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
+
+        for line in p.stdout:
+            # Header
+            if line.startswith('#'):
+                header = line.rstrip().split('\t')
+                measurement_mean_coverage_index = header.index('meanCoverage')
+                measurement_percentage10_index = header.index('percentage10')
+                measurement_percentage15_index = header.index('percentage15')
+                measurement_percentage20_index = header.index('percentage20')
+                measurement_percentage30_index = header.index('percentage30')
+                measurement_percentage50_index = header.index('percentage50')
+                measurement_percentage100_index = header.index('percentage100')
+
+            # Measurement
+            else:
+                data = line.rstrip().split('\t')
+                chr, start, end = data[:3]
+                measurement_mean_coverage = data[measurement_mean_coverage_index]
+                measurement_percentage10 = data[measurement_percentage10_index]
+                measurement_percentage15 = data[measurement_percentage15_index]
+                measurement_percentage20 = data[measurement_percentage20_index]
+                measurement_percentage30 = data[measurement_percentage30_index]
+                measurement_percentage50 = data[measurement_percentage50_index]
+                measurement_percentage100 = data[measurement_percentage100_index]
+
+                exon_measurements.append({
+                    'sample_id': sample.id,
+                    'exon_id': '{0}_{1}_{2}'.format(chr, start, end),
+                    'measurement_mean_coverage': measurement_mean_coverage,
+                    'measurement_percentage10': measurement_percentage10,
+                    'measurement_percentage15': measurement_percentage15,
+                    'measurement_percentage20': measurement_percentage20,
+                    'measurement_percentage30': measurement_percentage30,
+                    'measurement_percentage50': measurement_percentage50,
+                    'measurement_percentage100': measurement_percentage100,
+                })
+
+            # Bulk insert exons measurements
+            bulk_insert_n = 5000
+            for i in range(0, len(exon_measurements), bulk_insert_n):
+                db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements[i:i+bulk_insert_n])
+                db.session.commit()
+
+            db.session.commit()
+
+            # Set transcript measurements
+            query = db.session.query(Transcript.id, Exon.len, ExonMeasurement).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=sample.id).all()
+            transcripts = {}
+
+            for transcript_id, exon_len, exon_measurement in query:
+                if transcript_id not in transcripts:
+                    transcripts[transcript_id] = {
+                        'len': exon_len,
+                        'transcript_id': transcript_id,
+                        'sample_id': sample.id,
+                        'measurement_mean_coverage': exon_measurement.measurement_mean_coverage,
+                        'measurement_percentage10': exon_measurement.measurement_percentage10,
+                        'measurement_percentage15': exon_measurement.measurement_percentage15,
+                        'measurement_percentage20': exon_measurement.measurement_percentage20,
+                        'measurement_percentage30': exon_measurement.measurement_percentage30,
+                        'measurement_percentage50': exon_measurement.measurement_percentage50,
+                        'measurement_percentage100': exon_measurement.measurement_percentage100,
+                    }
+                else:
+                    measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
+                    for measurement_type in measurement_types:
+                        transcripts[transcript_id][measurement_type] = ((transcripts[transcript_id]['len'] * transcripts[transcript_id][measurement_type]) + (exon_len * exon_measurement[measurement_type])) / (transcripts[transcript_id]['len'] + exon_len)
+                    transcripts[transcript_id]['len'] += exon_len
+
+            # Bulk insert transcript measurements
+            bulk_insert_n = 5000
+            transcript_values = transcripts.values()
+            for i in range(0, len(transcript_values), bulk_insert_n):
+                db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
+                db.session.commit()
 
 
 class RemoveSample(Command):
@@ -266,7 +366,6 @@ class RemoveSample(Command):
         db.session.commit()
 
 
-
 class LoadSample(Command):
     """Load sample from exoncov file."""
 
@@ -286,9 +385,10 @@ class LoadSample(Command):
             sequencer=sequencer
         )[0]  # returns object and exists bool
 
-        sample = Sample.query.filter_by(name=sample_name).filter_by(sequencing_run=sequencing_run).first()
+        sample = Sample.query.filter_by(name=sample_name).filter(Sample.sequencing_runs.any(SequencingRun.id == sequencing_run.id)).first()
         if not sample:
-            sample = Sample(name=sample_name, sequencing_run=sequencing_run)
+            sample = Sample(name=sample_name, file_name=exoncov_file)
+            sample.sequencing_runs.append(sequencing_run)
             db.session.add(sample)
             db.session.commit()
         else:
@@ -366,7 +466,7 @@ class LoadSample(Command):
                         transcripts[transcript_id][measurement_type] = ((transcripts[transcript_id]['len'] * transcripts[transcript_id][measurement_type]) + (exon_len * exon_measurement[measurement_type])) / (transcripts[transcript_id]['len'] + exon_len)
                     transcripts[transcript_id]['len'] += exon_len
 
-            # Bulk insert exons measurements
+            # Bulk insert transcript measurements
             bulk_insert_n = 5000
             transcript_values = transcripts.values()
             for i in range(0, len(transcript_values), bulk_insert_n):
