@@ -8,11 +8,11 @@ import shlex
 
 from flask_script import Command, Option
 from flask_security.utils import encrypt_password
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import func
 import pysam
 
 from . import app, db, utils, user_datastore
-from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
+from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion
 
 
 # DB CLI
@@ -233,9 +233,11 @@ class ImportBam(Command):
 
     option_list = (
         Option('bam'),
+        Option('-s', '--sequencing_run_name', dest='sequencing_run_name'),
+        Option('-o', '--overwrite', dest='overwrite', default=False, action='store_true')
     )
 
-    def run(self, bam):
+    def run(self, bam, sequencing_run_name, overwrite=False):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -254,26 +256,41 @@ class ImportBam(Command):
                 sys.exit("Exoncov does not support bam files containing multiple samples.")
 
             if read_group['PU'] not in sequencing_runs:
-                sequencing_run = utils.get_one_or_create(
-                    db.session,
-                    SequencingRun,
-                    name=read_group['PU'],
-                    platform_unit=read_group['PU']
-                )[0]  # returns object and exists bool
+                if sequencing_run_name:
+                    sequencing_run, sequencing_run_exists = utils.get_one_or_create(
+                        db.session,
+                        SequencingRun,
+                        name=read_group['PU'],
+                        platform_unit=sequencing_run_name
+                    )  # returns object and exists bool
+                else:
+                    sequencing_run, sequencing_run_exists = utils.get_one_or_create(
+                        db.session,
+                        SequencingRun,
+                        name=read_group['PU'],
+                        platform_unit=read_group['PU']
+                    )  # returns object and exists bool
+
                 sequencing_runs[read_group['PU']] = sequencing_run
                 sequencing_run_ids.append(sequencing_run.id)
         bam_file.close()
 
         # Create sample
-        sample = Sample.query.filter_by(name=sample_name).filter(Sample.sequencing_runs.any(SequencingRun.id.in_(sequencing_run_ids))).first()   # TODO: Make sure to only find sample if it is connected to all sequencing runs.
-        if not sample:
-            sample = Sample(name=sample_name, file_name=bam, sequencing_runs=sequencing_runs.values())
-            db.session.add(sample)
+        sample = Sample.query.filter_by(name=sample_name).join(samples_sequencingRun).filter(SequencingRun.id.in_(sequencing_run_ids)).group_by(Sample).having(len(sequencing_run_ids) == func.count(samples_sequencingRun.c.sequencingRun_id)).first()
+
+        if sample and overwrite:
+            db.session.delete(sample)
             db.session.commit()
-        else:
-            sys.exit("ERROR: Sample and run combination already exists.")
+
+        elif sample and not overwrite:
+            sys.exit("ERROR: Sample and run(s) combination already exists.")
+
+        sample = Sample(name=sample_name, file_name=bam, sequencing_runs=sequencing_runs.values())
+        db.session.add(sample)
+        db.session.commit()
 
         # Run sambamba
+        # TODO: Add multithreading
         sambamba_command = "{sambamba} depth region {bam_file} -m -q 10 -F '{filter}' -L {bed_file} {T_settings}".format(
             sambamba=app.config['SAMBAMBA'],
             bam_file=bam,
@@ -357,26 +374,39 @@ class ImportBam(Command):
             for i in range(0, len(transcript_values), bulk_insert_n):
                 db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
                 db.session.commit()
+            db.session.commit()
+
+
+class SearchSample(Command):
+    """Remove sample from database."""
+
+    option_list = (
+        Option('sample_name'),
+    )
+
+    def run(self, sample_name):
+        samples = Sample.query.filter_by(name=sample_name).all()
+
+        print "Sample ID\tSample Name\tSequencing Runs"
+        for sample in samples:
+            print "{id}\t{name}\t{runs}".format(
+                id=sample.id,
+                name=sample.name,
+                runs=sample.sequencing_runs
+            )
 
 
 class RemoveSample(Command):
     """Remove sample from database."""
 
     option_list = (
-        Option('sample_name'),
-        Option('sequencing_run_name'),
+        Option('sample_id'),
     )
 
-    def run(self, sample_name, sequencing_run_name):
-        try:
-            sequencing_run = SequencingRun.query.filter_by(name=sequencing_run_name).one()
-        except NoResultFound:
-            sys.exit("Sequencing run not found in the database.")
-
-        try:
-            sample = Sample.query.filter_by(name=sample_name).filter_by(sequencing_run=sequencing_run).one()
-        except NoResultFound:
-            sys.exit("Sample and Sequencing run combination not found in the database.")
+    def run(self, sample_id):
+        sample = Sample.query.get(sample_id)
+        if not sample:
+            sys.exit("Sample not found in the database.")
 
         db.session.delete(sample)
         db.session.commit()
@@ -455,7 +485,6 @@ class LoadSample(Command):
             for i in range(0, len(exon_measurements), bulk_insert_n):
                 db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements[i:i+bulk_insert_n])
                 db.session.commit()
-
             db.session.commit()
 
             # Set transcript measurements
@@ -488,3 +517,4 @@ class LoadSample(Command):
             for i in range(0, len(transcript_values), bulk_insert_n):
                 db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
                 db.session.commit()
+            db.session.commit()
