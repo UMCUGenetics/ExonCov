@@ -5,11 +5,12 @@ import time
 
 from flask import render_template, request, redirect, url_for
 from flask_security import login_required, roles_required
+from flask_login import current_user
 from sqlalchemy.orm import joinedload
 
 from ExonCov import app, db
-from .models import Sample, SequencingRun, PanelVersion, Panel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm, SampleForm, CreatePanelForm, UpdatePanelForm
+from .models import Sample, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .forms import CustomPanelForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm
 
 
 @app.route('/')
@@ -201,79 +202,98 @@ def panel_version(id):
     return render_template('panel_version.html', panel=panel)
 
 
-@app.route('/panel/custom', methods=['GET'])
+@app.route('/panel/custom', methods=['GET', 'POST'])
 @login_required
-def custom_panel():
+def custom_panel_new():
+    """New custom panel page."""
+    # TODO: Page layout
+    custom_panel_form = CustomPanelNewForm()
+
+    if custom_panel_form.validate_on_submit():
+        custom_panel = CustomPanel(
+            user=current_user,
+            transcripts=custom_panel_form.transcripts,
+            samples=custom_panel_form.data['samples']
+        )
+        db.session.add(custom_panel)
+        db.session.commit()
+        return redirect(url_for('custom_panel', id=custom_panel.id))
+
+    return render_template('custom_panel_new.html', form=custom_panel_form)
+
+
+@app.route('/panel/custom/<int:id>', methods=['GET', 'POST'])
+@login_required
+def custom_panel(id):
     """Custom panel page."""
-    custom_panel_form = CustomPanelForm(request.args, meta={'csrf': False})
-    samples = []
-    sample_ids = []
-    measurement_type = []
+    # TODO: Check query speed
+    # TODO: Page layout
+    custom_panel = CustomPanel.query.get(id)
+    custom_panel_form = CustomPanelForm()
+
+    sample_ids = [sample.id for sample in custom_panel.samples]
+    transcript_ids = [transcript.id for transcript in custom_panel.transcripts]
+    measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
+    transcript_measurements = {}
     panel_measurements = {}
-    transcript_measurements = {}
 
-    if request.args and custom_panel_form.validate():
-        samples = custom_panel_form.data['samples']
-        measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
-        transcript_ids = custom_panel_form.transcript_ids
-        sample_ids = [sample.id for sample in samples]
+    query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript')).all()
 
-        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript')).all()
-        for transcript_measurement in query:
-            sample = transcript_measurement.sample
-            transcript = transcript_measurement.transcript
+    for transcript_measurement in query:
+        sample = transcript_measurement.sample
+        transcript = transcript_measurement.transcript
 
-            # Store transcript_measurements per transcript and sample
-            if transcript not in transcript_measurements:
-                transcript_measurements[transcript] = {}
-            transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
+        # Store transcript_measurements per transcript and sample
+        if transcript not in transcript_measurements:
+            transcript_measurements[transcript] = {}
+        transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-            # Calculate weighted average per sample for entire panel
-            if sample not in panel_measurements:
-                panel_measurements[sample] = {
-                    'len': transcript_measurement.len,
-                    'measurement': transcript_measurement[measurement_type[0]]
-                }
-            else:
-                panel_measurements[sample]['measurement'] = ((panel_measurements[sample]['len'] * panel_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (panel_measurements[sample]['len'] + transcript_measurement.len)
-                panel_measurements[sample]['len'] += transcript_measurement.len
+        # Calculate weighted average per sample for entire panel
+        if sample not in panel_measurements:
+            panel_measurements[sample] = {
+                'len': transcript_measurement.len,
+                'measurement': transcript_measurement[measurement_type[0]]
+            }
+        else:
+            panel_measurements[sample]['measurement'] = ((panel_measurements[sample]['len'] * panel_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (panel_measurements[sample]['len'] + transcript_measurement.len)
+            panel_measurements[sample]['len'] += transcript_measurement.len
 
-        # Calculate min, mean, max
-        for transcript in transcript_measurements:
-            values = transcript_measurements[transcript].values()
-            transcript_measurements[transcript]['min'] = min(values)
-            transcript_measurements[transcript]['max'] = max(values)
-            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+    # Calculate min, mean, max
+    for transcript in transcript_measurements:
+        values = transcript_measurements[transcript].values()
+        transcript_measurements[transcript]['min'] = min(values)
+        transcript_measurements[transcript]['max'] = max(values)
+        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
 
-        values = [panel_measurements[sample]['measurement'] for sample in panel_measurements]
-        panel_measurements['min'] = min(values)
-        panel_measurements['max'] = max(values)
-        panel_measurements['mean'] = float(sum(values)) / len(values)
+    values = [panel_measurements[sample]['measurement'] for sample in panel_measurements]
+    panel_measurements['min'] = min(values)
+    panel_measurements['max'] = max(values)
+    panel_measurements['mean'] = float(sum(values)) / len(values)
 
-    return render_template('custom_panel.html', form=custom_panel_form, samples=samples, sample_ids=sample_ids, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
+    return render_template('custom_panel.html', form=custom_panel_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
 
 
-@app.route('/panel/custom/transcript/<string:transcript_name>', methods=['GET'])
+@app.route('/panel/custom/<int:id>/transcript/<string:transcript_name>', methods=['GET', 'POST'])
 @login_required
-def custom_panel_transcript(transcript_name):
+def custom_panel_transcript(id, transcript_name):
     """Custom panel transcript page."""
+    # TODO: Check query speed
+    # TODO: Page layout
+    custom_panel = CustomPanel.query.get(id)
+    custom_panel_form = CustomPanelForm()
+
+    sample_ids = [sample.id for sample in custom_panel.samples]
     transcript = Transcript.query.filter_by(name=transcript_name).first()
-    sample_ids = request.args.getlist('sample')
-    samples = []
-    measurement_type = request.args['measurement_type']
-    exon_measurements = OrderedDict()
+    measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
     transcript_measurements = {}
+    exon_measurements = OrderedDict()
 
     if sample_ids and measurement_type:
         # Get transcript measurements
         query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter_by(transcript_id=transcript.id).options(joinedload('sample')).all()
         for transcript_measurement in query:
             sample = transcript_measurement.sample
-            transcript_measurements[sample] = transcript_measurement[measurement_type]
-
-            # Store sample
-            if sample not in samples:
-                samples.append(sample)
+            transcript_measurements[sample] = transcript_measurement[measurement_type[0]]
 
         # Get exon measurements
         query = db.session.query(ExonMeasurement).join(Exon).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).filter(ExonMeasurement.sample_id.in_(sample_ids)).order_by(Exon.start).options(joinedload(ExonMeasurement.exon, innerjoin=True)).all()
@@ -284,7 +304,7 @@ def custom_panel_transcript(transcript_name):
             # Store exon_measurement per exon and sample
             if exon not in exon_measurements:
                 exon_measurements[exon] = {}
-            exon_measurements[exon][sample] = exon_measurement[measurement_type]
+            exon_measurements[exon][sample] = exon_measurement[measurement_type[0]]
 
         # Calculate min, mean, max
         values = transcript_measurements.values()
@@ -298,17 +318,21 @@ def custom_panel_transcript(transcript_name):
             exon_measurements[exon]['max'] = max(values)
             exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
 
-    return render_template('custom_panel_transcript.html', transcript=transcript, samples=samples, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
+    return render_template('custom_panel_transcript.html', form=custom_panel_form, transcript=transcript, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
 
 
-@app.route('/panel/custom/gene/<string:gene_id>', methods=['GET'])
+@app.route('/panel/custom/<int:id>/gene/<string:gene_id>', methods=['GET', 'POST'])
 @login_required
-def custom_panel_gene(gene_id):
+def custom_panel_gene(id, gene_id):
     """Custom panel gene page."""
+    # TODO: Check query speed
+    # TODO: Page layout
+    custom_panel = CustomPanel.query.get(id)
+    custom_panel_form = CustomPanelForm()
+
+    sample_ids = [sample.id for sample in custom_panel.samples]
     gene = Gene.query.get(gene_id)
-    sample_ids = request.args.getlist('sample')
-    samples = []
-    measurement_type = request.args['measurement_type']
+    measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
     transcript_measurements = {}
 
     if sample_ids and measurement_type:
@@ -319,10 +343,7 @@ def custom_panel_gene(gene_id):
 
             if transcript not in transcript_measurements:
                 transcript_measurements[transcript] = {}
-            transcript_measurements[transcript][sample] = transcript_measurement[measurement_type]
-
-            if sample not in samples:
-                samples.append(sample)
+            transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
         for transcript in transcript_measurements:
             values = transcript_measurements[transcript].values()
@@ -330,4 +351,4 @@ def custom_panel_gene(gene_id):
             transcript_measurements[transcript]['max'] = max(values)
             transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
 
-    return render_template('custom_panel_gene.html', gene=gene, samples=samples, sample_ids=sample_ids, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
+    return render_template('custom_panel_gene.html', form=custom_panel_form, gene=gene, samples=samples, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)

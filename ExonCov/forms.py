@@ -28,27 +28,18 @@ class SampleForm(FlaskForm):
     sample = StringField('Sample')
 
 
-class CustomPanelForm(FlaskForm):
-    """Custom Panel form."""
+class CustomPanelNewForm(FlaskForm):
+    """Custom Panel New form."""
 
     samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
-    panel = QuerySelectField('Panel', validators=[], query_factory=all_panels, allow_blank=True, blank_text='Custom panel')
+    panel = QuerySelectField('Panel', validators=[], query_factory=all_panels, allow_blank=True, blank_text='None')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
-    measurement_type = SelectField('Measurement type', default='measurement_percentage15', choices=[
-        ('measurement_percentage10', '>10'),
-        ('measurement_percentage15', '>15'),
-        ('measurement_percentage20', '>20'),
-        ('measurement_percentage30', '>30'),
-        ('measurement_percentage50', '>50'),
-        ('measurement_percentage100', '>100'),
-        ('measurement_mean_coverage', 'Mean coverage')
-    ])
-    transcript_ids = []  # Filled in validate function
+    transcripts = []  # Filled in validate function
 
     def validate(self):
         """Extra validation, used to validate gene list."""
         # Default validation as defined in field validators
-        self.transcript_ids = []  # Reset transcript_ids on validation
+        self.transcripts = []  # Reset transcripts on validation
 
         if not FlaskForm.validate(self):
             return False
@@ -62,7 +53,7 @@ class CustomPanelForm(FlaskForm):
         else:
             if self.panel.data:
                 # Get panel transcript_ids
-                self.transcript_ids.extend([transcript.id for transcript in self.panel.data.transcripts])
+                self.transcripts.extend([transcript for transcript in self.panel.data.transcripts])
 
             if self.gene_list.data:
                 # Parse gene_list
@@ -73,12 +64,26 @@ class CustomPanelForm(FlaskForm):
                         if gene is None:
                             self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
                         else:
-                            self.transcript_ids.append(gene.default_transcript_id)
+                            self.transcripts.append(gene.default_transcript)
 
                 if self.gene_list.errors:
                     return False
 
         return True
+
+
+class CustomPanelForm(FlaskForm):
+    """Custom Panel form."""
+
+    measurement_type = SelectField('Measurement type', default='measurement_percentage15', choices=[
+        ('measurement_percentage10', '>10'),
+        ('measurement_percentage15', '>15'),
+        ('measurement_percentage20', '>20'),
+        ('measurement_percentage30', '>30'),
+        ('measurement_percentage50', '>50'),
+        ('measurement_percentage100', '>100'),
+        ('measurement_mean_coverage', 'Mean coverage')
+    ])
 
 
 class ExtendedRegisterForm(RegisterForm):
