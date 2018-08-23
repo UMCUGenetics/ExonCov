@@ -180,11 +180,6 @@ class Sample(db.Model):
         backref=db.backref('samples', lazy='joined')
     )
 
-    # __table_args__ = (
-    #     UniqueConstraint('name', 'sequencing_run_id'),
-    #     Index('sample_run', 'name', 'sequencing_run_id')
-    # )
-
     def __repr__(self):
         return "Sample({0})".format(self.name)
 
