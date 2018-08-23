@@ -33,7 +33,7 @@ class CustomModelView(ModelView):
 
 class PanelAdminView(CustomModelView):
     """Panel admin view."""
-    column_list = ['name']
+    column_list = ['name', 'versions']
     column_searchable_list = ['name']
 
     form_columns = ['name']
@@ -43,7 +43,7 @@ class PanelVersionAdminView(CustomModelView):
     """Panel admin view."""
     column_searchable_list = ['panel_name']
 
-    form_columns = ['panel', 'version_year', 'version_revision', 'active', 'transcripts']
+    form_columns = ['panel', 'version_year', 'version_revision', 'active', 'validated', 'transcripts']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
@@ -78,7 +78,7 @@ class TranscriptAdminView(CustomModelView):
     column_searchable_list = ['name', 'gene_id']
     column_filters = ['chr', 'start', 'end']
 
-    form_columns = ['name', 'gene', 'exons', 'chr', 'start', 'end']  # Automatically set chr, start, end based on exons.
+    form_columns = ['name', 'gene', 'exons', 'chr', 'start', 'end']  # TODO:Automatically set chr, start, end based on exons.
     form_ajax_refs = {
         'gene': {
             'fields': ['id'],
@@ -106,7 +106,7 @@ class SampleAdminView(CustomModelView):
     column_sortable_list = ['name', 'import_date']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'sequencing_runs', 'import_date']
+    form_columns = ['name', 'sequencing_runs', 'import_date', 'file_name']
     form_ajax_refs = {
         'sequencing_runs': {
             'fields': ['name'],
@@ -117,11 +117,10 @@ class SampleAdminView(CustomModelView):
 
 class SequencingRunAdminView(CustomModelView):
     """SequencingRun admin view."""
-    column_list = ['name', 'sequencer']
-    column_sortable_list = ['name', 'sequencer']
-    column_searchable_list = ['name', 'sequencer']
+    column_list = ['name', 'platform_unit', 'sequencer']
+    column_searchable_list = ['name', 'platform_unit', 'sequencer']
 
-    form_columns = ['name', 'sequencer']
+    form_columns = ['name', 'platform_unit', 'sequencer']
     form_choices = {
         'sequencer': [
             ('nextseq_umc01', 'Nextseq UMC01'),
