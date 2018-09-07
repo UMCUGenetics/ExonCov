@@ -41,7 +41,7 @@ def samples():
 @login_required
 def sample(id):
     """Sample page."""
-    sample = Sample.query.get(id)
+    sample = Sample.query.get_or_404(id)
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
@@ -70,8 +70,8 @@ def sample(id):
 @login_required
 def sample_panel(sample_id, panel_id):
     """Sample panel page."""
-    sample = Sample.query.get(sample_id)
-    panel = PanelVersion.query.get(panel_id)
+    sample = Sample.query.get_or_404(sample_id)
+    panel = PanelVersion.query.get_or_404(panel_id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -87,7 +87,7 @@ def sample_panel(sample_id, panel_id):
 @login_required
 def sample_transcript(sample_id, transcript_name):
     """Sample transcript page."""
-    sample = Sample.query.get(sample_id)
+    sample = Sample.query.get_or_404(sample_id)
     transcript = Transcript.query.filter_by(name=transcript_name).first()
 
     measurement_types = {
@@ -105,8 +105,8 @@ def sample_transcript(sample_id, transcript_name):
 @login_required
 def sample_gene(sample_id, gene_id):
     """Sample gene page."""
-    sample = Sample.query.get(sample_id)
-    gene = Gene.query.get(gene_id)
+    sample = Sample.query.get_or_404(sample_id)
+    gene = Gene.query.get_or_404(gene_id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -198,7 +198,7 @@ def panel_new():
 @login_required
 def panel_version(id):
     """PanelVersion page."""
-    panel = PanelVersion.query.get(id)
+    panel = PanelVersion.query.get_or_404(id)
     return render_template('panel_version.html', panel=panel)
 
 
@@ -228,7 +228,7 @@ def custom_panel(id):
     """Custom panel page."""
     # TODO: Check query speed
     # TODO: Page layout
-    custom_panel = CustomPanel.query.get(id)
+    custom_panel = CustomPanel.query.get_or_404(id)
     custom_panel_form = CustomPanelForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
@@ -279,7 +279,7 @@ def custom_panel_transcript(id, transcript_name):
     """Custom panel transcript page."""
     # TODO: Check query speed
     # TODO: Page layout
-    custom_panel = CustomPanel.query.get(id)
+    custom_panel = CustomPanel.query.get_or_404(id)
     custom_panel_form = CustomPanelForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
@@ -327,11 +327,12 @@ def custom_panel_gene(id, gene_id):
     """Custom panel gene page."""
     # TODO: Check query speed
     # TODO: Page layout
-    custom_panel = CustomPanel.query.get(id)
+    custom_panel = CustomPanel.query.get_or_404(id)
+    gene = Gene.query.get_or_404(gene_id)
+
     custom_panel_form = CustomPanelForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
-    gene = Gene.query.get(gene_id)
     measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
     transcript_measurements = {}
 
