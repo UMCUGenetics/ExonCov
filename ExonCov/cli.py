@@ -233,11 +233,12 @@ class ImportBam(Command):
 
     option_list = (
         Option('bam'),
-        Option('-s', '--sequencing_run_name', dest='sequencing_run_name'),
+        Option('-s', '--sequencer', dest='sequencer', choices=app.config['SEQUENCERS']),
+        Option('-r', '--sequencing_run_name', dest='sequencing_run_name'),
         Option('-o', '--overwrite', dest='overwrite', default=False, action='store_true')
     )
 
-    def run(self, bam, sequencing_run_name, overwrite=False):
+    def run(self, bam, sequencing_run_name, sequencer, overwrite=False):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -260,8 +261,8 @@ class ImportBam(Command):
                     sequencing_run, sequencing_run_exists = utils.get_one_or_create(
                         db.session,
                         SequencingRun,
-                        name=read_group['PU'],
-                        platform_unit=sequencing_run_name
+                        name=sequencing_run_name,
+                        platform_unit=read_group['PU']
                     )  # returns object and exists bool
                 else:
                     sequencing_run, sequencing_run_exists = utils.get_one_or_create(
@@ -384,12 +385,13 @@ class SearchSample(Command):
     def run(self, sample_name):
         samples = Sample.query.filter_by(name=sample_name).all()
 
-        print "Sample ID\tSample Name\tSequencing Runs"
+        print "Sample ID\tSample Name\tSequencing Runs\tCustom Panels"
         for sample in samples:
-            print "{id}\t{name}\t{runs}".format(
+            print "{id}\t{name}\t{runs}\t{custom_panels}".format(
                 id=sample.id,
                 name=sample.name,
-                runs=sample.sequencing_runs
+                runs=sample.sequencing_runs,
+                custom_panels=sample.custom_panels,
             )
 
 
@@ -403,10 +405,14 @@ class RemoveSample(Command):
     def run(self, sample_id):
         sample = Sample.query.get(sample_id)
         if not sample:
-            sys.exit("Sample not found in the database.")
+            sys.exit("ERROR: Sample not found in the database.")
 
-        db.session.delete(sample)
-        db.session.commit()
+        elif sample.custom_panels:
+            sys.exit("ERROR: Sample is used in custom panels.")
+
+        else:
+            db.session.delete(sample)
+            db.session.commit()
 
 # TODO: Update code or remove and only support bam import?
 # class LoadSample(Command):

@@ -37,3 +37,6 @@ DEBUG_TB_INTERCEPT_REDIRECTS = False
 SAMBAMBA = 'test_files/sambamba_v0.6.6'
 SAMBAMBA_FILTER = 'mapping_quality >= 20 and not duplicate and not failed_quality_control and not secondary_alignment'
 SAMBAMBA_BED = 'test_files/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.brca.bed'
+
+# Sequencers
+SEQUENCERS = ['nextseq_umc01', 'nextseq_umc02', 'novaseq_umc01']

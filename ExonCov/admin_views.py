@@ -4,7 +4,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
 from . import db, admin
-from .models import Exon, Transcript, Gene, Panel, PanelVersion, Sample, SequencingRun, User, Role
+from .models import Exon, Transcript, Gene, Panel, PanelVersion, CustomPanel, Sample, SequencingRun, User, Role
 
 
 class CustomModelView(ModelView):
@@ -40,7 +40,7 @@ class PanelAdminView(CustomModelView):
 
 
 class PanelVersionAdminView(CustomModelView):
-    """Panel admin view."""
+    """Panel version admin view."""
     column_searchable_list = ['panel_name']
 
     form_columns = ['panel', 'version_year', 'version_revision', 'active', 'validated', 'transcripts']
@@ -50,6 +50,11 @@ class PanelVersionAdminView(CustomModelView):
             'page_size': 10
         }
     }
+
+
+class CustomPanelAdminView(CustomModelView):
+    """Custom panel admin view."""
+    column_list = ['user', 'samples', 'transcripts']
 
 
 class GeneAdminView(CustomModelView):
@@ -143,6 +148,7 @@ class UserAdmin(CustomModelView):
 # Link view classes and models
 admin.add_view(PanelAdminView(Panel, db.session))
 admin.add_view(PanelVersionAdminView(PanelVersion, db.session))
+admin.add_view(CustomPanelAdminView(CustomPanel, db.session))
 admin.add_view(GeneAdminView(Gene, db.session))
 admin.add_view(TranscriptAdminView(Transcript, db.session))
 admin.add_view(ExonAdminView(Exon, db.session))

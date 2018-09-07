@@ -233,7 +233,7 @@ class SequencingRun(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), index=True)
-    sequencer = db.Column(db.String(50), index=True)  # NOTE: Do we need this?
+    sequencer = db.Column(db.String(50), index=True)
     platform_unit = db.Column(db.String(50), index=True)
 
     def __repr__(self):
@@ -333,7 +333,7 @@ class User(db.Model, UserMixin):
 
     def __str__(self):
         """Return string representation."""
-        return self.email
+        return self.name_email
 
     @hybrid_property
     def name_email(self):
