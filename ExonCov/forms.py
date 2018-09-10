@@ -24,7 +24,7 @@ def all_panels():
 
 class SampleForm(FlaskForm):
     """Query samples by run or samplename field"""
-    run = StringField('Run')
+    run = StringField('Sequencing run')
     sample = StringField('Sample')
 
 
