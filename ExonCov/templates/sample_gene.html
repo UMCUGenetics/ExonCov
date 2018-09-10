@@ -8,8 +8,7 @@
 <div class="well">
     <dl class="dl-horizontal">
         <dt>Sample</dt><dd>{{ sample.name }}</dd>
-        <dt>Sequencing run</dt><dd>{{ sample.sequencing_runs }}</dd>
-        <dt>Sequencer</dt><dd>{{ sample.sequencing_runs }}</dd>
+        <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run.name }}</li>{% endfor %}</ul></dd>
         <dt>Gene</dt><dd>{{ gene.id }}</dd>
     </dl>
 </div>
