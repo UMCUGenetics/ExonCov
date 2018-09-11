@@ -124,14 +124,16 @@ def sample_gene(sample_id, gene_id):
 def panels():
     """Panel overview page."""
     panels = Panel.query.options(joinedload('versions')).all()
-    return render_template('panels.html', panels=panels)
+    custom_panels = CustomPanel.query.order_by(CustomPanel.id.desc()).all()
+
+    return render_template('panels.html', panels=panels, custom_panels=custom_panels)
 
 
 @app.route('/panel/<string:name>')
 @login_required
 def panel(name):
     """Panel page."""
-    panel = Panel.query.filter_by(name=name).options(joinedload('versions')).first()
+    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first()
     return render_template('panel.html', panel=panel)
 
 
@@ -198,7 +200,7 @@ def panel_new():
 @login_required
 def panel_version(id):
     """PanelVersion page."""
-    panel = PanelVersion.query.get_or_404(id)
+    panel = PanelVersion.query.options(joinedload('transcripts').joinedload('exons')).options(joinedload('transcripts').joinedload('gene')).get_or_404(id)
     return render_template('panel_version.html', panel=panel)
 
 
@@ -226,9 +228,8 @@ def custom_panel_new():
 @login_required
 def custom_panel(id):
     """Custom panel page."""
-    # TODO: Check query speed
     # TODO: Page layout
-    custom_panel = CustomPanel.query.get_or_404(id)
+    custom_panel = CustomPanel.query.options(joinedload('transcripts')).get_or_404(id)
     custom_panel_form = CustomPanelForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
@@ -237,7 +238,7 @@ def custom_panel(id):
     transcript_measurements = {}
     panel_measurements = {}
 
-    query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript')).all()
+    query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript').joinedload('gene')).all()
 
     for transcript_measurement in query:
         sample = transcript_measurement.sample
@@ -277,20 +278,19 @@ def custom_panel(id):
 @login_required
 def custom_panel_transcript(id, transcript_name):
     """Custom panel transcript page."""
-    # TODO: Check query speed
     # TODO: Page layout
-    custom_panel = CustomPanel.query.get_or_404(id)
+    custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
     custom_panel_form = CustomPanelForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
-    transcript = Transcript.query.filter_by(name=transcript_name).first()
+    transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).first()
     measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
     transcript_measurements = {}
     exon_measurements = OrderedDict()
 
     if sample_ids and measurement_type:
         # Get transcript measurements
-        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter_by(transcript_id=transcript.id).options(joinedload('sample')).all()
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter_by(transcript_id=transcript.id).all()
         for transcript_measurement in query:
             sample = transcript_measurement.sample
             transcript_measurements[sample] = transcript_measurement[measurement_type[0]]
@@ -325,9 +325,8 @@ def custom_panel_transcript(id, transcript_name):
 @login_required
 def custom_panel_gene(id, gene_id):
     """Custom panel gene page."""
-    # TODO: Check query speed
     # TODO: Page layout
-    custom_panel = CustomPanel.query.get_or_404(id)
+    custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
     gene = Gene.query.get_or_404(gene_id)
 
     custom_panel_form = CustomPanelForm()

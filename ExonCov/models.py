@@ -85,7 +85,7 @@ class Transcript(db.Model):
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
-    gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id], lazy='joined')  # Why backref?
+    gene = db.relationship('Gene', backref='transcripts', foreign_keys=[gene_id])
     panels = db.relationship('PanelVersion', secondary=panels_transcripts, back_populates='transcripts')
     transcript_measurements = db.relationship('TranscriptMeasurement', back_populates='transcript')
     custom_panels = db.relationship('CustomPanel', secondary=custom_panels_transcripts, back_populates='transcripts')
@@ -152,7 +152,7 @@ class PanelVersion(db.Model):
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
-    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels', lazy='joined')  # TODO Check query speed!
+    transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
 
     def __repr__(self):
         return "PanelVersion({0})".format(self.name_version)
@@ -186,8 +186,8 @@ class CustomPanel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
 
     user = db.relationship('User', back_populates='custom_panels')
-    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels', lazy='joined')  # TODO Check query speed!
-    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels', lazy='joined')  # TODO Check query speed!
+    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels')
+    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels')
 
     def __repr__(self):
         return "CustomPanel({0})".format(self.id)
@@ -199,6 +199,11 @@ class CustomPanel(db.Model):
     def gene_count(self):
         """Calculate number of genes."""
         return len(self.transcripts)
+
+    @hybrid_property
+    def sample_count(self):
+        """Calculate number of genes."""
+        return len(self.samples)
 
 
 class Sample(db.Model):
@@ -214,8 +219,8 @@ class Sample(db.Model):
     exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
     sequencing_runs = db.relationship(
-        'SequencingRun', secondary=samples_sequencingRun,
-        backref=db.backref('samples', lazy='joined')
+        'SequencingRun', secondary=samples_sequencingRun, lazy='joined',
+        backref=db.backref('samples')
     )
     custom_panels = db.relationship('CustomPanel', secondary=custom_panels_samples, back_populates='samples')
 
@@ -315,8 +320,8 @@ class User(db.Model, UserMixin):
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
     roles = db.relationship(
-        'Role', secondary=roles_users,
-        backref=db.backref('users', lazy='dynamic')
+        'Role', secondary=roles_users, lazy='joined',
+        backref=db.backref('users')
     )
     custom_panels = db.relationship('CustomPanel', back_populates='user')
 
