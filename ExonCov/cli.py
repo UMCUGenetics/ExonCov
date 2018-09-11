@@ -292,12 +292,13 @@ class ImportBam(Command):
 
         # Run sambamba
         # TODO: Add multithreading
-        sambamba_command = "{sambamba} depth region {bam_file} -m -q 10 -F '{filter}' -L {bed_file} {T_settings}".format(
+        sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --fix-mate-overlaps --min-base-quality 10 --filter '{filter}' --regions {bed_file} {cov_threshold_settings}".format(
             sambamba=app.config['SAMBAMBA'],
             bam_file=bam,
+            threads=app.config['SAMBAMBA_THREADS'],
             filter=app.config['SAMBAMBA_FILTER'],
             bed_file=app.config['SAMBAMBA_BED'],
-            T_settings='-T 10 -T 15 -T 20 -T 30 -T 50 -T 100',
+            cov_threshold_settings='--cov-threshold 10 --cov-threshold 15 --cov-threshold 20 --cov-threshold 30 --cov-threshold 50 --cov-threshold 100',
         )
         p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
 
