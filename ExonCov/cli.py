@@ -152,6 +152,7 @@ class LoadDesign(Command):
         for i in range(0, len(exons), bulk_insert_n):
             db.session.add_all(exons[i:i+bulk_insert_n])
             db.session.commit()
+
         db.session.add_all(transcripts.values())
         db.session.commit()
 
@@ -160,36 +161,39 @@ class LoadDesign(Command):
         with open(gene_transcript_file, 'r') as f:
             print "Loading gene transcript file: {0}".format(gene_transcript_file)
             for line in f:
-                if line.startswith('#'):
-                    continue
+                if not line.startswith('#'):
+                    data = line.rstrip().split('\t')
+                    gene_id = data[0].rstrip()
+                    transcript_name = data[1].rstrip()
 
-                data = line.rstrip().split('\t')
-                gene_name = data[0].rstrip()
-                transcript_name = data[1].rstrip()
-                if gene_name in genes:
-                    gene = genes[gene_name]
-                else:
-                    gene = Gene(id=data[0])
-                if transcript_name in transcripts:
-                    gene.transcripts.append(transcripts[transcript_name])
-                genes[gene_name] = gene
+                    if transcript_name in transcripts:
+                        if gene_id in genes:
+                            gene = genes[gene_id]
+                        else:
+                            gene = Gene(id=gene_id)
+                            genes[gene_id] = gene
+                        gene.transcripts.append(transcripts[transcript_name])
+                        db.session.add(gene)
+                    else:
+                        print "Warning: Unkown transcript {0} for gene {1}".format(transcript_name, gene.id)
+            db.session.commit()
 
         # Setup preferred transcript dictonary
         preferred_transcripts = {}  # key = gene, value = transcript
         with open(preferred_transcripts_file, 'r') as f:
             print "Loading preferred transcripts file: {0}".format(preferred_transcripts_file)
             for line in f:
-                if line.startswith('#'):
-                    continue
-                data = line.rstrip().split('\t')
-                transcript_name = data[0]
-                gene_name = data[1]
-                preferred_transcripts[gene_name] = transcript_name
+                if not line.startswith('#'):
+                    # Parse data
+                    data = line.rstrip().split('\t')
+                    transcript = transcripts[data[0]]
+                    gene = genes[data[1]]
 
-                genes[gene_name].default_transcript_id = transcripts[transcript_name].id
-
-        db.session.add_all(genes.values())
-        db.session.commit()
+                    # Set default transcript
+                    gene.default_transcript = transcript
+                    preferred_transcripts[gene.id] = transcript.name
+                    db.session.add(gene)
+            db.session.commit()
 
         # Setup gene panel
         with open(gene_panel_file, 'r') as f:
@@ -224,7 +228,7 @@ class LoadDesign(Command):
                         transcript = transcripts[preferred_transcripts[gene]]
                         panel_version.transcripts.append(transcript)
                     db.session.add(panel_version)
-        db.session.commit()
+            db.session.commit()
 
 
 # Sample CLI
@@ -235,10 +239,11 @@ class ImportBam(Command):
         Option('bam'),
         Option('-s', '--sequencer', dest='sequencer', choices=app.config['SEQUENCERS']),
         Option('-r', '--sequencing_run_name', dest='sequencing_run_name'),
-        Option('-o', '--overwrite', dest='overwrite', default=False, action='store_true')
+        Option('-o', '--overwrite', dest='overwrite', default=False, action='store_true'),
+        Option('-p', '--print_output', dest='print_output', default=False, action='store_true')
     )
 
-    def run(self, bam, sequencing_run_name, sequencer, overwrite=False):
+    def run(self, bam, sequencing_run_name, sequencer, overwrite=False, print_output=False):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -303,6 +308,9 @@ class ImportBam(Command):
         p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
 
         for line in p.stdout:
+            if print_output:
+                print line
+
             # Header
             if line.startswith('#'):
                 header = line.rstrip().split('\t')
