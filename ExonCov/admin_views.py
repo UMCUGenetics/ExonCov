@@ -56,6 +56,13 @@ class CustomPanelAdminView(CustomModelView):
     """Custom panel admin view."""
     column_list = ['user', 'samples', 'transcripts']
 
+    form_ajax_refs = {
+        'transcripts': {
+            'fields': ['name', 'gene_id'],
+            'page_size': 10
+        }
+    }
+
 
 class GeneAdminView(CustomModelView):
     """Gene admin view."""
