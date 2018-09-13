@@ -129,17 +129,10 @@ class SampleAdminView(CustomModelView):
 
 class SequencingRunAdminView(CustomModelView):
     """SequencingRun admin view."""
-    column_list = ['name', 'platform_unit', 'sequencer']
-    column_searchable_list = ['name', 'platform_unit', 'sequencer']
+    column_list = ['name', 'platform_unit']
+    column_searchable_list = ['name', 'platform_unit']
 
-    form_columns = ['name', 'platform_unit', 'sequencer']
-    form_choices = {
-        'sequencer': [
-            ('nextseq_umc01', 'Nextseq UMC01'),
-            ('nextseq_umc02', 'Nextseq UMC02'),
-            ('novaseq_umc01', 'Novaseq UMC01')
-        ],
-    }
+    form_columns = ['name', 'platform_unit']
 
 
 class UserAdmin(CustomModelView):
