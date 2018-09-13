@@ -58,9 +58,9 @@ class CustomPanelNewForm(FlaskForm):
             if self.gene_list.data:
                 # Parse gene_list
                 for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
-                    gene_id = gene_id.strip().lower()
+                    gene_id = gene_id.strip()
                     if gene_id:
-                        gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                        gene = Gene.query.filter(Gene.id == gene_id).first()
                         if gene is None:
                             self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
                         else:
@@ -111,9 +111,9 @@ class CreatePanelForm(FlaskForm):
         if self.gene_list.data:
             # Parse gene_list
             for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
-                gene_id = gene_id.strip().lower()
+                gene_id = gene_id.strip()
                 if gene_id:
-                    gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                    gene = Gene.query.filter(Gene.id == gene_id).first()
                     if gene is None:
                         self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
                     elif gene.default_transcript in self.transcripts:
@@ -150,9 +150,9 @@ class UpdatePanelForm(FlaskForm):
         if self.gene_list.data:
             # Parse gene_list
             for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
-                gene_id = gene_id.strip().lower()
+                gene_id = gene_id.strip()
                 if gene_id:
-                    gene = Gene.query.filter(func.lower(Gene.id) == gene_id).first()
+                    gene = Gene.query.filter(Gene.id == gene_id).first()
                     if gene is None:
                         self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
                     elif gene.default_transcript in self.transcripts:
