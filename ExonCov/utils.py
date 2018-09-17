@@ -39,3 +39,7 @@ def url_for_other_page(page):
     args = request.args.copy()
     args['page'] = page
     return url_for(request.endpoint, **args)
+
+
+def weighted_average(values, weights):
+    return sum(x * y for x, y in zip(values, weights)) / sum(weights)

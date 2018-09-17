@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from ExonCov import app, db
 from .models import Sample, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
 from .forms import CustomPanelForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm
+from .utils import weighted_average
 
 
 @app.route('/')
@@ -61,7 +62,10 @@ def sample(id):
                 panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
         else:
             for measurement_type in measurement_types:
-                panels[panel.id][measurement_type] = ((panels[panel.id]['len'] * panels[panel.id][measurement_type]) + (transcript_measurement.len * transcript_measurement[measurement_type])) / (panels[panel.id]['len'] + transcript_measurement.len)
+                panels[panel.id][measurement_type] = weighted_average(
+                    [panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
+                    [panels[panel.id]['len'], transcript_measurement.len]
+                )
             panels[panel.id]['len'] += transcript_measurement.len
     return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types)
 
@@ -256,7 +260,10 @@ def custom_panel(id):
                 'measurement': transcript_measurement[measurement_type[0]]
             }
         else:
-            panel_measurements[sample]['measurement'] = ((panel_measurements[sample]['len'] * panel_measurements[sample]['measurement']) + (transcript_measurement.len * transcript_measurement[measurement_type[0]])) / (panel_measurements[sample]['len'] + transcript_measurement.len)
+            panel_measurements[sample]['measurement'] = weighted_average(
+                [panel_measurements[sample]['measurement'], transcript_measurement[measurement_type[0]]],
+                [panel_measurements[sample]['len'], transcript_measurement.len]
+            )
             panel_measurements[sample]['len'] += transcript_measurement.len
 
     # Calculate min, mean, max

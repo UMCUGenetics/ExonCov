@@ -22,6 +22,22 @@ def all_panels():
     return PanelVersion.query.all()
 
 
+def parse_gene_list(gene_list, transcripts=[]):
+    """Parse data from gene_list form field"""
+    errors = []
+    for gene_id in re.split('[\n\r,;\t ]+', gene_list):
+        gene_id = gene_id.strip()
+        if gene_id:
+            gene = Gene.query.filter(Gene.id == gene_id).first()
+            if gene is None:
+                errors.append('Unknown gene: {0}'.format(gene_id))
+            elif gene.default_transcript in transcripts:
+                errors.append('Multiple entries for gene: {0}'.format(gene_id))
+            else:
+                transcripts.append(gene.default_transcript)
+    return errors, transcripts
+
+
 class SampleForm(FlaskForm):
     """Query samples by run or samplename field"""
     run = StringField('Sequencing run')
@@ -57,16 +73,9 @@ class CustomPanelNewForm(FlaskForm):
 
             if self.gene_list.data:
                 # Parse gene_list
-                for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
-                    gene_id = gene_id.strip()
-                    if gene_id:
-                        gene = Gene.query.filter(Gene.id == gene_id).first()
-                        if gene is None:
-                            self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
-                        else:
-                            self.transcripts.append(gene.default_transcript)
-
-                if self.gene_list.errors:
+                errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
+                if errors:
+                    self.gene_list.errors.extend(errors)
                     return False
 
         return True
@@ -94,7 +103,7 @@ class ExtendedRegisterForm(RegisterForm):
 
 
 class CreatePanelForm(FlaskForm):
-    """Create / Update Panel form."""
+    """Create Panel form."""
 
     name = StringField('Name', validators=[InputRequired()])
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
@@ -110,21 +119,15 @@ class CreatePanelForm(FlaskForm):
 
         if self.gene_list.data:
             # Parse gene_list
-            for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
-                gene_id = gene_id.strip()
-                if gene_id:
-                    gene = Gene.query.filter(Gene.id == gene_id).first()
-                    if gene is None:
-                        self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
-                    elif gene.default_transcript in self.transcripts:
-                        self.gene_list.errors.append('Multiple entries for gene: {0}'.format(gene_id))
-                    else:
-                        self.transcripts.append(gene.default_transcript)
+            errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
+            if errors:
+                self.gene_list.errors.extend(errors)
+                return False
 
         if self.name.data:
             panel = Panel.query.filter_by(name=self.name.data).first()
             if panel:
-                self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.'.format(gene_id))
+                self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.')
 
         if self.gene_list.errors or self.name.errors:
             return False
@@ -149,16 +152,10 @@ class UpdatePanelForm(FlaskForm):
 
         if self.gene_list.data:
             # Parse gene_list
-            for gene_id in re.split('[\n\r,;\t ]+', self.gene_list.data):
-                gene_id = gene_id.strip()
-                if gene_id:
-                    gene = Gene.query.filter(Gene.id == gene_id).first()
-                    if gene is None:
-                        self.gene_list.errors.append('Unknown gene: {0}'.format(gene_id))
-                    elif gene.default_transcript in self.transcripts:
-                        self.gene_list.errors.append('Multiple entries for gene: {0}'.format(gene_id))
-                    else:
-                        self.transcripts.append(gene.default_transcript)
+            errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
+            if errors:
+                self.gene_list.errors.extend(errors)
+                return False
 
         if self.gene_list.errors:
             return False

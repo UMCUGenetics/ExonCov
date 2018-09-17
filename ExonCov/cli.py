@@ -13,7 +13,7 @@ import pysam
 
 from . import app, db, utils, user_datastore
 from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
-
+from .utils import weighted_average
 
 # DB CLI
 class Drop(Command):
@@ -373,7 +373,10 @@ class ImportBam(Command):
             else:
                 measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
                 for measurement_type in measurement_types:
-                    transcripts[transcript_id][measurement_type] = ((transcripts[transcript_id]['len'] * transcripts[transcript_id][measurement_type]) + (exon_len * exon_measurement[measurement_type])) / (transcripts[transcript_id]['len'] + exon_len)
+                    transcripts[transcript_id][measurement_type] = weighted_average(
+                        [transcripts[transcript_id][measurement_type], exon_measurement[measurement_type]],
+                        [transcripts[transcript_id]['len'], exon_len]
+                    )
                 transcripts[transcript_id]['len'] += exon_len
 
         # Bulk insert transcript measurements
