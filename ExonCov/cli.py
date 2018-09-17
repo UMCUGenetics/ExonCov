@@ -385,7 +385,7 @@ class ImportBam(Command):
 
 
 class SearchSample(Command):
-    """Remove sample from database."""
+    """Search sample in database."""
 
     option_list = (
         Option('sample_name'),
