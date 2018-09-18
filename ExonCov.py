@@ -159,67 +159,68 @@ def make_Transcript_stats(exoncov_files, L_bed, L_list, column, NM_ENS_dic):
         dic_trans = make_Dic_Trans(exoncov, column)  # make dictionary for transcripts with all exons
         transcript_list = []
         for item in dic_trans:
-            final_list = []
-            for exon in dic_trans[item]:
-                list = []
-                # Gene, chromosome, from, to, interval (too hardcoded, change?)
-                list += item, exon[4], exon[0], exon[1], exon[2], int(exon[2]) - int(exon[1])
-                # add number of bases covered in total for target
-                list += [int("%.0f" % float(float(int(exon[2]) - int(exon[1])) * (float(exon[8]))))]
-                # int(L_bed+3)-1)= length BED file + 3 output fields sambamaba (-1 for offset). len(L_list) = values as input -L option sambamba
-                for cov in exon[(int(L_bed + 3) - 1):((int(L_bed + 3) - 1) + int(len(L_list)))]:
-                    bases = ((int(exon[2]) - int(exon[1])) * float(cov))
-                    list.append(float(bases))
-                list.append(exon[total_length - 1])  # last value = sample name
-                final_list.append(list)
-            if len(final_list) == 1:
-                printline = final_list[0]
-                printline += [int("1")]  # add number of exons to last column
-            else:
-                chr = str(final_list[0][2])
-                start = int(final_list[0][3])
-                stop = int(final_list[0][4])
-                x = 0
-                for region in final_list[1:]:  # [1:] because first exon already covered
+            if item != "NA":	# if transcript name is NA, but still in the BED file i.e. PAR genes)
+                final_list = []
+                for exon in dic_trans[item]:
+                    list = []
+                    # Gene, chromosome, from, to, interval (too hardcoded, change?)
+                    list += item, exon[4], exon[0], exon[1], exon[2], int(exon[2]) - int(exon[1])
+                    # add number of bases covered in total for target
+                    list += [int("%.0f" % float(float(int(exon[2]) - int(exon[1])) * (float(exon[8]))))]
+                    # int(L_bed+3)-1)= length BED file + 3 output fields sambamaba (-1 for offset). len(L_list) = values as input -L option sambamba
+                    for cov in exon[(int(L_bed + 3) - 1):((int(L_bed + 3) - 1) + int(len(L_list)))]:
+                        bases = ((int(exon[2]) - int(exon[1])) * float(cov))
+                        list.append(float(bases))
+                    list.append(exon[total_length - 1])  # last value = sample name
+                    final_list.append(list)
+                if len(final_list) == 1:
+                    printline = final_list[0]
+                    printline += [int("1")]  # add number of exons to last column
+                else:
+                    chr = str(final_list[0][2])
+                    start = int(final_list[0][3])
+                    stop = int(final_list[0][4])
+                    x = 0
+                    for region in final_list[1:]:  # [1:] because first exon already covered
 
-                    if start < stop and int(region[3]) < int(region[4]) and start < int(region[3]) and stop < int(region[4]) and chr == str(region[2]):
-                        if x == 0:
-                            printline = final_list[0]
-                            printline += [int("1")]  # add number of exons to last column
-                            x = 1
-                        printline[4] = int(region[4])  # replace old stop by new stop
-                        y = 0
-                        while y < len(L_list) + 2:  # +2 for length and total_bases
-                            printline[5 + y] += float(region[5 + y])
-                            y += 1
-                        printline[-1] += 1
-                        chr = str(region[2])
-                        start = int(region[3])
-                        stop = int(region[4])
-                    else:
-                        printline = ""
-                        try:
-                            error_dic[item]
-                        except:
-                            error_dic[item] = str(region[2]), region[-1]
+                        if start < stop and int(region[3]) < int(region[4]) and start < int(region[3]) and stop < int(region[4]) and chr == str(region[2]):
+                            if x == 0:
+                                printline = final_list[0]
+                                printline += [int("1")]  # add number of exons to last column
+                                x = 1
+                            printline[4] = int(region[4])  # replace old stop by new stop
+                            y = 0
+                            while y < len(L_list) + 2:  # +2 for length and total_bases
+                                printline[5 + y] += float(region[5 + y])
+                                y += 1
+                            printline[-1] += 1
+                            chr = str(region[2])
+                            start = int(region[3])
+                            stop = int(region[4])
+                        else:
+                            printline = ""
+                            try:
+                                error_dic[item]
+                            except:
+                                error_dic[item] = str(region[2]), region[-1]
 
-            if len(printline) > 0:  # convert bases covered >X to percentage based on total transcript length
-                transcript_line = [printline[0]]
-                try:
-                    transcript_line += [NM_ENS_dic[str(printline[0])]]  # use gene name if transcript is found in NM file!
-                except:
-                    transcript_line += [printline[1]]  # otherwise, use gene name of BED file. This can include multiple names seperated by ":"
+                if len(printline) > 0:  # convert bases covered >X to percentage based on total transcript length
+                    transcript_line = [printline[0]]
+                    try:
+                        transcript_line += [NM_ENS_dic[str(printline[0])]]  # use gene name if transcript is found in NM file!
+                    except:
+                        transcript_line += [printline[1]]  # otherwise, use gene name of BED file. This can include multiple names seperated by ":"
 
-                transcript_line += printline[2:5]
-                transcript_line += [str(printline[-1])]
-                transcript_line += [str("%.0f" % float(printline[5]))]  # add number of total_bases of total bases for combined exons
-                y = 0
-                while y < len(L_list) + 1:  # +1 for mean coverage column
-                    transcript_line += [str(float(float(printline[6 + y]) / float(printline[5])))]
-                    y += 1
-                transcript_line += [printline[-2]]
-                transcript_list += [transcript_line]
-                printline = ""
+                    transcript_line += printline[2:5]
+                    transcript_line += [str(printline[-1])]
+                    transcript_line += [str("%.0f" % float(printline[5]))]  # add number of total_bases of total bases for combined exons
+                    y = 0
+                    while y < len(L_list) + 1:  # +1 for mean coverage column
+                        transcript_line += [str(float(float(printline[6 + y]) / float(printline[5])))]
+                        y += 1
+                    transcript_line += [printline[-2]]
+                    transcript_list += [transcript_line]
+                    printline = ""
 
         transcript_list.sort(key=lambda x: (x[2], int(x[3])))
         write_file = open(str(transcript_list[0][-1]) + "_transcript_coverage.tsv", "w")  # Output file for transcript coverage
