@@ -59,9 +59,9 @@ class Exon(db.Model):
     __tablename__ = 'exons'
 
     id = db.Column(db.String(25), primary_key=True)  # chr_start_end
-    chr = db.Column(db.String(2))
-    start = db.Column(db.Integer)
-    end = db.Column(db.Integer)
+    chr = db.Column(db.String(2), nullable=False)
+    start = db.Column(db.Integer(), nullable=False)
+    end = db.Column(db.Integer(), nullable=False)
 
     transcripts = db.relationship('Transcript', secondary=exons_transcripts, back_populates='exons')
     exon_measurements = db.relationship('ExonMeasurement', back_populates='exon')
@@ -84,10 +84,10 @@ class Transcript(db.Model):
     __tablename__ = 'transcripts'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), index=True, unique=True)
-    chr = db.Column(db.String(2))  # Based on exon.chr
-    start = db.Column(db.Integer)  # Based on smallest exon.start
-    end = db.Column(db.Integer)  # Based on largest exon.end
+    name = db.Column(db.String(50), nullable=False, index=True, unique=True)
+    chr = db.Column(db.String(2), nullable=False)  # Based on exon.chr
+    start = db.Column(db.Integer(), nullable=False)  # Based on smallest exon.start
+    end = db.Column(db.Integer(), nullable=False)  # Based on largest exon.end
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
 
     exons = db.relationship('Exon', secondary=exons_transcripts, back_populates='transcripts')
@@ -114,7 +114,7 @@ class Gene(db.Model):
     __tablename__ = 'genes'
 
     id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
-    default_transcript_id = db.Column(db.Integer, db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), index=True)
+    default_transcript_id = db.Column(db.Integer(), db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), nullable=False, index=True)
 
     default_transcript = db.relationship('Transcript', foreign_keys=[default_transcript_id])
 
@@ -151,11 +151,11 @@ class PanelVersion(db.Model):
     __tablename__ = 'panel_versions'
 
     id = db.Column(db.Integer, primary_key=True)
-    version_year = db.Column(db.Integer, index=True)
-    version_revision = db.Column(db.Integer, index=True)
+    version_year = db.Column(db.Integer(), nullable=False, index=True)
+    version_revision = db.Column(db.Integer(), nullable=False, index=True)
     active = db.Column(db.Boolean, index=True, default=False)
     validated = db.Column(db.Boolean, index=True, default=False)
-    panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), index=True)
+    panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
@@ -187,9 +187,9 @@ class CustomPanel(db.Model):
 
     __tablename__ = 'custom_panels'
 
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, default=datetime.date.today, index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
+    id = db.Column(db.Integer(), primary_key=True)
+    date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
 
     user = db.relationship('User', back_populates='custom_panels')
     samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels')
@@ -217,11 +217,11 @@ class Sample(db.Model):
 
     __tablename__ = 'samples'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), index=True)
-    import_date = db.Column(db.Date, default=datetime.date.today, index=True)
-    file_name = db.Column(db.String(255))
-    import_command = db.Column(db.Text())
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(255), nullable=False, index=True)
+    import_date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
+    file_name = db.Column(db.String(255), nullable=False)
+    import_command = db.Column(db.Text(), nullable=False)
 
     exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
@@ -245,12 +245,18 @@ class SampleSet(db.Model):
     __tablename__ = 'sample_sets'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), index=True)
-    date = db.Column(db.Date, default=datetime.date.today, index=True)
+    name = db.Column(db.String(255), nullable=False, index=True)
+    date = db.Column(db.Date, default=datetime.date.today, nullable=False, index=True)
     description = db.Column(db.Text())
     active = db.Column(db.Boolean, index=True, default=False)
 
     samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets')
+
+    def __repr__(self):
+        return "SampleSet({0})".format(str(self))
+
+    def __str__(self):
+        return self.name
 
 
 class SequencingRun(db.Model):
@@ -263,10 +269,15 @@ class SequencingRun(db.Model):
     platform_unit = db.Column(db.String(50), index=True)
 
     def __repr__(self):
-        return "SequencingRun({0})".format(self.name)
+        return "SequencingRun({0})".format(str(self))
 
     def __str__(self):
-        return self.name
+        if self.name:
+            return self.name
+        elif self.platform_unit:
+            return self.platform_unit
+        else:
+            return self.id
 
 
 class ExonMeasurement(db.Model):

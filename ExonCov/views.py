@@ -216,10 +216,16 @@ def custom_panel_new():
     custom_panel_form = CustomPanelNewForm()
 
     if custom_panel_form.validate_on_submit():
+        samples = []
+        if custom_panel_form.data['samples']:
+            samples += custom_panel_form.data['samples']
+        if custom_panel_form.data['sample_set']:
+            samples += custom_panel_form.data['sample_set'].samples
+
         custom_panel = CustomPanel(
             user=current_user,
             transcripts=custom_panel_form.transcripts,
-            samples=custom_panel_form.data['samples']
+            samples=samples
         )
         db.session.add(custom_panel)
         db.session.commit()

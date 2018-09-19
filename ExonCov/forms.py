@@ -8,13 +8,18 @@ from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField
 from wtforms.validators import InputRequired
 from sqlalchemy import func
 
-from .models import Sample, Gene, PanelVersion, Panel
+from .models import Sample, SampleSet, Gene, PanelVersion, Panel
 
 
 # Query factories
 def all_samples():
     """Query factory for all samples."""
     return Sample.query.all()
+
+
+def active_sample_sets():
+    """Query factory for active sample sets."""
+    return SampleSet.query.filter_by(active=True).all()
 
 
 def all_panels():
@@ -47,8 +52,9 @@ class SampleForm(FlaskForm):
 class CustomPanelNewForm(FlaskForm):
     """Custom Panel New form."""
 
-    samples = QuerySelectMultipleField('Samples', validators=[InputRequired()], query_factory=all_samples)
-    panel = QuerySelectField('Panel', validators=[], query_factory=all_panels, allow_blank=True, blank_text='None')
+    sample_set = QuerySelectField('Sample sets', query_factory=active_sample_sets, allow_blank=True, blank_text='None')
+    samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
+    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
     transcripts = []  # Filled in validate function
 
@@ -60,12 +66,26 @@ class CustomPanelNewForm(FlaskForm):
         if not FlaskForm.validate(self):
             return False
 
+        # Parse Samples and Sample sets
+        if not self.samples.data and not self.sample_set.data:
+            message = 'Sample(s) and/or sample set must be set.'
+            self.samples.errors.append(message)
+            self.sample_sets.errors.append(message)
+            return False
+        elif self.samples.data and self.sample_set.data:
+            sample_ids = [sample.id for sample in self.samples.data]
+            for sample in self.sample_set.data.samples:
+                if sample.id in sample_ids:
+                    message = 'Sample {0} is already present in sample set.'.format(sample.name)
+                    self.samples.errors.append(message)
+                    return False
+
+        # Parse panels and genes
         if not self.panel.data and not self.gene_list.data:
             message = 'Panel and/or gene list must be set.'
             self.panel.errors.append(message)
             self.gene_list.errors.append(message)
             return False
-
         else:
             if self.panel.data:
                 # Get panel transcript_ids

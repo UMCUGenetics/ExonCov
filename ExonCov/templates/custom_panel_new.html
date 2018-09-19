@@ -8,6 +8,7 @@
     <form method="POST" action="{{ url_for('custom_panel_new') }}" class="form-horizontal">
         {{ form.csrf_token }}
         {{ render_select2_field(form.samples) }}
+        {{ render_select2_field(form.sample_set) }}
         {{ render_select2_field(form.panel) }}
         {{ render_field(form.gene_list, rows="6") }}
 
