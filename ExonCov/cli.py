@@ -259,26 +259,28 @@ class ImportBam(Command):
             if not sample_name:
                 sample_name = read_group['SM']
             elif sample_name != read_group['SM']:
-                sys.exit("Exoncov does not support bam files containing multiple samples.")
+                sys.exit("ERROR: Exoncov does not support bam files containing multiple samples.")
 
             if read_group['PU'] not in sequencing_runs:
-                if sequencing_run_name:
-                    sequencing_run, sequencing_run_exists = utils.get_one_or_create(
-                        db.session,
-                        SequencingRun,
-                        name=sequencing_run_name,
-                        platform_unit=read_group['PU']
-                    )  # returns object and exists bool
-                else:
-                    sequencing_run, sequencing_run_exists = utils.get_one_or_create(
-                        db.session,
-                        SequencingRun,
-                        name=read_group['PU'],
-                        platform_unit=read_group['PU']
-                    )  # returns object and exists bool
-
+                sequencing_run, sequencing_run_exists = utils.get_one_or_create(
+                    db.session,
+                    SequencingRun,
+                    platform_unit=read_group['PU']
+                )  # returns object and exists bool
                 sequencing_runs[read_group['PU']] = sequencing_run
                 sequencing_run_ids.append(sequencing_run.id)
+
+        if not sequencing_runs:
+            sys.exit("ERROR: Sample can not be linked to a sequencing run, please make sure that read groups contain PU values.")
+        elif len(sequencing_runs) > 1 and sequencing_run_name:
+            print "WARNING: Sample read groups contain multiple platform units, sequencing_run_name setting ignored."
+        elif sequencing_runs.values()[0].name and sequencing_runs.values()[0].name != sequencing_run_name:
+            print "WARNING: Sequencing run (PU) is in database with different sequencing_run_name, sequencing_run_name setting ignored."
+        else:
+            sequencing_runs.values()[0].name = sequencing_run_name
+            db.session.add(sequencing_runs.values()[0])
+            db.session.commit()
+
         bam_file.close()
 
         # Look for sample in database
