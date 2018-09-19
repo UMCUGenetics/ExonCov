@@ -292,13 +292,13 @@ class ImportBam(Command):
             sys.exit("ERROR: Sample and run(s) combination already exists.")
 
         # Create sambamba
-        sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --fix-mate-overlaps --min-base-quality 10 --filter '{filter}' --regions {bed_file} {cov_threshold_settings}".format(
+        sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --filter '{filter}' --regions {bed_file} {settings}".format(
             sambamba=app.config['SAMBAMBA'],
             bam_file=bam,
             threads=app.config['SAMBAMBA_THREADS'],
             filter=app.config['SAMBAMBA_FILTER'],
             bed_file=app.config['SAMBAMBA_BED'],
-            cov_threshold_settings='--cov-threshold 10 --cov-threshold 15 --cov-threshold 20 --cov-threshold 30 --cov-threshold 50 --cov-threshold 100',
+            settings='--fix-mate-overlaps --min-base-quality 10 --cov-threshold 10 --cov-threshold 15 --cov-threshold 20 --cov-threshold 30 --cov-threshold 50 --cov-threshold 100',
         )
 
         # Create sample
