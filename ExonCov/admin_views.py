@@ -4,7 +4,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
 from . import db, admin
-from .models import Exon, Transcript, Gene, Panel, PanelVersion, CustomPanel, Sample, SequencingRun, User, Role
+from .models import Exon, Transcript, Gene, Panel, PanelVersion, CustomPanel, Sample, SampleSet, SequencingRun, User, Role
 
 
 class CustomModelView(ModelView):
@@ -54,11 +54,16 @@ class PanelVersionAdminView(CustomModelView):
 
 class CustomPanelAdminView(CustomModelView):
     """Custom panel admin view."""
-    column_list = ['user', 'samples', 'transcripts']
+    column_list = ['user', 'date']
 
+    form_columns = ['user', 'date', 'samples', 'transcripts']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
+            'page_size': 10
+        },
+        'samples': {
+            'fields': ['name'],
             'page_size': 10
         }
     }
@@ -86,9 +91,9 @@ class GeneAdminView(CustomModelView):
 class TranscriptAdminView(CustomModelView):
     """Transcript admin view."""
     column_list = ['name', 'chr', 'start', 'end', 'gene']
-    column_sortable_list = ['name', 'chr', 'start', 'end']
+    column_sortable_list = ['name', 'chr', 'start', 'end']  # TODO: sort by gene
     column_searchable_list = ['name', 'gene_id']
-    column_filters = ['chr', 'start', 'end']
+    column_filters = ['chr', 'start', 'end', 'gene_id']
 
     form_columns = ['name', 'gene', 'exons', 'chr', 'start', 'end']  # TODO:Automatically set chr, start, end based on exons.
     form_ajax_refs = {
@@ -118,9 +123,22 @@ class SampleAdminView(CustomModelView):
     column_sortable_list = ['name', 'import_date']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'sequencing_runs', 'import_date', 'file_name']
+    form_columns = ['name', 'sequencing_runs', 'import_date', 'file_name', 'import_command']
     form_ajax_refs = {
         'sequencing_runs': {
+            'fields': ['name'],
+            'page_size': 10
+        },
+    }
+
+
+class SampleSetAdminView(CustomModelView):
+    """Sample set admin view."""
+    column_list = ['name', 'date']
+
+    form_columns = ['name', 'date', 'description', 'samples', 'active']
+    form_ajax_refs = {
+        'samples': {
             'fields': ['name'],
             'page_size': 10
         },
@@ -149,10 +167,13 @@ class UserAdmin(CustomModelView):
 admin.add_view(PanelAdminView(Panel, db.session))
 admin.add_view(PanelVersionAdminView(PanelVersion, db.session))
 admin.add_view(CustomPanelAdminView(CustomPanel, db.session))
+
 admin.add_view(GeneAdminView(Gene, db.session))
 admin.add_view(TranscriptAdminView(Transcript, db.session))
 admin.add_view(ExonAdminView(Exon, db.session))
+
 admin.add_view(SampleAdminView(Sample, db.session))
+admin.add_view(SampleSetAdminView(SampleSet, db.session))
 admin.add_view(SequencingRunAdminView(SequencingRun, db.session))
 
 admin.add_view(UserAdmin(User, db.session))

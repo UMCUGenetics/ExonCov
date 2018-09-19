@@ -238,7 +238,7 @@ class ImportBam(Command):
 
     option_list = (
         Option('bam'),
-        Option('-r', '--sequencing_run_name', dest='sequencing_run_name'),
+        Option('-r', '--sequencing_run_name', dest='sequencing_run_name'),  # TODO: Fix for merged run
         Option('-o', '--overwrite', dest='overwrite', default=False, action='store_true'),
         Option('-p', '--print_output', dest='print_output', default=False, action='store_true')
     )
@@ -291,12 +291,7 @@ class ImportBam(Command):
         elif sample and not overwrite:
             sys.exit("ERROR: Sample and run(s) combination already exists.")
 
-        # Create sample
-        sample = Sample(name=sample_name, file_name=bam, sequencing_runs=sequencing_runs.values())
-        db.session.add(sample)
-        db.session.commit()
-
-        # Run sambamba
+        # Create sambamba
         sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --fix-mate-overlaps --min-base-quality 10 --filter '{filter}' --regions {bed_file} {cov_threshold_settings}".format(
             sambamba=app.config['SAMBAMBA'],
             bam_file=bam,
@@ -305,6 +300,13 @@ class ImportBam(Command):
             bed_file=app.config['SAMBAMBA_BED'],
             cov_threshold_settings='--cov-threshold 10 --cov-threshold 15 --cov-threshold 20 --cov-threshold 30 --cov-threshold 50 --cov-threshold 100',
         )
+
+        # Create sample
+        sample = Sample(name=sample_name, file_name=bam, import_command=sambamba_command, sequencing_runs=sequencing_runs.values())
+        db.session.add(sample)
+        db.session.commit()
+
+        # Run sambamba
         p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
 
         for line in p.stdout:

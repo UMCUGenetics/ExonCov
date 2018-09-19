@@ -34,6 +34,12 @@ custom_panels_samples = db.Table(
     db.Column('sample_id', db.ForeignKey('samples.id'), primary_key=True)
 )
 
+sample_sets_samples = db.Table(
+    'sample_sets_samples',
+    db.Column('sample_set_id', db.ForeignKey('sample_sets.id'), primary_key=True),
+    db.Column('sample_id', db.ForeignKey('samples.id'), primary_key=True)
+)
+
 roles_users = db.Table(
     'roles_users',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
@@ -186,8 +192,8 @@ class CustomPanel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), index=True)
 
     user = db.relationship('User', back_populates='custom_panels')
-    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels')
     samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels')
+    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels')
 
     def __repr__(self):
         return "CustomPanel({0})".format(self.id)
@@ -215,6 +221,7 @@ class Sample(db.Model):
     name = db.Column(db.String(255), index=True)
     import_date = db.Column(db.Date, default=datetime.date.today, index=True)
     file_name = db.Column(db.String(255))
+    import_command = db.Column(db.Text())
 
     exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
@@ -223,12 +230,27 @@ class Sample(db.Model):
         backref=db.backref('samples')
     )
     custom_panels = db.relationship('CustomPanel', secondary=custom_panels_samples, back_populates='samples')
+    sets = db.relationship('SampleSet', secondary=sample_sets_samples, back_populates='samples')
 
     def __repr__(self):
         return "Sample({0})".format(self.name)
 
     def __str__(self):
         return self.name
+
+
+class SampleSet(db.Model):
+    """Sample set class, groups samples together."""
+
+    __tablename__ = 'sample_sets'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), index=True)
+    date = db.Column(db.Date, default=datetime.date.today, index=True)
+    description = db.Column(db.Text())
+    active = db.Column(db.Boolean, index=True, default=False)
+
+    samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets')
 
 
 class SequencingRun(db.Model):
