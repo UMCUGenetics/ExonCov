@@ -168,13 +168,13 @@ admin.add_view(PanelAdminView(Panel, db.session))
 admin.add_view(PanelVersionAdminView(PanelVersion, db.session))
 admin.add_view(CustomPanelAdminView(CustomPanel, db.session))
 
-admin.add_view(GeneAdminView(Gene, db.session))
-admin.add_view(TranscriptAdminView(Transcript, db.session))
-admin.add_view(ExonAdminView(Exon, db.session))
-
 admin.add_view(SampleAdminView(Sample, db.session))
 admin.add_view(SampleSetAdminView(SampleSet, db.session))
 admin.add_view(SequencingRunAdminView(SequencingRun, db.session))
+
+admin.add_view(GeneAdminView(Gene, db.session))
+admin.add_view(TranscriptAdminView(Transcript, db.session))
+admin.add_view(ExonAdminView(Exon, db.session))
 
 admin.add_view(UserAdmin(User, db.session))
 admin.add_view(CustomModelView(Role, db.session))
