@@ -49,7 +49,7 @@ def sample(id):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    query = db.session.query(PanelVersion, TranscriptMeasurement).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
+    query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
     panels = OrderedDict()
 
     for panel, transcript_measurement in query:
@@ -206,6 +206,32 @@ def panel_version(id):
     """PanelVersion page."""
     panel = PanelVersion.query.options(joinedload('transcripts').joinedload('exons')).options(joinedload('transcripts').joinedload('gene')).get_or_404(id)
     return render_template('panel_version.html', panel=panel)
+
+
+@app.route('/panel_version/<int:id>/change_validated_status')
+@roles_required('panel_admin')
+def panel_version_change_validated_status(id):
+    """Set validation status to true."""
+    panel = PanelVersion.query.get_or_404(id)
+
+    panel.validated = not panel.validated
+    db.session.add(panel)
+    db.session.commit()
+
+    return redirect(url_for('panel_version', id=panel.id))
+
+
+@app.route('/panel_version/<int:id>/change_active_status')
+@roles_required('panel_admin')
+def panel_version_change_active_status(id):
+    """Set validation status to true."""
+    panel = PanelVersion.query.get_or_404(id)
+
+    panel.active = not panel.active
+    db.session.add(panel)
+    db.session.commit()
+
+    return redirect(url_for('panel_version', id=panel.id))
 
 
 @app.route('/panel/custom', methods=['GET', 'POST'])
