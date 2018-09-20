@@ -37,4 +37,4 @@ DEBUG_TB_INTERCEPT_REDIRECTS = False
 SAMBAMBA = 'test_files/sambamba_v0.6.6'
 SAMBAMBA_THREADS = 4
 SAMBAMBA_FILTER = 'mapping_quality >= 20 and not duplicate and not failed_quality_control and not secondary_alignment'
-SAMBAMBA_BED = 'test_files/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed'
+SAMBAMBA_BED = 'test_files/Dx_tracks/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v3_20bpflank.bed'

@@ -15,6 +15,7 @@ from . import app, db, utils, user_datastore
 from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
 from .utils import weighted_average
 
+
 # DB CLI
 class Drop(Command):
     """Drop database."""
@@ -79,10 +80,10 @@ class LoadDesign(Command):
 
     def __init__(
         self,
-        default_exon_file='test_files/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.multi_chr_transcripts_removed.bed',
-        default_gene_transcript_file='test_files/NM_ENSEMBL_HGNC.txt',
+        default_exon_file='test_files/Dx_tracks/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v3_20bpflank.bed',
+        default_gene_transcript_file='test_files/Dx_tracks/Exoncov/NM_ENSEMBL_HGNC.txt',
         default_preferred_transcripts_file='test_files/preferred_transcripts.txt',
-        defaut_gene_panel_file='test_files/gpanels.txt',
+        defaut_gene_panel_file='test_files/Dx_tracks/Exoncov/gpanels.txt',
     ):
         self.default_exon_file = default_exon_file
         self.default_gene_transcript_file = default_gene_transcript_file
@@ -123,29 +124,29 @@ class LoadDesign(Command):
 
                 # Create transcripts
                 for transcript_name in transcript_data:
+                    if transcript_name != 'NA':
+                        if transcript_name in transcripts:
+                            transcript = transcripts[transcript_name]
 
-                    if transcript_name in transcripts:
-                        transcript = transcripts[transcript_name]
+                            # Set start / end positions
+                            if transcript.start > exon.start:
+                                transcript.start = exon.start
+                            if transcript.end < exon.end:
+                                transcript.end = exon.end
 
-                        # Set start / end positions
-                        if transcript.start > exon.start:
-                            transcript.start = exon.start
-                        if transcript.end < exon.end:
-                            transcript.end = exon.end
+                            # Sanity check chromosome
+                            if transcript.chr != exon.chr:
+                                print "Warning: Different chromosomes for {0} and {1}".format(transcript, exon)
 
-                        # Sanity check chromosome
-                        if transcript.chr != exon.chr:
-                            print "Warning: Different chromosomes for {0} and {1}".format(transcript, exon)
-
-                    else:
-                        transcript = Transcript(
-                            name=transcript_name,
-                            chr=exon.chr,
-                            start=exon.start,
-                            end=exon.end
-                        )
-                        transcripts[transcript_name] = transcript
-                    exon.transcripts.append(transcript)
+                        else:
+                            transcript = Transcript(
+                                name=transcript_name,
+                                chr=exon.chr,
+                                start=exon.start,
+                                end=exon.end
+                            )
+                            transcripts[transcript_name] = transcript
+                        exon.transcripts.append(transcript)
                 exons.append(exon)
 
         # Bulk insert exons and transcript
@@ -176,7 +177,7 @@ class LoadDesign(Command):
                         gene.transcripts.append(transcripts[transcript_name])
                         db.session.add(gene)
                     else:
-                        print "Warning: Unkown transcript {0} for gene {1}".format(transcript_name, gene.id)
+                        print "Warning: Unkown transcript {0} for gene {1}".format(transcript_name, gene_id)
             db.session.commit()
 
         # Setup preferred transcript dictonary
@@ -199,7 +200,6 @@ class LoadDesign(Command):
         # Setup gene panel
         with open(gene_panel_file, 'r') as f:
             print "Loading gene panel file: {0}".format(gene_panel_file)
-            f.readline()  # skip header
             for line in f:
                 data = line.rstrip().split('\t')
                 panel = data[0]
@@ -226,8 +226,11 @@ class LoadDesign(Command):
                     panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True)
 
                     for gene in set(genes):
-                        transcript = transcripts[preferred_transcripts[gene]]
-                        panel_version.transcripts.append(transcript)
+                        if gene in preferred_transcripts:
+                            transcript = transcripts[preferred_transcripts[gene]]
+                            panel_version.transcripts.append(transcript)
+                        else:
+                            print "WARNING: Unkown gene: {0}".format(gene)
                     db.session.add(panel_version)
             db.session.commit()
 
