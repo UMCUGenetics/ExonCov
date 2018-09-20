@@ -114,7 +114,7 @@ class Gene(db.Model):
     __tablename__ = 'genes'
 
     id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
-    default_transcript_id = db.Column(db.Integer(), db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), nullable=False, index=True)
+    default_transcript_id = db.Column(db.Integer(), db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), index=True)
 
     default_transcript = db.relationship('Transcript', foreign_keys=[default_transcript_id])
 
@@ -236,7 +236,7 @@ class Sample(db.Model):
         return "Sample({0})".format(self.name)
 
     def __str__(self):
-        return self.name
+        return '{0} ({1})'.format(self.name, ', '.join([str(sequencing_run) for sequencing_run in self.sequencing_runs]))
 
 
 class SampleSet(db.Model):
