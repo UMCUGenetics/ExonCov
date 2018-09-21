@@ -9,7 +9,10 @@ import shlex
 from flask_script import Command, Option
 from flask_security.utils import encrypt_password
 from sqlalchemy import func
-import pysam
+try:
+    import pysam
+except ImportError:
+    print "WARNING: pysam not loaded, can't import bam files."
 
 from . import app, db, utils, user_datastore
 from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
@@ -178,7 +181,7 @@ class LoadDesign(Command):
                     data = line.rstrip().split('\t')
                     gene = genes[data[0]]
                     transcript = transcripts[data[1]]
-                    
+
                     # Set default transcript
                     gene.default_transcript = transcript
                     preferred_transcripts[gene.id] = transcript.name
