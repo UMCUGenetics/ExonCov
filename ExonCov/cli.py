@@ -78,30 +78,18 @@ class PrintStats(Command):
 class LoadDesign(Command):
     """Load design files to database."""
 
-    def __init__(
-        self,
-        default_exon_file='test_files/Dx_tracks/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v3_20bpflank.bed',
-        default_gene_transcript_file='test_files/Dx_tracks/Exoncov/NM_ENSEMBL_HGNC.txt',
-        default_preferred_transcripts_file='test_files/preferred_transcripts.txt',
-        defaut_gene_panel_file='test_files/Dx_tracks/Exoncov/gpanels.txt',
-    ):
-        self.default_exon_file = default_exon_file
-        self.default_gene_transcript_file = default_gene_transcript_file
-        self.default_preferred_transcripts_file = default_preferred_transcripts_file
-        self.defaut_gene_panel_file = defaut_gene_panel_file
-
-    def get_options(self):
-        return [
-            Option('-e', '--exon_file', dest='exon_file', default=self.default_exon_file),
-            Option('-gt', '--gene_transcript', dest='gene_transcript_file', default=self.default_gene_transcript_file),
-            Option('-pt', '--preferred_transcripts', dest='preferred_transcripts_file', default=self.default_preferred_transcripts_file),
-            Option('-gp', '--gene_panel', dest='gene_panel_file', default=self.defaut_gene_panel_file),
-        ]
-
-    def run(self, exon_file, gene_transcript_file, preferred_transcripts_file, gene_panel_file):
+    def run(self):
         """Load files."""
+        # files
+        exon_file = app.config['EXON_BED_FILE']
+        gene_transcript_file = app.config['GENE_TRANSCRIPT_FILE']
+        preferred_transcripts_file = app.config['PREFERRED_TRANSCRIPTS_FILE']
+        gene_panel_file = app.config['GENE_PANEL_FILE']
+
+        # Filled during parsing.
         transcripts = {}
         exons = []
+
         # Parse Exon file
         with open(exon_file, 'r') as f:
             print "Loading exon file: {0}".format(exon_file)
@@ -188,9 +176,9 @@ class LoadDesign(Command):
                 if not line.startswith('#'):
                     # Parse data
                     data = line.rstrip().split('\t')
-                    transcript = transcripts[data[0]]
-                    gene = genes[data[1]]
-
+                    gene = genes[data[0]]
+                    transcript = transcripts[data[1]]
+                    
                     # Set default transcript
                     gene.default_transcript = transcript
                     preferred_transcripts[gene.id] = transcript.name
@@ -302,7 +290,7 @@ class ImportBam(Command):
             bam_file=bam,
             threads=app.config['SAMBAMBA_THREADS'],
             filter=app.config['SAMBAMBA_FILTER'],
-            bed_file=app.config['SAMBAMBA_BED'],
+            bed_file=app.config['EXON_BED_FILE'],
             settings='--fix-mate-overlaps --min-base-quality 10 --cov-threshold 10 --cov-threshold 15 --cov-threshold 20 --cov-threshold 30 --cov-threshold 50 --cov-threshold 100',
         )
 

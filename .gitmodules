@@ -1,0 +1,3 @@
+[submodule "Dx_tracks"]
+	path = Dx_tracks
+	url = git@github.com:UMCUGenetics/Dx_tracks.git
