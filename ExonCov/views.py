@@ -7,6 +7,7 @@ from flask import render_template, request, redirect, url_for
 from flask_security import login_required, roles_required
 from flask_login import current_user
 from sqlalchemy.orm import joinedload
+from sqlalchemy import or_
 
 from ExonCov import app, db
 from .models import Sample, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
@@ -30,7 +31,7 @@ def samples():
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
         if run:
-            samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(SequencingRun.name.like('%{0}%'.format(run)))
+            samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(or_(SequencingRun.name.like('%{0}%'.format(run)),SequencingRun.platform_unit.like('%{0}%'.format(run))))
         samples = samples.paginate(page=page, per_page=samples_per_page)
     else:
         samples = Sample.query.paginate(page=page, per_page=samples_per_page)

@@ -30,7 +30,7 @@
         {% for sample in samples.items %}
         <tr>
             <td><a href="{{ url_for('sample', id=sample.id) }}">{{ sample.name }}</a></td>
-            <td><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run.name }}</li>{% endfor %}</ul></td>
+            <td><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></td>
             <td>{{ sample.import_date }}</td>
         </tr>
         {% endfor %}
