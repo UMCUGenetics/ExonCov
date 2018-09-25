@@ -170,7 +170,7 @@ def panel_update(name):
                 revision = 1
 
             if update_panel_form.confirm.data:
-                panel_new_version = PanelVersion(panel_name=panel.name, version_year=year, version_revision=revision, active=True, transcripts=transcripts)
+                panel_new_version = PanelVersion(panel_name=panel.name, version_year=year, version_revision=revision, transcripts=transcripts)
                 db.session.add(panel_new_version)
                 db.session.commit()
                 return redirect(url_for('panel', name=panel.name))
@@ -192,7 +192,7 @@ def panel_new():
         transcripts = new_panel_form.transcripts
 
         new_panel = Panel(name=panel_name)
-        new_panel_version = PanelVersion(panel_name=panel_name, version_year=time.strftime('%y'), version_revision=1, active=True, transcripts=transcripts)
+        new_panel_version = PanelVersion(panel_name=panel_name, version_year=time.strftime('%y'), version_revision=1, transcripts=transcripts)
 
         db.session.add(new_panel)
         db.session.add(new_panel_version)
