@@ -26,15 +26,15 @@ def samples():
     run = request.args.get('run')
     samples_per_page = 10
 
+    samples = Sample.query.order_by(Sample.import_date.desc()).order_by(Sample.name.asc())
     if (sample or run) and sample_form.validate():
-        samples = Sample.query
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
         if run:
             samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(or_(SequencingRun.name.like('%{0}%'.format(run)),SequencingRun.platform_unit.like('%{0}%'.format(run))))
-        samples = samples.order_by(Sample.import_date.desc()).paginate(page=page, per_page=samples_per_page)
+        samples = samples.paginate(page=page, per_page=samples_per_page)
     else:
-        samples = Sample.query.order_by(Sample.import_date.desc()).paginate(page=page, per_page=samples_per_page)
+        samples = samples.paginate(page=page, per_page=samples_per_page)
 
     return render_template('samples.html', form=sample_form, samples=samples)
 
