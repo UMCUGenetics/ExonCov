@@ -31,7 +31,7 @@ def samples():
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
         if run:
-            samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(or_(SequencingRun.name.like('%{0}%'.format(run)),SequencingRun.platform_unit.like('%{0}%'.format(run))))
+            samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(or_(SequencingRun.name.like('%{0}%'.format(run)), SequencingRun.platform_unit.like('%{0}%'.format(run))))
         samples = samples.paginate(page=page, per_page=samples_per_page)
     else:
         samples = samples.paginate(page=page, per_page=samples_per_page)
