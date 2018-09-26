@@ -191,38 +191,41 @@ class LoadDesign(Command):
         # Setup gene panel
         with open(gene_panel_file, 'r') as f:
             print "Loading gene panel file: {0}".format(gene_panel_file)
+            panels = {}
             for line in f:
                 data = line.rstrip().split('\t')
                 panel = data[0]
 
                 if 'elid' not in panel:  # Skip old elid panel designs
-                    panel_match = re.search('(\w+)v(1\d).(\d)', panel)  # look for [panel_name]v[version] pattern
-                    if panel_match:
-                        panel_name = panel_match.group(1)
-                        panel_version_year = panel_match.group(2)
-                        panel_version_revision = panel_match.group(3)
+                    panels[panel] = data[2]
+
+            for panel in sorted(panels.keys()):
+                panel_match = re.search('(\w+)v(1\d).(\d)', panel)  # look for [panel_name]v[version] pattern
+                genes = panels[panel].split(',')
+                if panel_match:
+                    panel_name = panel_match.group(1)
+                    panel_version_year = panel_match.group(2)
+                    panel_version_revision = panel_match.group(3)
+                else:
+                    panel_name = panel
+                    panel_version_year = time.strftime('%y')
+                    panel_version_revision = 1
+
+                panel = utils.get_one_or_create(
+                    db.session,
+                    Panel,
+                    name=panel_name,
+                )[0]
+
+                panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True)
+
+                for gene in set(genes):
+                    if gene in preferred_transcripts:
+                        transcript = transcripts[preferred_transcripts[gene]]
+                        panel_version.transcripts.append(transcript)
                     else:
-                        panel_name = panel
-                        panel_version_year = time.strftime('%y')
-                        panel_version_revision = 1
-
-                    genes = data[2].split(',')
-
-                    panel = utils.get_one_or_create(
-                        db.session,
-                        Panel,
-                        name=panel_name,
-                    )[0]
-
-                    panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True)
-
-                    for gene in set(genes):
-                        if gene in preferred_transcripts:
-                            transcript = transcripts[preferred_transcripts[gene]]
-                            panel_version.transcripts.append(transcript)
-                        else:
-                            print "WARNING: Unkown gene: {0}".format(gene)
-                    db.session.add(panel_version)
+                        print "WARNING: Unkown gene: {0}".format(gene)
+                db.session.add(panel_version)
             db.session.commit()
 
 
