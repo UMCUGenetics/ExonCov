@@ -43,7 +43,7 @@ class PanelVersionAdminView(CustomModelView):
     """Panel version admin view."""
     column_searchable_list = ['panel_name']
 
-    form_columns = ['panel', 'version_year', 'version_revision', 'active', 'validated', 'transcripts']
+    form_columns = ['panel', 'version_year', 'version_revision', 'active', 'validated', 'transcripts', 'comments']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
@@ -91,11 +91,11 @@ class GeneAdminView(CustomModelView):
 class TranscriptAdminView(CustomModelView):
     """Transcript admin view."""
     column_list = ['name', 'chr', 'start', 'end', 'gene']
-    column_sortable_list = ['name', 'chr', 'start', 'end']  # TODO: sort by gene
+    column_sortable_list = ['name', 'chr', 'start', 'end']
     column_searchable_list = ['name', 'gene_id']
     column_filters = ['chr', 'start', 'end', 'gene_id']
 
-    form_columns = ['name', 'gene', 'exons', 'chr', 'start', 'end']  # TODO:Automatically set chr, start, end based on exons.
+    form_columns = ['name', 'gene', 'exons', 'chr', 'start', 'end']
     form_ajax_refs = {
         'gene': {
             'fields': ['id'],

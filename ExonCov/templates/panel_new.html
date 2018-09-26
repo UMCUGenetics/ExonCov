@@ -9,6 +9,7 @@
         {{ form.csrf_token }}
         {{ render_select2_field(form.name) }}
         {{ render_field(form.gene_list, rows="12") }}
+        {{ render_field(form.comments, rows="2") }}
 
         <div class="form-group">
             <div class="col-sm-offset-1 col-sm-10">

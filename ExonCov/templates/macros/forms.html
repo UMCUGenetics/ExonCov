@@ -26,11 +26,10 @@
 {% endmacro %}
 
 {% macro render_checkbox(field) %}
-<div class="form-group">
-    <div class="col-sm-offset-2 col-sm-10">
-        <label>
-            {{ field(type='checkbox', **kwargs) }} {{field.label.text}}
-        </label>
+<div class="form-group {% if field.flags.required %}required{% endif %}">
+    {{ field.label(class_='col-sm-2 control-label') }}
+    <div class="col-sm-5">
+        {{ field(type='checkbox', **kwargs) }}
     </div>
 </div>
 {% endmacro %}

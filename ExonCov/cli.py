@@ -217,7 +217,7 @@ class LoadDesign(Command):
                     name=panel_name,
                 )[0]
 
-                panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True)
+                panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True, user_id=1)
 
                 for gene in set(genes):
                     if gene in preferred_transcripts:

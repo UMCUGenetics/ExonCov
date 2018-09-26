@@ -18,11 +18,11 @@
         <tr>
             <th># Exons</th>
             <th># Samples</th>
-            <th>Min.</th>
             <th>Mean</th>
+            <th>Min.</th>
             <th>Max.</th>
             {% for sample in custom_panel.samples %}
-            <th>{{ sample.name }} - {{ measurement_type[1] }}</th>
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -30,8 +30,8 @@
         <tr>
             <td>{{ exon_measurements|count }}</td>
             <td>{{ samples|count }}</td>
-            {{ render_measurment_td(transcript_measurements['min']) }}
             {{ render_measurment_td(transcript_measurements['mean']) }}
+            {{ render_measurment_td(transcript_measurements['min']) }}
             {{ render_measurment_td(transcript_measurements['max']) }}
             {% for sample in custom_panel.samples %}
             {{ render_measurment_td(transcript_measurements[sample]) }}
@@ -47,11 +47,11 @@
             <th>Chr</th>
             <th>Start</th>
             <th>End</th>
-            <th>Min.</th>
             <th>Mean</th>
+            <th>Min.</th>
             <th>Max.</th>
             {% for sample in custom_panel.samples %}
-            <th>{{ sample.name }} - {{ measurement_type[1] }}</th>
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -61,8 +61,8 @@
             <td>{{ exon.chr }}</td>
             <td>{{ exon.start }}</td>
             <td>{{ exon.end }}</td>
-            {{ render_measurment_td(exon_measurements[exon]['min']) }}
             {{ render_measurment_td(exon_measurements[exon]['mean']) }}
+            {{ render_measurment_td(exon_measurements[exon]['min']) }}
             {{ render_measurment_td(exon_measurements[exon]['max']) }}
             {% for sample in custom_panel.samples %}
             {{ render_measurment_td(exon_measurements[exon][sample]) }}

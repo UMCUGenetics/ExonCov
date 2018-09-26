@@ -5,12 +5,15 @@
 
 {% block header %}
 Gene panel - {{ panel.name_version }}
+{% if current_user.has_role('panel_admin') %}
+<small><a href="{{ url_for('panel_version_edit', id=panel.id) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+{% endif %}
 {% endblock %}
 
 {% block body %}
 <dl class="dl-horizontal">
-    <dt>Active</dt><dd>{{ render_bool_glyph(panel.active) }} {% if current_user.has_role('panel_admin') %}<div class="btn-group btn-group-xs" role="group"><a href="{{ url_for('panel_version_change_active_status', id=panel.id) }}" type="button" class="btn btn-warning">Change active status.</a></div>{% endif %}</dd>
-    <dt>Validated</dt><dd>{{ render_bool_glyph(panel.validated) }} {% if current_user.has_role('panel_admin') %}<div class="btn-group btn-group-xs" role="group"><a href="{{ url_for('panel_version_change_validated_status', id=panel.id) }}" type="button" class="btn btn-warning">Change validation status.</a></div>{% endif %}</dd>
+    <dt>Active</dt><dd>{{ render_bool_glyph(panel.active) }}</dd>
+    <dt>Validated</dt><dd>{{ render_bool_glyph(panel.validated) }}</dd>
 </dl>
 {{ render_sample_datatable_form(filter=false) }}
 

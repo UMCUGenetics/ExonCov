@@ -155,9 +155,12 @@ class PanelVersion(db.Model):
     version_revision = db.Column(db.Integer(), nullable=False, index=True)
     active = db.Column(db.Boolean, index=True, default=False)
     validated = db.Column(db.Boolean, index=True, default=False)
+    comments = db.Column(db.Text())
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
+    user = db.relationship('User', back_populates='panel_versions')
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
 
     def __repr__(self):
@@ -189,6 +192,7 @@ class CustomPanel(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
+    comments = db.Column(db.Text())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
 
     user = db.relationship('User', back_populates='custom_panels')
@@ -356,6 +360,7 @@ class User(db.Model, UserMixin):
         backref=db.backref('users')
     )
     custom_panels = db.relationship('CustomPanel', back_populates='user')
+    panel_versions = db.relationship('PanelVersion', back_populates='user')
 
     def __init__(self, email, password, first_name, last_name, active, roles):
         self.email = email

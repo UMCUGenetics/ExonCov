@@ -24,7 +24,7 @@ def active_sample_sets():
 
 def all_panels():
     """Query factory for all panels."""
-    return PanelVersion.query.all()
+    return PanelVersion.query.filter_by(active=True).filter_by(validated=True).all()
 
 
 def parse_gene_list(gene_list, transcripts=[]):
@@ -70,7 +70,7 @@ class CustomPanelNewForm(FlaskForm):
         if not self.samples.data and not self.sample_set.data:
             message = 'Sample(s) and/or sample set must be set.'
             self.samples.errors.append(message)
-            self.sample_sets.errors.append(message)
+            self.sample_set.errors.append(message)
             return False
         elif self.samples.data and self.sample_set.data:
             sample_ids = [sample.id for sample in self.samples.data]
@@ -127,6 +127,7 @@ class CreatePanelForm(FlaskForm):
 
     name = StringField('Name', validators=[InputRequired()])
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    comments = TextAreaField('Comments')
     transcript = []  # Filled in validate function
 
     def validate(self):
@@ -159,6 +160,7 @@ class UpdatePanelForm(FlaskForm):
     """Update Panel form."""
 
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
+    comments = TextAreaField('Comments')
     confirm = BooleanField('Confirm')
     transcript = []  # Filled in validate function
 
@@ -181,3 +183,11 @@ class UpdatePanelForm(FlaskForm):
             return False
 
         return True
+
+
+class PanelVersionEditForm(FlaskForm):
+    """PanelVersion edit form."""
+
+    comments = TextAreaField('Comments')
+    active = BooleanField('Active')
+    validated = BooleanField('Validated')

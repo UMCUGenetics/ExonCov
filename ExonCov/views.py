@@ -11,7 +11,7 @@ from sqlalchemy import or_
 
 from ExonCov import app, db
 from .models import Sample, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm
+from .forms import CustomPanelForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
 from .utils import weighted_average
 
 
@@ -170,7 +170,14 @@ def panel_update(name):
                 revision = 1
 
             if update_panel_form.confirm.data:
-                panel_new_version = PanelVersion(panel_name=panel.name, version_year=year, version_revision=revision, transcripts=transcripts)
+                panel_new_version = PanelVersion(
+                    panel_name=panel.name,
+                    version_year=year,
+                    version_revision=revision,
+                    transcripts=transcripts,
+                    comments=update_panel_form.data['comments'],
+                    user=current_user
+                )
                 db.session.add(panel_new_version)
                 db.session.commit()
                 return redirect(url_for('panel', name=panel.name))
@@ -192,7 +199,13 @@ def panel_new():
         transcripts = new_panel_form.transcripts
 
         new_panel = Panel(name=panel_name)
-        new_panel_version = PanelVersion(panel_name=panel_name, version_year=time.strftime('%y'), version_revision=1, transcripts=transcripts)
+        new_panel_version = PanelVersion(
+            panel_name=panel_name,
+            version_year=time.strftime('%y'),
+            version_revision=1, transcripts=transcripts,
+            comments=new_panel_form.data['comments'],
+            user=current_user
+            )
 
         db.session.add(new_panel)
         db.session.add(new_panel_version)
@@ -209,37 +222,28 @@ def panel_version(id):
     return render_template('panel_version.html', panel=panel)
 
 
-@app.route('/panel_version/<int:id>/change_validated_status')
+@app.route('/panel_version/<int:id>/edit', methods=['GET', 'POST'])
 @roles_required('panel_admin')
-def panel_version_change_validated_status(id):
+def panel_version_edit(id):
     """Set validation status to true."""
     panel = PanelVersion.query.get_or_404(id)
+    form = PanelVersionEditForm(active=panel.active, validated=panel.validated, comments=panel.comments)
 
-    panel.validated = not panel.validated
-    db.session.add(panel)
-    db.session.commit()
+    if form.validate_on_submit():
+        panel.active = form.active.data
+        panel.validated = form.validated.data
+        panel.comments = form.comments.data
+        db.session.add(panel)
+        db.session.commit()
+        return redirect(url_for('panel_version', id=panel.id))
 
-    return redirect(url_for('panel_version', id=panel.id))
-
-
-@app.route('/panel_version/<int:id>/change_active_status')
-@roles_required('panel_admin')
-def panel_version_change_active_status(id):
-    """Set validation status to true."""
-    panel = PanelVersion.query.get_or_404(id)
-
-    panel.active = not panel.active
-    db.session.add(panel)
-    db.session.commit()
-
-    return redirect(url_for('panel_version', id=panel.id))
+    return render_template('panel_version_edit.html', form=form, panel=panel)
 
 
 @app.route('/panel/custom', methods=['GET', 'POST'])
 @login_required
 def custom_panel_new():
     """New custom panel page."""
-    # TODO: Page layout
     custom_panel_form = CustomPanelNewForm()
 
     if custom_panel_form.validate_on_submit():
@@ -265,7 +269,6 @@ def custom_panel_new():
 @login_required
 def custom_panel(id):
     """Custom panel page."""
-    # TODO: Page layout
     custom_panel = CustomPanel.query.options(joinedload('transcripts')).get_or_404(id)
     custom_panel_form = CustomPanelForm()
 
@@ -318,7 +321,6 @@ def custom_panel(id):
 @login_required
 def custom_panel_transcript(id, transcript_name):
     """Custom panel transcript page."""
-    # TODO: Page layout
     custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
     custom_panel_form = CustomPanelForm()
 
@@ -365,7 +367,6 @@ def custom_panel_transcript(id, transcript_name):
 @login_required
 def custom_panel_gene(id, gene_id):
     """Custom panel gene page."""
-    # TODO: Page layout
     custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
     gene = Gene.query.get_or_404(gene_id)
 

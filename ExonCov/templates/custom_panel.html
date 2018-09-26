@@ -19,11 +19,11 @@
         <tr>
             <th># Genes</th>
             <th># Samples</th>
-            <th>Min.</th>
             <th>Mean</th>
+            <th>Min.</th>
             <th>Max.</th>
             {% for sample in custom_panel.samples %}
-            <th>{{ sample.name }} - {{ measurement_type[1] }}</th>
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -31,8 +31,8 @@
         <tr>
             <td>{{ transcript_measurements|count }}</td>
             <td>{{ samples|count }}</td>
-            {{ render_measurment_td(panel_measurements['min']) }}
             {{ render_measurment_td(panel_measurements['mean']) }}
+            {{ render_measurment_td(panel_measurements['min']) }}
             {{ render_measurment_td(panel_measurements['max']) }}
             {% for sample in custom_panel.samples %}
             {{ render_measurment_td(panel_measurements[sample]['measurement']) }}
@@ -49,11 +49,11 @@
         <tr>
             <th>Gene</th>
             <th>Transcript</th>
-            <th>Min.</th>
             <th>Mean</th>
+            <th>Min.</th>
             <th>Max.</th>
             {% for sample in custom_panel.samples %}
-            <th>{{ sample.name }} - {{ measurement_type[1] }}</th>
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -62,8 +62,8 @@
         <tr>
             <td><a href="{{ url_for('custom_panel_gene', id=custom_panel.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
             <td><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
-            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
             {% for sample in custom_panel.samples %}
             {{ render_measurment_td(transcript_measurements[transcript][sample]) }}

@@ -17,11 +17,11 @@
     <thead>
         <tr>
             <th>Transcript</th>
-            <th>Min.</th>
             <th>Mean</th>
+            <th>Min.</th>
             <th>Max.</th>
             {% for sample in custom_panel.samples %}
-            <th>{{ sample.name }} - {{ measurement_type[1] }}</th>
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -29,8 +29,8 @@
         {% for transcript in transcript_measurements %}
         <tr>
             <td><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
-            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
             {% for sample in custom_panel.samples %}
             {{ render_measurment_td(transcript_measurements[transcript][sample]) }}
