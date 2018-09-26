@@ -235,7 +235,7 @@ class ImportBam(Command):
 
     option_list = (
         Option('bam'),
-        Option('-r', '--sequencing_run_name', dest='sequencing_run_name'),  # TODO: Fix for merged run
+        Option('-r', '--sequencing_run_name', dest='sequencing_run_name'),
         Option('-o', '--overwrite', dest='overwrite', default=False, action='store_true'),
         Option('-p', '--print_output', dest='print_output', default=False, action='store_true')
     )
