@@ -17,10 +17,12 @@ def get_one_or_create(session, model, create_method='', create_method_kwargs=Non
         try:
             session.add(created)
             session.flush()
-            return created, False
         except IntegrityError:
             session.rollback()
             return session.query(model).filter_by(**kwargs).one(), True
+        else:
+            session.commit()
+            return created, False
 
 
 class WSGIMiddleware(object):
