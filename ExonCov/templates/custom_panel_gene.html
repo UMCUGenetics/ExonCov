@@ -1,4 +1,4 @@
-{% from "macros/forms.html" import render_field %}
+{% from "macros/forms.html" import custom_panel_measurement_type %}
 {% from "macros/tables.html" import render_measurment_td %}
 {% extends 'base.html' %}
 
@@ -6,11 +6,14 @@
 
 {% block body %}
 <div class="well">
-    <form method="POST" action="" class="form-horizontal">
-        {{ form.csrf_token }}
-        {{ render_field(form.measurement_type, onchange="this.form.submit()") }}
-    </form>
+    <dl class="dl-horizontal">
+        <dt>Created by</dt><dd>{{ custom_panel.user }}</dd>
+        <dt>Date</dt><dd>{{ custom_panel.date }}</dd>
+        <dt>Comments</dt><dd>{{ custom_panel.comments }}</dd>
+    </dl>
 </div>
+
+{{ custom_panel_measurement_type(form) }}
 
 <h2>Transcript Statistics</h2>
 <table class="table table-bordered table-hover table-condensed" id="data_table">

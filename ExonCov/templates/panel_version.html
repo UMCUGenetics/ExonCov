@@ -14,6 +14,8 @@ Gene panel - {{ panel.name_version }}
 <dl class="dl-horizontal">
     <dt>Active</dt><dd>{{ render_bool_glyph(panel.active) }}</dd>
     <dt>Validated</dt><dd>{{ render_bool_glyph(panel.validated) }}</dd>
+    {% if current_user.has_role('panel_admin') %}<dt>Comments</dt><dd>{{ panel.comments }}</dd>{% endif %}
+
 </dl>
 {{ render_sample_datatable_form(filter=false) }}
 

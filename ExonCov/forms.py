@@ -56,6 +56,7 @@ class CustomPanelNewForm(FlaskForm):
     samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
     panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
+    comments = TextAreaField('Comments', description="Provide a short description.", validators=[])
     transcripts = []  # Filled in validate function
 
     def validate(self):
@@ -127,7 +128,7 @@ class CreatePanelForm(FlaskForm):
 
     name = StringField('Name', validators=[InputRequired()])
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
-    comments = TextAreaField('Comments')
+    comments = TextAreaField('Comments', description="Provide a short description.")
     transcript = []  # Filled in validate function
 
     def validate(self):
@@ -160,7 +161,7 @@ class UpdatePanelForm(FlaskForm):
     """Update Panel form."""
 
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
-    comments = TextAreaField('Comments')
+    comments = TextAreaField('Comments', description="Provide a short description.")
     confirm = BooleanField('Confirm')
     transcript = []  # Filled in validate function
 
@@ -188,6 +189,6 @@ class UpdatePanelForm(FlaskForm):
 class PanelVersionEditForm(FlaskForm):
     """PanelVersion edit form."""
 
-    comments = TextAreaField('Comments')
+    comments = TextAreaField('Comments', description="Provide a short description.")
     active = BooleanField('Active')
     validated = BooleanField('Validated')

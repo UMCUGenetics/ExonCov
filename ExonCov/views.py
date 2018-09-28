@@ -256,7 +256,8 @@ def custom_panel_new():
         custom_panel = CustomPanel(
             user=current_user,
             transcripts=custom_panel_form.transcripts,
-            samples=samples
+            samples=samples,
+            comments=custom_panel_form.data['comments']
         )
         db.session.add(custom_panel)
         db.session.commit()
