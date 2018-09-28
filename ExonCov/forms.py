@@ -5,7 +5,7 @@ from flask_wtf import FlaskForm
 from flask_security.forms import RegisterForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
 from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField
-from wtforms.validators import InputRequired
+from wtforms import validators
 
 from .models import Sample, SampleSet, Gene, PanelVersion, Panel
 
@@ -55,7 +55,7 @@ class CustomPanelNewForm(FlaskForm):
     samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
     panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
-    comments = TextAreaField('Comments', description="Provide a short description.", validators=[InputRequired()])
+    comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     transcripts = []  # Filled in validate function
 
     def validate(self):
@@ -118,16 +118,16 @@ class CustomPanelForm(FlaskForm):
 class ExtendedRegisterForm(RegisterForm):
     """Extend default register form."""
 
-    first_name = StringField('First name', validators=[InputRequired()])
-    last_name = StringField('Last name', validators=[InputRequired()])
+    first_name = StringField('First name', validators=[validators.InputRequired()])
+    last_name = StringField('Last name', validators=[validators.InputRequired()])
 
 
 class CreatePanelForm(FlaskForm):
     """Create Panel form."""
 
-    name = StringField('Name', validators=[InputRequired()])
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
-    comments = TextAreaField('Comments', description="Provide a short description.", validators=[InputRequired()])
+    name = StringField('Name', validators=[validators.InputRequired()])
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     transcript = []  # Filled in validate function
 
     def validate(self):
@@ -159,8 +159,8 @@ class CreatePanelForm(FlaskForm):
 class UpdatePanelForm(FlaskForm):
     """Update Panel form."""
 
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[InputRequired()])
-    comments = TextAreaField('Comments', description="Provide a short description.", validators=[InputRequired()])
+    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     confirm = BooleanField('Confirm')
     transcript = []  # Filled in validate function
 
@@ -188,6 +188,6 @@ class UpdatePanelForm(FlaskForm):
 class PanelVersionEditForm(FlaskForm):
     """PanelVersion edit form."""
 
-    comments = TextAreaField('Comments', description="Provide a short description.", validators=[InputRequired()])
+    comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     active = BooleanField('Active')
     validated = BooleanField('Validated')
