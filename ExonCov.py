@@ -628,8 +628,8 @@ if __name__ == "__main__":
     parser.add_option("--project", metavar="[STRING]", help="SGE project [default = SGE default]")
     parser.add_option("-c", default="off", dest="max_mem", metavar="[INT]", help="memory reserved for qsub [default =  off (=threads*10G)]")
 
-    parser.add_option("-b", default="/hpc/cog_bioinf/diagnostiek/production/Dx_tracks/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed",
-                      dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_v2_20bpflank.bed]")
+    parser.add_option("-b", default="/hpc/cog_bioinf/diagnostiek/production/Dx_tracks/Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v3_20bpflank.bed",
+                      dest="bed_file", metavar="[PATH]", help="full path to BED file [default = [master]/ENSEMBL_UCSC_merged_collapsed_sorted_v3_20bpflank.bed]")
     parser.add_option("-n", default="/hpc/cog_bioinf/diagnostiek/production/Dx_tracks/Exoncov/NM_ENSEMBL_HGNC.txt", dest="hgnc_trans_file",
                       metavar="[PATH]", help="full path to file with the link between GENE (HGNC) and all known NM/ENST transcripts [default = [master]/NM_ENSEMBL_HGNC.txt]")
 
