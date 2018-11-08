@@ -9,10 +9,11 @@ import shlex
 from flask_script import Command, Option
 from flask_security.utils import encrypt_password
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 try:
     import pysam
 except ImportError:
-    print "WARNING: pysam not loaded, can't import bam files."
+    print >> sys.stderr, "WARNING: pysam not loaded, can't import bam files."
 
 from . import app, db, utils, user_datastore
 from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
@@ -270,13 +271,22 @@ class ImportBam(Command):
         if not sequencing_runs:
             sys.exit("ERROR: Sample can not be linked to a sequencing run, please make sure that read groups contain PU values.")
         elif len(sequencing_runs) > 1 and sequencing_run_name:
-            print "WARNING: Sample read groups contain multiple platform units, sequencing_run_name setting ignored."
-        elif sequencing_runs.values()[0].name and sequencing_runs.values()[0].name != sequencing_run_name:
-            print "WARNING: Sequencing run (PU) is in database with different sequencing_run_name, sequencing_run_name setting ignored."
-        else:
-            sequencing_runs.values()[0].name = sequencing_run_name
-            db.session.add(sequencing_runs.values()[0])
-            db.session.commit()
+            print >> sys.stderr, "WARNING: Sample read groups contain multiple platform units, sequencing_run_name setting ignored."
+        else:  # assume one sequencing run (PU)
+            sequencing_run = sequencing_runs.values()[0]
+            if sequencing_run.name and sequencing_run.name != sequencing_run_name:
+                print >> sys.stderr, "WARNING: Sequencing run (PU) exists in database with different sequencing_run_name, sequencing_run_name setting ignored."
+            else:
+                try:
+                    sequencing_runs.values()[0].name = sequencing_run_name
+                    db.session.add(sequencing_runs.values()[0])
+                    db.session.flush()
+                except IntegrityError as e:
+                    db.session.rollback()
+                    print >> sys.stderr, "WARNING: sequencing_run_name in database linked to different Sequencing run (PU), sequencing_run_name setting ignored."
+                    print >> sys.stderr, e
+                else:
+                    db.session.commit()
 
         bam_file.close()
 
