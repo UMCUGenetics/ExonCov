@@ -1,6 +1,5 @@
 """ExonCov views."""
 
-from collections import OrderedDict
 import time
 
 from flask import render_template, request, redirect, url_for
@@ -51,7 +50,7 @@ def sample(id):
         'measurement_percentage30': '>30'
     }
     query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
-    panels = OrderedDict()
+    panels = {}
 
     for panel, transcript_measurement in query:
         if panel.id not in panels:
@@ -329,7 +328,7 @@ def custom_panel_transcript(id, transcript_name):
     transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).first()
     measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
     transcript_measurements = {}
-    exon_measurements = OrderedDict()
+    exon_measurements = {}
 
     if sample_ids and measurement_type:
         # Get transcript measurements
