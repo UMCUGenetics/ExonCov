@@ -298,7 +298,7 @@ class ImportBam(Command):
             db.session.commit()
 
         elif sample and not overwrite:
-            sys.exit("ERROR: Sample and run(s) combination already exists.")
+            sys.exit("ERROR: Sample and run(s) combination already exists.\t{0}".format(sample))
 
         # Create sambamba
         sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --filter '{filter}' --regions {bed_file} {settings}".format(
