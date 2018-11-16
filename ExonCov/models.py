@@ -303,8 +303,12 @@ class ExonMeasurement(db.Model):
     sample = db.relationship('Sample', back_populates='exon_measurements')
     exon = db.relationship('Exon', back_populates='exon_measurements')
 
-    __table_args = (
-        UniqueConstraint('exon_id', 'sample_id')
+    __table_args__ = (
+        UniqueConstraint('exon_id', 'sample_id'),
+        {
+            'mysql_row_format': 'COMPRESSED',
+            'mysql_key_block_size': '8'
+        }
     )
 
     def __repr__(self):
@@ -334,8 +338,12 @@ class TranscriptMeasurement(db.Model):
     sample = db.relationship('Sample', back_populates='transcript_measurements')
     transcript = db.relationship('Transcript', back_populates='transcript_measurements')
 
-    __table_args = (
-        UniqueConstraint('transcript_id', 'sample_id')
+    __table_args__ = (
+        UniqueConstraint('transcript_id', 'sample_id'),
+        {
+            'mysql_row_format': 'COMPRESSED',
+            'mysql_key_block_size': '8'
+        }
     )
 
     def __repr__(self):
