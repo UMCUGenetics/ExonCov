@@ -4,7 +4,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
 from . import db, admin
-from .models import Exon, Transcript, Gene, Panel, PanelVersion, CustomPanel, Sample, SampleSet, SequencingRun, User, Role
+from .models import Exon, Transcript, Gene, Panel, PanelVersion, CustomPanel, Sample, SampleProject, SampleSet, SequencingRun, User, Role
 
 
 class CustomModelView(ModelView):
@@ -119,17 +119,29 @@ class ExonAdminView(CustomModelView):
 
 class SampleAdminView(CustomModelView):
     """Sample admin view."""
-    column_list = ['name', 'sequencing_runs', 'import_date']
+    column_list = ['name', 'project', 'sequencing_runs', 'import_date']
     column_sortable_list = ['name', 'import_date']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'sequencing_runs', 'import_date', 'file_name', 'import_command']
+    form_columns = ['name', 'project', 'sequencing_runs', 'import_date', 'file_name', 'import_command']
     form_ajax_refs = {
+        'project': {
+            'fields': ['name'],
+            'page_size': 10
+        },
         'sequencing_runs': {
             'fields': ['name'],
             'page_size': 10
         },
     }
+
+
+class SampleProjectAdminView(CustomModelView):
+    """SequencingRun admin view."""
+    column_list = ['name']
+    column_searchable_list = ['name']
+
+    form_columns = ['name']
 
 
 class SampleSetAdminView(CustomModelView):
@@ -169,6 +181,7 @@ admin.add_view(PanelVersionAdminView(PanelVersion, db.session))
 admin.add_view(CustomPanelAdminView(CustomPanel, db.session))
 
 admin.add_view(SampleAdminView(Sample, db.session))
+admin.add_view(SampleProjectAdminView(SampleProject, db.session))
 admin.add_view(SampleSetAdminView(SampleSet, db.session))
 admin.add_view(SequencingRunAdminView(SequencingRun, db.session))
 

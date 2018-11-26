@@ -16,7 +16,7 @@ except ImportError:
     print >> sys.stderr, "WARNING: pysam not loaded, can't import bam files."
 
 from . import app, db, utils, user_datastore
-from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
+from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, SampleProject, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
 from .utils import weighted_average
 
 
@@ -235,13 +235,13 @@ class ImportBam(Command):
     """Import sample from bam file."""
 
     option_list = (
+        Option('project_name'),
         Option('bam'),
-        Option('-r', '--sequencing_run_name', dest='sequencing_run_name'),
-        Option('-o', '--overwrite', dest='overwrite', default=False, action='store_true'),
-        Option('-p', '--print_output', dest='print_output', default=False, action='store_true')
+        Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
+        Option('-o', '--print_output', dest='print_output', default=False, action='store_true')
     )
 
-    def run(self, bam, sequencing_run_name, overwrite=False, print_output=False):
+    def run(self, bam, project_name, overwrite=False, print_output=False):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -252,7 +252,7 @@ class ImportBam(Command):
         sequencing_run_ids = []
         exon_measurements = []
 
-        # Parse read groups
+        # Parse read groups and setup sequencing run(s)
         for read_group in bam_file.header['RG']:
             if not sample_name:
                 sample_name = read_group['SM']
@@ -270,37 +270,25 @@ class ImportBam(Command):
 
         if not sequencing_runs:
             sys.exit("ERROR: Sample can not be linked to a sequencing run, please make sure that read groups contain PU values.")
-        elif len(sequencing_runs) > 1 and sequencing_run_name:
-            print >> sys.stderr, "WARNING: Sample read groups contain multiple platform units, sequencing_run_name setting ignored."
-        else:  # assume one sequencing run (PU)
-            sequencing_run = sequencing_runs.values()[0]
-            if sequencing_run.name and sequencing_run.name != sequencing_run_name:
-                print >> sys.stderr, "WARNING: Sequencing run (PU) exists in database with different sequencing_run_name, sequencing_run_name setting ignored."
-            else:
-                try:
-                    sequencing_runs.values()[0].name = sequencing_run_name
-                    db.session.add(sequencing_runs.values()[0])
-                    db.session.flush()
-                except IntegrityError as e:
-                    db.session.rollback()
-                    print >> sys.stderr, "WARNING: sequencing_run_name in database linked to different Sequencing run (PU), sequencing_run_name setting ignored."
-                    print >> sys.stderr, e
-                else:
-                    db.session.commit()
 
         bam_file.close()
 
-        # Look for sample in database
-        sample = Sample.query.filter_by(name=sample_name).join(samples_sequencingRun).filter(SequencingRun.id.in_(sequencing_run_ids)).group_by(Sample).having(len(sequencing_run_ids) == func.count(samples_sequencingRun.c.sequencingRun_id)).first()
+        # Setup sample project
+        sample_project, sample_project_exists = utils.get_one_or_create(
+            db.session,
+            SampleProject,
+            name=project_name
+        )  # returns object and exists bool
 
+        # Look for sample in database
+        sample = Sample.query.filter_by(name=sample_name).filter_by(project_id=sample_project.id).first()
         if sample and overwrite:
             db.session.delete(sample)
             db.session.commit()
-
         elif sample and not overwrite:
-            sys.exit("ERROR: Sample and run(s) combination already exists.\t{0}".format(sample))
+            sys.exit("ERROR: Sample and project combination already exists.\t{0}".format(sample))
 
-        # Create sambamba
+        # Create sambamba command
         sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --filter '{filter}' --regions {bed_file} {settings}".format(
             sambamba=app.config['SAMBAMBA'],
             bam_file=bam,
@@ -311,7 +299,7 @@ class ImportBam(Command):
         )
 
         # Create sample
-        sample = Sample(name=sample_name, file_name=bam, import_command=sambamba_command, sequencing_runs=sequencing_runs.values())
+        sample = Sample(name=sample_name, project=sample_project, file_name=bam, import_command=sambamba_command, sequencing_runs=sequencing_runs.values())
         db.session.add(sample)
         db.session.commit()
 

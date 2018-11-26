@@ -44,8 +44,9 @@ def parse_gene_list(gene_list, transcripts=[]):
 
 class SampleForm(FlaskForm):
     """Query samples by run or samplename field"""
-    run = StringField('Sequencing run')
     sample = StringField('Sample')
+    project = StringField('Project')
+    run = StringField('Sequencing run')
 
 
 class CustomPanelNewForm(FlaskForm):

@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import or_
 
 from ExonCov import app, db
-from .models import Sample, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .models import Sample, SampleProject, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
 from .forms import CustomPanelForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
 from .utils import weighted_average
 
@@ -22,13 +22,16 @@ def samples():
     sample_form = SampleForm(request.args, meta={'csrf': False})
     page = request.args.get('page', default=1, type=int)
     sample = request.args.get('sample')
+    project = request.args.get('project')
     run = request.args.get('run')
     samples_per_page = 10
 
     samples = Sample.query.order_by(Sample.import_date.desc()).order_by(Sample.name.asc())
-    if (sample or run) and sample_form.validate():
+    if (sample or project or run) and sample_form.validate():
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
+        if project:
+            samples = samples.join(SampleProject).filter(SampleProject.name.like('%{0}%'.format(project)))
         if run:
             samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(or_(SequencingRun.name.like('%{0}%'.format(run)), SequencingRun.platform_unit.like('%{0}%'.format(run))))
         samples = samples.paginate(page=page, per_page=samples_per_page)

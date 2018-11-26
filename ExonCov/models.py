@@ -42,14 +42,14 @@ sample_sets_samples = db.Table(
 
 roles_users = db.Table(
     'roles_users',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
+    db.Column('user_id', db.ForeignKey('user.id'), primary_key=True),
+    db.Column('role_id', db.ForeignKey('role.id'), primary_key=True)
 )
 
 samples_sequencingRun = db.Table(
     'samples_sequencingRun',
-    db.Column('sample_id', db.Integer, db.ForeignKey('samples.id')),
-    db.Column('sequencingRun_id', db.Integer, db.ForeignKey('sequencing_runs.id'))
+    db.Column('sample_id', db.ForeignKey('samples.id'), primary_key=True),
+    db.Column('sequencingRun_id', db.ForeignKey('sequencing_runs.id'), primary_key=True)
 )
 
 
@@ -226,13 +226,12 @@ class Sample(db.Model):
     import_date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
     file_name = db.Column(db.String(255), nullable=False)
     import_command = db.Column(db.Text(), nullable=False)
+    project_id = db.Column(db.Integer(), db.ForeignKey('sample_projects.id'), nullable=False, index=True)
 
     exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
-    sequencing_runs = db.relationship(
-        'SequencingRun', secondary=samples_sequencingRun, lazy='joined',
-        backref=db.backref('samples')
-    )
+    project = db.relationship('SampleProject', back_populates='samples', lazy='joined')
+    sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, lazy='joined', backref=db.backref('samples'))
     custom_panels = db.relationship('CustomPanel', secondary=custom_panels_samples, back_populates='samples')
     sets = db.relationship('SampleSet', secondary=sample_sets_samples, back_populates='samples')
 
@@ -240,7 +239,7 @@ class Sample(db.Model):
         return "Sample({0})".format(self.name)
 
     def __str__(self):
-        return '{0} ({1})'.format(self.name, ', '.join([str(sequencing_run) for sequencing_run in self.sequencing_runs]))
+        return '{0} ({1})'.format(self.name, self.project)
 
 
 class SampleSet(db.Model):
@@ -258,6 +257,22 @@ class SampleSet(db.Model):
 
     def __repr__(self):
         return "SampleSet({0})".format(str(self))
+
+    def __str__(self):
+        return self.name
+
+
+class SampleProject(db.Model):
+    """Sample Project"""
+    __tablename__ = 'sample_projects'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False, index=True)
+
+    samples = db.relationship('Sample', back_populates='project', lazy='joined')
+
+    def __repr__(self):
+        return "SampleProject({0})".format(str(self))
 
     def __str__(self):
         return self.name
@@ -363,10 +378,7 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(255), nullable=False)
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
-    roles = db.relationship(
-        'Role', secondary=roles_users, lazy='joined',
-        backref=db.backref('users')
-    )
+    roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
     custom_panels = db.relationship('CustomPanel', back_populates='user')
     panel_versions = db.relationship('PanelVersion', back_populates='user')
 

@@ -8,6 +8,7 @@
 <div class="well">
     <form method="GET" action="{{ url_for('samples') }}" class="form-inline">
         {{ render_inline_field(form.sample) }}
+        {{ render_inline_field(form.project) }}
         {{ render_inline_field(form.run) }}
         <div class="form-group">
             <div class="col-sm-offset-1 col-sm-10">
@@ -21,6 +22,7 @@
     <thead>
         <tr>
             <th>Sample</th>
+            <th>Project</th>
             <th>Sequencing runs</th>
             <th>Date</th>
         </tr>
@@ -29,6 +31,7 @@
         {% for sample in samples.items %}
         <tr>
             <td><a href="{{ url_for('sample', id=sample.id) }}">{{ sample.name }}</a></td>
+            <td>{{ sample.project.name }}</td>
             <td><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></td>
             <td>{{ sample.import_date }}</td>
         </tr>
