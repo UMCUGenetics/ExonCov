@@ -11,6 +11,7 @@ manager.add_command("db", db_manager)
 manager.add_command('import_bam', cli.ImportBam())
 manager.add_command('search_sample', cli.SearchSample())
 manager.add_command('remove_sample', cli.RemoveSample())
+manager.add_command('check_samples', cli.CheckSamples())
 
 db_manager.add_command('drop', cli.Drop())
 db_manager.add_command('create', cli.Create())

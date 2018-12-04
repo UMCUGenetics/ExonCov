@@ -428,3 +428,27 @@ class RemoveSample(Command):
         else:
             db.session.delete(sample)
             db.session.commit()
+
+
+class CheckSamples(Command):
+    """Check exon_measurements and transcripts_measurements for all samples."""
+
+    def run(self):
+        error = False
+
+        exon_count = Exon.query.count()
+        sample_exon_count = db.session.query(Sample.name, func.count(ExonMeasurement.id)).outerjoin(ExonMeasurement).group_by(Sample.id).all()
+        for sample_count in sample_exon_count:
+            if sample_count[1] != exon_count:
+                print "ERROR: Sample:{0} ExonMeasurement:{1} Exons:{2}".format(sample_count[0], sample_count[1], exon_count)
+                error = True
+
+        transcript_count = Transcript.query.count()
+        sample_transcript_count = db.session.query(Sample.name, func.count(TranscriptMeasurement.id)).outerjoin(TranscriptMeasurement).group_by(Sample.id).all()
+        for sample_count in sample_transcript_count:
+            if sample_count[1] != transcript_count:
+                print "ERROR: Sample:{0} TranscriptMeasurement:{1} Exons:{2}".format(sample_count[0], sample_count[1], transcript_count)
+                error = True
+
+        if not error:
+            print "No errors found."
