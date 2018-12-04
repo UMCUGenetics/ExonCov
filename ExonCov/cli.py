@@ -9,6 +9,7 @@ import shlex
 from flask_script import Command, Option
 from flask_security.utils import encrypt_password
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 try:
     import pysam
@@ -250,7 +251,7 @@ class ImportBam(Command):
         sample_name = None
         sequencing_runs = {}
         sequencing_run_ids = []
-        exon_measurements = []
+        exon_measurements = {}
 
         # Parse read groups and setup sequencing run(s)
         for read_group in bam_file.header['RG']:
@@ -325,17 +326,18 @@ class ImportBam(Command):
             else:
                 data = line.rstrip().split('\t')
                 chr, start, end = data[:3]
-                measurement_mean_coverage = data[measurement_mean_coverage_index]
-                measurement_percentage10 = data[measurement_percentage10_index]
-                measurement_percentage15 = data[measurement_percentage15_index]
-                measurement_percentage20 = data[measurement_percentage20_index]
-                measurement_percentage30 = data[measurement_percentage30_index]
-                measurement_percentage50 = data[measurement_percentage50_index]
-                measurement_percentage100 = data[measurement_percentage100_index]
+                exon_id = '{0}_{1}_{2}'.format(chr, start, end)
+                measurement_mean_coverage = float(data[measurement_mean_coverage_index])
+                measurement_percentage10 = float(data[measurement_percentage10_index])
+                measurement_percentage15 = float(data[measurement_percentage15_index])
+                measurement_percentage20 = float(data[measurement_percentage20_index])
+                measurement_percentage30 = float(data[measurement_percentage30_index])
+                measurement_percentage50 = float(data[measurement_percentage50_index])
+                measurement_percentage100 = float(data[measurement_percentage100_index])
 
-                exon_measurements.append({
+                exon_measurements[exon_id] = {
                     'sample_id': sample.id,
-                    'exon_id': '{0}_{1}_{2}'.format(chr, start, end),
+                    'exon_id': exon_id,
                     'measurement_mean_coverage': measurement_mean_coverage,
                     'measurement_percentage10': measurement_percentage10,
                     'measurement_percentage15': measurement_percentage15,
@@ -343,44 +345,46 @@ class ImportBam(Command):
                     'measurement_percentage30': measurement_percentage30,
                     'measurement_percentage50': measurement_percentage50,
                     'measurement_percentage100': measurement_percentage100,
-                })
+                }
 
         # Bulk insert exons measurements
         bulk_insert_n = 5000
         for i in range(0, len(exon_measurements), bulk_insert_n):
-            db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements[i:i+bulk_insert_n])
+            db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements.values()[i:i+bulk_insert_n])
             db.session.commit()
 
         # Set transcript measurements
-        query = db.session.query(Transcript.id, Exon.len, ExonMeasurement).join(Exon, Transcript.exons).join(ExonMeasurement).filter_by(sample_id=sample.id).all()
-        transcripts = {}
+        transcripts = Transcript.query.options(joinedload('exons')).all()
+        transcripts_measurements = {}
 
-        for transcript_id, exon_len, exon_measurement in query:
-            if transcript_id not in transcripts:
-                transcripts[transcript_id] = {
-                    'len': exon_len,
-                    'transcript_id': transcript_id,
-                    'sample_id': sample.id,
-                    'measurement_mean_coverage': exon_measurement.measurement_mean_coverage,
-                    'measurement_percentage10': exon_measurement.measurement_percentage10,
-                    'measurement_percentage15': exon_measurement.measurement_percentage15,
-                    'measurement_percentage20': exon_measurement.measurement_percentage20,
-                    'measurement_percentage30': exon_measurement.measurement_percentage30,
-                    'measurement_percentage50': exon_measurement.measurement_percentage50,
-                    'measurement_percentage100': exon_measurement.measurement_percentage100,
-                }
-            else:
-                measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
-                for measurement_type in measurement_types:
-                    transcripts[transcript_id][measurement_type] = weighted_average(
-                        [transcripts[transcript_id][measurement_type], exon_measurement[measurement_type]],
-                        [transcripts[transcript_id]['len'], exon_len]
-                    )
-                transcripts[transcript_id]['len'] += exon_len
+        for transcript in transcripts:
+            for exon in transcript.exons:
+                exon_measurement = exon_measurements[exon.id]
+                if transcript.id not in transcripts_measurements:
+                    transcripts_measurements[transcript.id] = {
+                        'len': exon.len,
+                        'transcript_id': transcript.id,
+                        'sample_id': sample.id,
+                        'measurement_mean_coverage': exon_measurement['measurement_mean_coverage'],
+                        'measurement_percentage10': exon_measurement['measurement_percentage10'],
+                        'measurement_percentage15': exon_measurement['measurement_percentage15'],
+                        'measurement_percentage20': exon_measurement['measurement_percentage20'],
+                        'measurement_percentage30': exon_measurement['measurement_percentage30'],
+                        'measurement_percentage50': exon_measurement['measurement_percentage50'],
+                        'measurement_percentage100': exon_measurement['measurement_percentage100'],
+                    }
+                else:
+                    measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
+                    for measurement_type in measurement_types:
+                        transcripts_measurements[transcript.id][measurement_type] = weighted_average(
+                            [transcripts_measurements[transcript.id][measurement_type], exon_measurement[measurement_type]],
+                            [transcripts_measurements[transcript.id]['len'], exon.len]
+                        )
+                    transcripts_measurements[transcript.id]['len'] += exon.len
 
         # Bulk insert transcript measurements
         bulk_insert_n = 5000
-        transcript_values = transcripts.values()
+        transcript_values = transcripts_measurements.values()
         for i in range(0, len(transcript_values), bulk_insert_n):
             db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
             db.session.commit()
