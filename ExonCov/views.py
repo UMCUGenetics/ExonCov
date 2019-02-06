@@ -73,6 +73,38 @@ def sample(id):
     return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types)
 
 
+@app.route('/sample/<int:id>/inactive_panels')
+@login_required
+def sample_inactive_panels(id):
+    """Sample inactive panels page."""
+    sample = Sample.query.get_or_404(id)
+    measurement_types = {
+        'measurement_mean_coverage': 'Mean coverage',
+        'measurement_percentage10': '>10',
+        'measurement_percentage15': '>15',
+        'measurement_percentage30': '>30'
+    }
+    query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=False).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
+    panels = {}
+
+    for panel, transcript_measurement in query:
+        if panel.id not in panels:
+            panels[panel.id] = {
+                'len': transcript_measurement.len,
+                'name_version': panel.name_version,
+            }
+            for measurement_type in measurement_types:
+                panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
+        else:
+            for measurement_type in measurement_types:
+                panels[panel.id][measurement_type] = weighted_average(
+                    [panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
+                    [panels[panel.id]['len'], transcript_measurement.len]
+                )
+            panels[panel.id]['len'] += transcript_measurement.len
+    return render_template('sample_inactive_panels.html', sample=sample, panels=panels, measurement_types=measurement_types)
+
+
 @app.route('/sample/<int:sample_id>/panel/<int:panel_id>')
 @login_required
 def sample_panel(sample_id, panel_id):

@@ -4,8 +4,8 @@
 
 {% block header %}
 <div class="row">
-    <div class="col-md-8">{{ sample.name }}</div>
-    <div class="col-md-4"><p class="text-right"><small><a href="{{ url_for('sample_inactive_panels', id=sample.id) }}">View inactive panels</a></small></p></div>
+    <div class="col-md-8">{{ sample.name }} <small>Inactive panels</small></div>
+    <div class="col-md-4"><p class="text-right"><small><a href="{{ url_for('sample', id=sample.id) }}">View active panels</a></small></p></div>
 </div>
 {% endblock %}
 
