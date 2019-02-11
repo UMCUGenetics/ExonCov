@@ -348,7 +348,7 @@ class ImportBam(Command):
                 }
 
         # Bulk insert exons measurements
-        bulk_insert_n = 5000
+        bulk_insert_n = 1000
         for i in range(0, len(exon_measurements), bulk_insert_n):
             db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements.values()[i:i+bulk_insert_n])
             db.session.commit()
@@ -383,7 +383,7 @@ class ImportBam(Command):
                     transcripts_measurements[transcript.id]['len'] += exon.len
 
         # Bulk insert transcript measurements
-        bulk_insert_n = 5000
+        bulk_insert_n = 1000
         transcript_values = transcripts_measurements.values()
         for i in range(0, len(transcript_values), bulk_insert_n):
             db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
