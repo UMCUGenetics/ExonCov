@@ -81,7 +81,7 @@
 {% endmacro %}
 
 {% macro render_sample_datatable_form(search=true, filter=true) %}
-<form class="form-inline">
+<form class="form-inline" onsubmit="return false;">
     <div class="form-group col-lg-3">
         {% if search %}
         <label>Search:</label>
