@@ -78,6 +78,8 @@ class PrintStats(Command):
         print "Number of panels: {0}".format(Panel.query.count())
         print "Number of custom panels: {0}".format(CustomPanel.query.count())
         print "Number of samples: {0}".format(Sample.query.count())
+        print "Number of sequencing runs: {0}".format(SequencingRun.query.count())
+        print "Number of sequencing projects: {0}".format(SampleProject.query.count())
 
 
 class LoadDesign(Command):
