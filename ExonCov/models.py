@@ -227,6 +227,7 @@ class Sample(db.Model):
     file_name = db.Column(db.String(255), nullable=False)
     import_command = db.Column(db.Text(), nullable=False)
     project_id = db.Column(db.Integer(), db.ForeignKey('sample_projects.id'), nullable=False, index=True)
+    exon_measurement_file = db.Column(db.Text(), nullable=False)
 
     exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')

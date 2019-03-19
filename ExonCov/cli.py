@@ -4,6 +4,7 @@ import sys
 import re
 import time
 import subprocess
+import os
 import shlex
 
 from flask_script import Command, Option
@@ -11,6 +12,7 @@ from flask_security.utils import encrypt_password
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
+from backports import tempfile
 try:
     import pysam
 except ImportError:
@@ -243,10 +245,11 @@ class ImportBam(Command):
         Option('-b', '--exon_bed', dest='exon_bed_file', default=app.config['EXON_BED_FILE']),
         Option('-t', '--threads', dest='threads', default=1),
         Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
-        Option('-o', '--print_output', dest='print_output', default=False, action='store_true')
+        Option('-o', '--print_output', dest='print_output', default=False, action='store_true'),
+        Option('-t', '--temp', dest='temp_path')
     )
 
-    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output):
+    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output, temp_path=None):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -287,7 +290,7 @@ class ImportBam(Command):
 
         # Look for sample in database
         sample = Sample.query.filter_by(name=sample_name).filter_by(project_id=sample_project.id).first()
-        if sample and overwrite:
+        if sample and `overwrite`:
             db.session.delete(sample)
             db.session.commit()
         elif sample and not overwrite:
@@ -304,57 +307,108 @@ class ImportBam(Command):
         )
 
         # Create sample
-        sample = Sample(name=sample_name, project=sample_project, file_name=bam, import_command=sambamba_command, sequencing_runs=sequencing_runs.values())
+        sample = Sample(
+            name=sample_name,
+            project=sample_project,
+            file_name=bam,
+            import_command=sambamba_command,
+            sequencing_runs=sequencing_runs.values(),
+            exon_measurement_file='{0}_{1}.txt'.format(sample_project.name, sample_name)
+            )
         db.session.add(sample)
         db.session.commit()
 
         # Run sambamba
-        p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
+        with tempfile.TemporaryDirectory(dir=temp_path) as temp_dir:
+            p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
+            exon_measurement_file_path = '{0}/{1}'.format(temp_dir, sample.exon_measurement_file)
+            exon_measurement_file = open(exon_measurement_file_path, "w")
+            for line in p.stdout:
+                if print_output:
+                    print line
 
-        for line in p.stdout:
-            if print_output:
-                print line
+                # Header
+                if line.startswith('#'):
+                    header = line.rstrip().split('\t')
+                    measurement_mean_coverage_index = header.index('meanCoverage')
+                    measurement_percentage10_index = header.index('percentage10')
+                    measurement_percentage15_index = header.index('percentage15')
+                    measurement_percentage20_index = header.index('percentage20')
+                    measurement_percentage30_index = header.index('percentage30')
+                    measurement_percentage50_index = header.index('percentage50')
+                    measurement_percentage100_index = header.index('percentage100')
+                    exon_measurement_file.write(
+                        '#{chr}\t{start}\t{end}\t{cov}\t{perc_10}\t{perc_15}\t{perc_20}\t{perc_30}\t{perc_50}\t{perc_100}\n'.format(
+                            chr='chr',
+                            start='start',
+                            end='end',
+                            cov='measurement_mean_coverage',
+                            perc_10='measurement_percentage10',
+                            perc_15='measurement_percentage15',
+                            perc_20='measurement_percentage20',
+                            perc_30='measurement_percentage30',
+                            perc_50='measurement_percentage50',
+                            perc_100='measurement_percentage100',
+                        )
+                    )
 
-            # Header
-            if line.startswith('#'):
-                header = line.rstrip().split('\t')
-                measurement_mean_coverage_index = header.index('meanCoverage')
-                measurement_percentage10_index = header.index('percentage10')
-                measurement_percentage15_index = header.index('percentage15')
-                measurement_percentage20_index = header.index('percentage20')
-                measurement_percentage30_index = header.index('percentage30')
-                measurement_percentage50_index = header.index('percentage50')
-                measurement_percentage100_index = header.index('percentage100')
+                # Measurement
+                else:
+                    data = line.rstrip().split('\t')
+                    chr, start, end = data[:3]
+                    exon_id = '{0}_{1}_{2}'.format(chr, start, end)
+                    measurement_mean_coverage = float(data[measurement_mean_coverage_index])
+                    measurement_percentage10 = float(data[measurement_percentage10_index])
+                    measurement_percentage15 = float(data[measurement_percentage15_index])
+                    measurement_percentage20 = float(data[measurement_percentage20_index])
+                    measurement_percentage30 = float(data[measurement_percentage30_index])
+                    measurement_percentage50 = float(data[measurement_percentage50_index])
+                    measurement_percentage100 = float(data[measurement_percentage100_index])
+                    exon_measurement_file.write(
+                        '{chr}\t{start}\t{end}\t{cov}\t{perc_10}\t{perc_15}\t{perc_20}\t{perc_30}\t{perc_50}\t{perc_100}\n'.format(
+                            chr=chr,
+                            start=start,
+                            end=end,
+                            cov=measurement_mean_coverage,
+                            perc_10=measurement_percentage10,
+                            perc_15=measurement_percentage15,
+                            perc_20=measurement_percentage20,
+                            perc_30=measurement_percentage30,
+                            perc_50=measurement_percentage50,
+                            perc_100=measurement_percentage100,
+                        )
+                    )
 
-            # Measurement
-            else:
-                data = line.rstrip().split('\t')
-                chr, start, end = data[:3]
-                exon_id = '{0}_{1}_{2}'.format(chr, start, end)
-                measurement_mean_coverage = float(data[measurement_mean_coverage_index])
-                measurement_percentage10 = float(data[measurement_percentage10_index])
-                measurement_percentage15 = float(data[measurement_percentage15_index])
-                measurement_percentage20 = float(data[measurement_percentage20_index])
-                measurement_percentage30 = float(data[measurement_percentage30_index])
-                measurement_percentage50 = float(data[measurement_percentage50_index])
-                measurement_percentage100 = float(data[measurement_percentage100_index])
+                    exon_measurements[exon_id] = {
+                        'sample_id': sample.id,
+                        'exon_id': exon_id,
+                        'measurement_mean_coverage': measurement_mean_coverage,
+                        'measurement_percentage10': measurement_percentage10,
+                        'measurement_percentage15': measurement_percentage15,
+                        'measurement_percentage20': measurement_percentage20,
+                        'measurement_percentage30': measurement_percentage30,
+                        'measurement_percentage50': measurement_percentage50,
+                        'measurement_percentage100': measurement_percentage100,
+                    }
 
-                exon_measurements[exon_id] = {
-                    'sample_id': sample.id,
-                    'exon_id': exon_id,
-                    'measurement_mean_coverage': measurement_mean_coverage,
-                    'measurement_percentage10': measurement_percentage10,
-                    'measurement_percentage15': measurement_percentage15,
-                    'measurement_percentage20': measurement_percentage20,
-                    'measurement_percentage30': measurement_percentage30,
-                    'measurement_percentage50': measurement_percentage50,
-                    'measurement_percentage100': measurement_percentage100,
-                }
+            # Bulk insert exons measurements
+            bulk_insert_n = 1000
+            for i in range(0, len(exon_measurements), bulk_insert_n):
+                db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements.values()[i:i+bulk_insert_n])
+                db.session.commit()
+            exon_measurement_file.close()
 
-        # Bulk insert exons measurements
-        bulk_insert_n = 1000
-        for i in range(0, len(exon_measurements), bulk_insert_n):
-            db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements.values()[i:i+bulk_insert_n])
+            # bgzip and rsync
+            os.system('bgzip {0}'.format(exon_measurement_file_path))
+            os.system('tabix -s 1 -b 2 -e 3 -c \'#\' {0}.gz'.format(exon_measurement_file_path))
+            os.system('rsync {0}* {1}'.format(exon_measurement_file_path, app.config['EXON_MEASUREMENTS_RSYNC_PATH']))
+
+            # Change exon_measurement_file to path on server.
+            sample.exon_measurement_file = '{0}/{1}.gz'.format(
+                app.config['EXON_MEASUREMENTS_RSYNC_PATH'].split(':')[-1],
+                sample.exon_measurement_file
+            )
+            db.session.add(sample)
             db.session.commit()
 
         # Set transcript measurements

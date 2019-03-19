@@ -7,6 +7,7 @@ from flask_security import login_required, roles_required
 from flask_login import current_user
 from sqlalchemy.orm import joinedload
 from sqlalchemy import or_
+import pysam
 
 from ExonCov import app, db
 from .models import Sample, SampleProject, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
@@ -127,7 +128,20 @@ def sample_panel(sample_id, panel_id):
 def sample_transcript(sample_id, transcript_name):
     """Sample transcript page."""
     sample = Sample.query.get_or_404(sample_id)
+    sample_tabix = pysam.TabixFile(sample.exon_measurement_file)
     transcript = Transcript.query.filter_by(name=transcript_name).first()
+    exons = transcript.exons
+
+    exon_measurements = []
+    header = sample_tabix.header[0].lstrip('#').split('\t')
+
+    for exon in exons:
+        for row in sample_tabix.fetch(exon.chr, exon.start, exon.end):
+            row = dict(zip(header, row.split('\t')))
+            if int(row['start']) == exon.start and int(row['end']) == exon.end:
+                row['len'] = exon.len
+                exon_measurements.append(row)
+                break
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -135,8 +149,6 @@ def sample_transcript(sample_id, transcript_name):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    exon_measurements = db.session.query(Exon, ExonMeasurement).join(exons_transcripts).filter(exons_transcripts.columns.transcript_id == transcript.id).join(ExonMeasurement).filter_by(sample_id=sample.id).order_by(Exon.start).all()
-
     return render_template('sample_transcript.html', sample=sample, transcript=transcript, exon_measurements=exon_measurements, measurement_types=measurement_types)
 
 
