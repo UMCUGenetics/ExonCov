@@ -240,11 +240,13 @@ class ImportBam(Command):
     option_list = (
         Option('project_name'),
         Option('bam'),
+        Option('-b', '--exon_bed', dest='exon_bed_file', default=app.config['EXON_BED_FILE']),
+        Option('-t', '--threads', dest='threads', default=1),
         Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
         Option('-o', '--print_output', dest='print_output', default=False, action='store_true')
     )
 
-    def run(self, bam, project_name, overwrite=False, print_output=False):
+    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -295,9 +297,9 @@ class ImportBam(Command):
         sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --filter '{filter}' --regions {bed_file} {settings}".format(
             sambamba=app.config['SAMBAMBA'],
             bam_file=bam,
-            threads=app.config['SAMBAMBA_THREADS'],
+            threads=threads,
             filter=app.config['SAMBAMBA_FILTER'],
-            bed_file=app.config['EXON_BED_FILE'],
+            bed_file=exon_bed_file,
             settings='--fix-mate-overlaps --min-base-quality 10 --cov-threshold 10 --cov-threshold 15 --cov-threshold 20 --cov-threshold 30 --cov-threshold 50 --cov-threshold 100',
         )
 
