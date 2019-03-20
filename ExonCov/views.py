@@ -131,17 +131,21 @@ def sample_transcript(sample_id, transcript_name):
     transcript = Transcript.query.filter_by(name=transcript_name).first()
 
     exon_measurements = []
-    with pysam.TabixFile(sample.exon_measurement_file) as sample_tabix:
+    try:
+        sample_tabix = pysam.TabixFile(sample.exon_measurement_file)
+    except IOError:
+        pass
+    else:
+        with sample_tabix:
+            header = sample_tabix.header[0].lstrip('#').split('\t')
 
-        header = sample_tabix.header[0].lstrip('#').split('\t')
-
-        for exon in transcript.exons:
-            for row in sample_tabix.fetch(exon.chr, exon.start, exon.end):
-                row = dict(zip(header, row.split('\t')))
-                if int(row['start']) == exon.start and int(row['end']) == exon.end:
-                    row['len'] = exon.len
-                    exon_measurements.append(row)
-                    break
+            for exon in transcript.exons:
+                for row in sample_tabix.fetch(exon.chr, exon.start, exon.end):
+                    row = dict(zip(header, row.split('\t')))
+                    if int(row['start']) == exon.start and int(row['end']) == exon.end:
+                        row['len'] = exon.len
+                        exon_measurements.append(row)
+                        break
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -386,20 +390,26 @@ def custom_panel_transcript(id, transcript_name):
 
         # Get exon measurements
         for sample in custom_panel.samples:
-            with pysam.TabixFile(sample.exon_measurement_file) as sample_tabix:
-                header = sample_tabix.header[0].lstrip('#').split('\t')
+            try:
+                sample_tabix = pysam.TabixFile(sample.exon_measurement_file)
+            except IOError:
+                exon_measurements = {}
+                break
+            else:
+                with sample_tabix:
+                    header = sample_tabix.header[0].lstrip('#').split('\t')
 
-                for exon in transcript.exons:
-                    if exon not in exon_measurements:
-                        exon_measurements[exon] = {}
+                    for exon in transcript.exons:
+                        if exon not in exon_measurements:
+                            exon_measurements[exon] = {}
 
-                    for row in sample_tabix.fetch(exon.chr, exon.start, exon.end):
-                        row = dict(zip(header, row.split('\t')))
-                        print row, exon
-                        if int(row['start']) == exon.start and int(row['end']) == exon.end:
+                        for row in sample_tabix.fetch(exon.chr, exon.start, exon.end):
+                            row = dict(zip(header, row.split('\t')))
                             print row, exon
-                            exon_measurements[exon][sample] = float(row[measurement_type[0]])
-                            break
+                            if int(row['start']) == exon.start and int(row['end']) == exon.end:
+                                print row, exon
+                                exon_measurements[exon][sample] = float(row[measurement_type[0]])
+                                break
 
         # Calculate min, mean, max
         values = transcript_measurements.values()
