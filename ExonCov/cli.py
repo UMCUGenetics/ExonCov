@@ -246,7 +246,7 @@ class ImportBam(Command):
         Option('-t', '--threads', dest='threads', default=1),
         Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
         Option('-o', '--print_output', dest='print_output', default=False, action='store_true'),
-        Option('-t', '--temp', dest='temp_path')
+        Option('--temp', dest='temp_path')
     )
 
     def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output, temp_path=None):
@@ -391,14 +391,8 @@ class ImportBam(Command):
                         'measurement_percentage100': measurement_percentage100,
                     }
 
-            # Bulk insert exons measurements
-            bulk_insert_n = 1000
-            for i in range(0, len(exon_measurements), bulk_insert_n):
-                db.session.bulk_insert_mappings(ExonMeasurement, exon_measurements.values()[i:i+bulk_insert_n])
-                db.session.commit()
-            exon_measurement_file.close()
-
             # bgzip and rsync
+            exon_measurement_file.close()
             os.system('bgzip {0}'.format(exon_measurement_file_path))
             os.system('tabix -s 1 -b 2 -e 3 -c \'#\' {0}.gz'.format(exon_measurement_file_path))
             os.system('rsync {0}* {1}'.format(exon_measurement_file_path, app.config['EXON_MEASUREMENTS_RSYNC_PATH']))
