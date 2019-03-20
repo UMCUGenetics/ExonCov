@@ -246,10 +246,12 @@ class ImportBam(Command):
         Option('-t', '--threads', dest='threads', default=1),
         Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
         Option('-o', '--print_output', dest='print_output', default=False, action='store_true'),
-        Option('--temp', dest='temp_path')
+        Option('--temp', dest='temp_path', default=None),
+        Option('--bgzip', dest='bgzip_path', default='bgzip'),
+        Option('--tabix', dest='tabix_path', default='tabix')
     )
 
-    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output, temp_path=None):
+    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output, temp_path, bgzip_path, tabix_path):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -313,8 +315,13 @@ class ImportBam(Command):
             file_name=bam,
             import_command=sambamba_command,
             sequencing_runs=sequencing_runs.values(),
-            exon_measurement_file='{0}_{1}.txt'.format(sample_project.name, sample_name)
+            exon_measurement_file='{0}_{1}'.format(sample_project.name, sample_name)
             )
+        db.session.add(sample)
+        db.session.commit()
+
+        # Add sample id to exon measurement file
+        sample.exon_measurement_file = '{0}_{1}.txt'.format(sample.id, sample.exon_measurement_file)
         db.session.add(sample)
         db.session.commit()
 
@@ -393,8 +400,8 @@ class ImportBam(Command):
 
             # bgzip and rsync
             exon_measurement_file.close()
-            os.system('bgzip {0}'.format(exon_measurement_file_path))
-            os.system('tabix -s 1 -b 2 -e 3 -c \'#\' {0}.gz'.format(exon_measurement_file_path))
+            os.system('{bgzip} {file}'.format(bgzip=bgzip_path, file=exon_measurement_file_path))
+            os.system('{tabix} -s 1 -b 2 -e 3 -c \'#\' {file}.gz'.format(tabix=tabix_path, file=exon_measurement_file_path))
             os.system('rsync {0}* {1}'.format(exon_measurement_file_path, app.config['EXON_MEASUREMENTS_RSYNC_PATH']))
 
             # Change exon_measurement_file to path on server.
