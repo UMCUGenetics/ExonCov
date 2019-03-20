@@ -247,11 +247,9 @@ class ImportBam(Command):
         Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
         Option('-o', '--print_output', dest='print_output', default=False, action='store_true'),
         Option('--temp', dest='temp_path', default=None),
-        Option('--bgzip', dest='bgzip_path', default='bgzip'),
-        Option('--tabix', dest='tabix_path', default='tabix')
     )
 
-    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output, temp_path, bgzip_path, tabix_path):
+    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output, temp_path):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -398,11 +396,12 @@ class ImportBam(Command):
                         'measurement_percentage100': measurement_percentage100,
                     }
 
-            # bgzip and rsync
+            #tabix and rsync
             exon_measurement_file.close()
-            os.system('{bgzip} {file}'.format(bgzip=bgzip_path, file=exon_measurement_file_path))
-            os.system('{tabix} -s 1 -b 2 -e 3 -c \'#\' {file}.gz'.format(tabix=tabix_path, file=exon_measurement_file_path))
-            os.system('rsync {0}* {1}'.format(exon_measurement_file_path, app.config['EXON_MEASUREMENTS_RSYNC_PATH']))
+            exon_measurement_file_path_gz = '{0}.gz'.format(exon_measurement_file_path)
+            pysam.tabix_compress(exon_measurement_file_path, exon_measurement_file_path_gz)
+            pysam.tabix_index(exon_measurement_file_path_gz, seq_col=0, start_col=1, end_col=2)
+            os.system('rsync {0}* {1}'.format(exon_measurement_file_path_gz, app.config['EXON_MEASUREMENTS_RSYNC_PATH']))
 
             # Change exon_measurement_file to path on server.
             sample.exon_measurement_file = '{0}/{1}.gz'.format(
