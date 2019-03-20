@@ -10,7 +10,7 @@ from sqlalchemy import or_
 import pysam
 
 from ExonCov import app, db
-from .models import Sample, SampleProject, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, ExonMeasurement, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .models import Sample, SampleProject, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, TranscriptMeasurement, panels_transcripts, exons_transcripts
 from .forms import CustomPanelForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
 from .utils import weighted_average
 

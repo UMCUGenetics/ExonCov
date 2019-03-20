@@ -19,7 +19,7 @@ except ImportError:
     print >> sys.stderr, "WARNING: pysam not loaded, can't import bam files."
 
 from . import app, db, utils, user_datastore
-from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, SampleProject, samples_sequencingRun, ExonMeasurement, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
+from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, SampleProject, samples_sequencingRun, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
 from .utils import weighted_average
 
 
@@ -483,17 +483,10 @@ class RemoveSample(Command):
 
 
 class CheckSamples(Command):
-    """Check exon_measurements and transcripts_measurements for all samples."""
+    """Check transcripts_measurements for all samples."""
 
     def run(self):
         error = False
-
-        exon_count = Exon.query.count()
-        sample_exon_count = db.session.query(Sample.name, func.count(ExonMeasurement.id)).outerjoin(ExonMeasurement).group_by(Sample.id).all()
-        for sample_count in sample_exon_count:
-            if sample_count[1] != exon_count:
-                print "ERROR: Sample:{0} ExonMeasurement:{1} Exons:{2}".format(sample_count[0], sample_count[1], exon_count)
-                error = True
 
         transcript_count = Transcript.query.count()
         sample_transcript_count = db.session.query(Sample.name, func.count(TranscriptMeasurement.id)).outerjoin(TranscriptMeasurement).group_by(Sample.id).all()
