@@ -29,7 +29,7 @@ SECURITY_MSG_DISABLED_ACCOUNT = ('Please contact admins to activate your account
 TEMPLATES_AUTO_RELOAD = True
 
 # Debug toolbar
-DEBUG_TB_ENABLED = True
+DEBUG_TB_ENABLED = False
 DEBUG_TB_PROFILER_ENABLED = False
 DEBUG_TB_INTERCEPT_REDIRECTS = False
 
@@ -40,6 +40,8 @@ PREFERRED_TRANSCRIPTS_FILE = 'Dx_tracks/Exoncov/Preferred_transcript_list.txt'
 GENE_PANEL_FILE = 'Dx_tracks/Exoncov/gpanels.txt'
 
 # Sambamba count settings
-SAMBAMBA = 'test_files/sambamba_v0.6.6'
-SAMBAMBA_THREADS = 4
+SAMBAMBA = 'path/to/sambamba_v0.6.6'
 SAMBAMBA_FILTER = 'mapping_quality >= 20 and not duplicate and not failed_quality_control and not secondary_alignment'
+
+# Exon measurement output path
+EXON_MEASUREMENTS_RSYNC_PATH = 'rsync/path/for/data'
