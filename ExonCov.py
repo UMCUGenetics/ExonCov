@@ -13,9 +13,6 @@ manager.add_command('search_sample', cli.SearchSample())
 manager.add_command('remove_sample', cli.RemoveSample())
 manager.add_command('check_samples', cli.CheckSamples())
 
-db_manager.add_command('drop', cli.Drop())
-db_manager.add_command('create', cli.Create())
-db_manager.add_command('reset', cli.Reset())
 db_manager.add_command('stats', cli.PrintStats())
 db_manager.add_command('load_design', cli.LoadDesign())
 

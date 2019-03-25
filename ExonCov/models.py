@@ -64,7 +64,6 @@ class Exon(db.Model):
     end = db.Column(db.Integer(), nullable=False)
 
     transcripts = db.relationship('Transcript', secondary=exons_transcripts, back_populates='exons')
-    exon_measurements = db.relationship('ExonMeasurement', back_populates='exon')
 
     def __repr__(self):
         return "Exon({0}:{1}-{2})".format(self.chr, self.start, self.end)
@@ -227,8 +226,8 @@ class Sample(db.Model):
     file_name = db.Column(db.String(255), nullable=False)
     import_command = db.Column(db.Text(), nullable=False)
     project_id = db.Column(db.Integer(), db.ForeignKey('sample_projects.id'), nullable=False, index=True)
+    exon_measurement_file = db.Column(db.Text(), nullable=False)
 
-    exon_measurements = db.relationship('ExonMeasurement', cascade="all,delete", back_populates='sample')
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
     project = db.relationship('SampleProject', back_populates='samples', lazy='joined')
     sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, lazy='joined', backref=db.backref('samples'))
@@ -297,40 +296,6 @@ class SequencingRun(db.Model):
             return self.platform_unit
         else:
             return self.id
-
-
-class ExonMeasurement(db.Model):
-    """Exon measurement class, stores sample measurements per exon."""
-
-    __tablename__ = 'exon_measurements'
-
-    id = db.Column(BIGINT(unsigned=True), primary_key=True)
-    measurement_mean_coverage = db.Column(db.Float)
-    measurement_percentage10 = db.Column(db.Float)
-    measurement_percentage15 = db.Column(db.Float)
-    measurement_percentage20 = db.Column(db.Float)
-    measurement_percentage30 = db.Column(db.Float)
-    measurement_percentage50 = db.Column(db.Float)
-    measurement_percentage100 = db.Column(db.Float)
-    exon_id = db.Column(db.String(25), db.ForeignKey('exons.id'), index=True)
-    sample_id = db.Column(db.Integer, db.ForeignKey('samples.id'), index=True)
-
-    sample = db.relationship('Sample', back_populates='exon_measurements')
-    exon = db.relationship('Exon', back_populates='exon_measurements')
-
-    __table_args__ = (
-        UniqueConstraint('exon_id', 'sample_id'),
-        {
-            'mysql_row_format': 'COMPRESSED',
-            'mysql_key_block_size': '8'
-        }
-    )
-
-    def __repr__(self):
-        return "ExonMeasurement({0}-{1})".format(self.sample, self.exon)
-
-    def __getitem__(self, item):
-        return getattr(self, item)
 
 
 class TranscriptMeasurement(db.Model):

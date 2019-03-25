@@ -36,4 +36,4 @@ def security_context_processor():
         admin_view=admin.index_view,
         h=flask_admin.helpers,
         get_url=url_for
-)
+    )
