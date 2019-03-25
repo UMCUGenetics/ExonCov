@@ -20,52 +20,6 @@ from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, SampleP
 from .utils import weighted_average
 
 
-# DB CLI
-class Drop(Command):
-    """Drop database."""
-
-    def run(self):
-        db.drop_all()
-
-
-class Create(Command):
-    """Create database tables."""
-
-    def run(self):
-        db.create_all()
-
-        # Create admin role and first user
-        site_admin_role = Role(name='site_admin')
-        db.session.add(site_admin_role)
-        panel_admin_role = Role(name='panel_admin')
-        db.session.add(panel_admin_role)
-
-        db.session.commit()
-
-        admin = user_datastore.create_user(
-            first_name='First',
-            last_name='Admin',
-            email='admin@admin.nl',
-            password=encrypt_password('admin'),
-            active=True,
-            roles=[site_admin_role, panel_admin_role]
-        )
-        admin.active = True
-        db.session.add(admin)
-        db.session.commit()
-
-
-class Reset(Command):
-    """Reset (drop and create) database tables."""
-
-    def run(self):
-        drop = Drop()
-        drop.run()
-
-        create = Create()
-        create.run()
-
-
 class PrintStats(Command):
     """Print database stats."""
 
@@ -81,158 +35,6 @@ class PrintStats(Command):
         print "Number of sequencing projects: {0}".format(SampleProject.query.count())
 
 
-class LoadDesign(Command):
-    """Load design files to database."""
-
-    def run(self):
-        """Load files."""
-        # files
-        exon_file = app.config['EXON_BED_FILE']
-        gene_transcript_file = app.config['GENE_TRANSCRIPT_FILE']
-        preferred_transcripts_file = app.config['PREFERRED_TRANSCRIPTS_FILE']
-        gene_panel_file = app.config['GENE_PANEL_FILE']
-
-        # Filled during parsing.
-        transcripts = {}
-        exons = []
-
-        # Parse Exon file
-        with open(exon_file, 'r') as f:
-            print "Loading exon file: {0}".format(exon_file)
-            for line in f:
-                data = line.rstrip().split('\t')
-                chr, start, end = data[:3]
-                # Create exon
-                exon = Exon(
-                    id='{0}_{1}_{2}'.format(chr, start, end),
-                    chr=chr,
-                    start=int(start),
-                    end=int(end)
-                )
-
-                try:
-                    transcript_data = set(data[6].split(':'))
-                except IndexError:
-                    print "Warning: No transcripts for exon: {0}.".format(exon)
-                    transcript_data = []
-
-                # Create transcripts
-                for transcript_name in transcript_data:
-                    if transcript_name != 'NA':
-                        if transcript_name in transcripts:
-                            transcript = transcripts[transcript_name]
-
-                            # Set start / end positions
-                            if transcript.start > exon.start:
-                                transcript.start = exon.start
-                            if transcript.end < exon.end:
-                                transcript.end = exon.end
-
-                            # Sanity check chromosome
-                            if transcript.chr != exon.chr:
-                                print "Warning: Different chromosomes for {0} and {1}".format(transcript, exon)
-
-                        else:
-                            transcript = Transcript(
-                                name=transcript_name,
-                                chr=exon.chr,
-                                start=exon.start,
-                                end=exon.end
-                            )
-                            transcripts[transcript_name] = transcript
-                        exon.transcripts.append(transcript)
-                exons.append(exon)
-
-        # Bulk insert exons and transcript
-        bulk_insert_n = 5000
-        for i in range(0, len(exons), bulk_insert_n):
-            db.session.add_all(exons[i:i+bulk_insert_n])
-            db.session.commit()
-
-        db.session.add_all(transcripts.values())
-        db.session.commit()
-
-        # Load gene and transcript file
-        genes = {}
-        with open(gene_transcript_file, 'r') as f:
-            print "Loading gene transcript file: {0}".format(gene_transcript_file)
-            for line in f:
-                if not line.startswith('#'):
-                    data = line.rstrip().split('\t')
-                    gene_id = data[0].rstrip()
-                    transcript_name = data[1].rstrip()
-
-                    if transcript_name in transcripts:
-                        if gene_id in genes:
-                            gene = genes[gene_id]
-                        else:
-                            gene = Gene(id=gene_id)
-                            genes[gene_id] = gene
-                        gene.transcripts.append(transcripts[transcript_name])
-                        db.session.add(gene)
-                    else:
-                        print "Warning: Unkown transcript {0} for gene {1}".format(transcript_name, gene_id)
-            db.session.commit()
-
-        # Setup preferred transcript dictonary
-        preferred_transcripts = {}  # key = gene, value = transcript
-        with open(preferred_transcripts_file, 'r') as f:
-            print "Loading preferred transcripts file: {0}".format(preferred_transcripts_file)
-            for line in f:
-                if not line.startswith('#'):
-                    # Parse data
-                    data = line.rstrip().split('\t')
-                    gene = genes[data[0]]
-                    transcript = transcripts[data[1]]
-
-                    # Set default transcript
-                    gene.default_transcript = transcript
-                    preferred_transcripts[gene.id] = transcript.name
-                    db.session.add(gene)
-            db.session.commit()
-
-        # Setup gene panel
-        with open(gene_panel_file, 'r') as f:
-            print "Loading gene panel file: {0}".format(gene_panel_file)
-            panels = {}
-            for line in f:
-                data = line.rstrip().split('\t')
-                panel = data[0]
-
-                if 'elid' not in panel:  # Skip old elid panel designs
-                    panels[panel] = data[2]
-
-            for panel in sorted(panels.keys()):
-                panel_match = re.search('(\w+)v(1\d).(\d)', panel)  # look for [panel_name]v[version] pattern
-                genes = panels[panel].split(',')
-                if panel_match:
-                    panel_name = panel_match.group(1)
-                    panel_version_year = panel_match.group(2)
-                    panel_version_revision = panel_match.group(3)
-                else:
-                    panel_name = panel
-                    panel_version_year = time.strftime('%y')
-                    panel_version_revision = 1
-
-                panel = utils.get_one_or_create(
-                    db.session,
-                    Panel,
-                    name=panel_name,
-                )[0]
-
-                panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True, user_id=1)
-
-                for gene in set(genes):
-                    if gene in preferred_transcripts:
-                        transcript = transcripts[preferred_transcripts[gene]]
-                        panel_version.transcripts.append(transcript)
-                    else:
-                        print "WARNING: Unkown gene: {0}".format(gene)
-                db.session.add(panel_version)
-            db.session.commit()
-
-
-# Sample CLI
 class ImportBam(Command):
     """Import sample from bam file."""
 
@@ -287,7 +89,7 @@ class ImportBam(Command):
 
         # Look for sample in database
         sample = Sample.query.filter_by(name=sample_name).filter_by(project_id=sample_project.id).first()
-        if sample and `overwrite`:
+        if sample and overwrite:
             db.session.delete(sample)
             db.session.commit()
         elif sample and not overwrite:
@@ -500,3 +302,154 @@ class CheckSamples(Command):
 
         if not error:
             print "No errors found."
+
+
+class LoadDesign(Command):
+    """Load design files to database."""
+
+    def run(self):
+        """Load files."""
+        # files
+        exon_file = app.config['EXON_BED_FILE']
+        gene_transcript_file = app.config['GENE_TRANSCRIPT_FILE']
+        preferred_transcripts_file = app.config['PREFERRED_TRANSCRIPTS_FILE']
+        gene_panel_file = app.config['GENE_PANEL_FILE']
+
+        # Filled during parsing.
+        transcripts = {}
+        exons = []
+
+        # Parse Exon file
+        with open(exon_file, 'r') as f:
+            print "Loading exon file: {0}".format(exon_file)
+            for line in f:
+                data = line.rstrip().split('\t')
+                chr, start, end = data[:3]
+                # Create exon
+                exon = Exon(
+                    id='{0}_{1}_{2}'.format(chr, start, end),
+                    chr=chr,
+                    start=int(start),
+                    end=int(end)
+                )
+
+                try:
+                    transcript_data = set(data[6].split(':'))
+                except IndexError:
+                    print "Warning: No transcripts for exon: {0}.".format(exon)
+                    transcript_data = []
+
+                # Create transcripts
+                for transcript_name in transcript_data:
+                    if transcript_name != 'NA':
+                        if transcript_name in transcripts:
+                            transcript = transcripts[transcript_name]
+
+                            # Set start / end positions
+                            if transcript.start > exon.start:
+                                transcript.start = exon.start
+                            if transcript.end < exon.end:
+                                transcript.end = exon.end
+
+                            # Sanity check chromosome
+                            if transcript.chr != exon.chr:
+                                print "Warning: Different chromosomes for {0} and {1}".format(transcript, exon)
+
+                        else:
+                            transcript = Transcript(
+                                name=transcript_name,
+                                chr=exon.chr,
+                                start=exon.start,
+                                end=exon.end
+                            )
+                            transcripts[transcript_name] = transcript
+                        exon.transcripts.append(transcript)
+                exons.append(exon)
+
+        # Bulk insert exons and transcript
+        bulk_insert_n = 5000
+        for i in range(0, len(exons), bulk_insert_n):
+            db.session.add_all(exons[i:i+bulk_insert_n])
+            db.session.commit()
+
+        db.session.add_all(transcripts.values())
+        db.session.commit()
+
+        # Load gene and transcript file
+        genes = {}
+        with open(gene_transcript_file, 'r') as f:
+            print "Loading gene transcript file: {0}".format(gene_transcript_file)
+            for line in f:
+                if not line.startswith('#'):
+                    data = line.rstrip().split('\t')
+                    gene_id = data[0].rstrip()
+                    transcript_name = data[1].rstrip()
+
+                    if transcript_name in transcripts:
+                        if gene_id in genes:
+                            gene = genes[gene_id]
+                        else:
+                            gene = Gene(id=gene_id)
+                            genes[gene_id] = gene
+                        gene.transcripts.append(transcripts[transcript_name])
+                        db.session.add(gene)
+                    else:
+                        print "Warning: Unkown transcript {0} for gene {1}".format(transcript_name, gene_id)
+            db.session.commit()
+
+        # Setup preferred transcript dictonary
+        preferred_transcripts = {}  # key = gene, value = transcript
+        with open(preferred_transcripts_file, 'r') as f:
+            print "Loading preferred transcripts file: {0}".format(preferred_transcripts_file)
+            for line in f:
+                if not line.startswith('#'):
+                    # Parse data
+                    data = line.rstrip().split('\t')
+                    gene = genes[data[0]]
+                    transcript = transcripts[data[1]]
+
+                    # Set default transcript
+                    gene.default_transcript = transcript
+                    preferred_transcripts[gene.id] = transcript.name
+                    db.session.add(gene)
+            db.session.commit()
+
+        # Setup gene panel
+        with open(gene_panel_file, 'r') as f:
+            print "Loading gene panel file: {0}".format(gene_panel_file)
+            panels = {}
+            for line in f:
+                data = line.rstrip().split('\t')
+                panel = data[0]
+
+                if 'elid' not in panel:  # Skip old elid panel designs
+                    panels[panel] = data[2]
+
+            for panel in sorted(panels.keys()):
+                panel_match = re.search('(\w+)v(1\d).(\d)', panel)  # look for [panel_name]v[version] pattern
+                genes = panels[panel].split(',')
+                if panel_match:
+                    panel_name = panel_match.group(1)
+                    panel_version_year = panel_match.group(2)
+                    panel_version_revision = panel_match.group(3)
+                else:
+                    panel_name = panel
+                    panel_version_year = time.strftime('%y')
+                    panel_version_revision = 1
+
+                panel = utils.get_one_or_create(
+                    db.session,
+                    Panel,
+                    name=panel_name,
+                )[0]
+
+                panel_version = PanelVersion(panel_name=panel_name, version_year=panel_version_year, version_revision=panel_version_revision, active=True, validated=True, user_id=1)
+
+                for gene in set(genes):
+                    if gene in preferred_transcripts:
+                        transcript = transcripts[preferred_transcripts[gene]]
+                        panel_version.transcripts.append(transcript)
+                    else:
+                        print "WARNING: Unkown gene: {0}".format(gene)
+                db.session.add(panel_version)
+            db.session.commit()
