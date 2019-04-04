@@ -14,7 +14,8 @@ manager.add_command('remove_sample', cli.RemoveSample())
 manager.add_command('check_samples', cli.CheckSamples())
 
 db_manager.add_command('stats', cli.PrintStats())
-db_manager.add_command('load_design', cli.LoadDesign())
+db_manager.add_command('panel_genes', cli.PrintPanelGenesTable())
+#db_manager.add_command('load_design', cli.LoadDesign())
 
 if __name__ == "__main__":
     manager.run()

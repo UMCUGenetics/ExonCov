@@ -25,7 +25,6 @@ class PrintStats(Command):
     """Print database stats."""
 
     def run(self):
-        """Run function."""
         print "Number of genes: {0}".format(Gene.query.count())
         print "Number of transcripts: {0}".format(Transcript.query.count())
         print "Number of exons: {0}".format(Exon.query.count())
@@ -34,6 +33,19 @@ class PrintStats(Command):
         print "Number of samples: {0}".format(Sample.query.count())
         print "Number of sequencing runs: {0}".format(SequencingRun.query.count())
         print "Number of sequencing projects: {0}".format(SampleProject.query.count())
+
+
+class PrintPanelGenesTable(Command):
+    """Print tab delimited panel / genes table."""
+
+    def run(self):
+        print '{panel}\t{gene}'.format(panel='panel_version', gene='gene')
+
+        panel_versions = PanelVersion.query.filter_by(active=True).options(joinedload('transcripts'))
+
+        for panel in panel_versions:
+            for transcript in panel.transcripts:
+                print '{panel}\t{gene}'.format(panel=panel.name_version, gene=transcript.gene_id)
 
 
 class ImportBam(Command):
@@ -255,6 +267,7 @@ class ImportBam(Command):
         if not temp_path:
             shutil.rmtree(temp_dir)
 
+
 class SearchSample(Command):
     """Search sample in database."""
 
@@ -316,7 +329,6 @@ class LoadDesign(Command):
     """Load design files to database."""
 
     def run(self):
-        """Load files."""
         # files
         exon_file = app.config['EXON_BED_FILE']
         gene_transcript_file = app.config['GENE_TRANSCRIPT_FILE']
