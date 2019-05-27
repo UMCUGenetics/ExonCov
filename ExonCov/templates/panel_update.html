@@ -1,0 +1,21 @@
+{% from "macros/forms.html" import render_field, render_select2_field %}
+{% extends 'base.html' %}
+
+{% block header %}{{panel}} - Update{% endblock %}
+
+{% block body %}
+<div class="well">
+    <form method="POST" action="{{ url_for('panel_update', name=panel.panel_name) }}" class="form-horizontal">
+        {{ form.csrf_token }}
+        {{ render_field(form.gene_list, rows="12") }}
+        {{ render_field(form.comments, rows="2") }}
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-10">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+{% endblock %}

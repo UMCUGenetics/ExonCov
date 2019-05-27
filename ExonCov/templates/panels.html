@@ -1,0 +1,71 @@
+{% from "macros/forms.html" import render_sample_datatable_form %}
+{% extends 'base.html' %}
+
+{% block header %}Gene panels{% endblock %}
+
+{% block body %}
+
+{{ render_sample_datatable_form(filter=false) }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Gene panel</th>
+            <th>Last version</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel in panels %}
+        <tr>
+            <td><a href="{{ url_for('panel', name=panel.name) }}">{{ panel.name }}</a></td>
+            <td><a href="{{ url_for('panel_version', id=panel.last_version.id) }}">{{ panel.last_version }}</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if current_user.has_role('panel_admin') %}
+<div class="page-header"><h1> Custom panels </h1></div>
+<table class="table table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>User</th>
+            <th># Samples</th>
+            <th># Transcripts</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel in custom_panels %}
+        <tr>
+            <td><a href="{{ url_for('custom_panel', id=panel.id) }}">{{ panel.id }}</a></td>
+            <td>{{ panel.date }}</td>
+            <td>{{ panel.user }}</td>
+            <td>{{ panel.sample_count }}</td>
+            <td>{{ panel.gene_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        var dataTable = $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "order": [[ 0, 'asc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            console.log(this.value)
+            dataTable.search(this.value).draw();
+        });
+    });
+</script>
+{% endblock %}

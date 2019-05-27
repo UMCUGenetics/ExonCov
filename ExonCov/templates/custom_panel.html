@@ -1,0 +1,93 @@
+{% from "macros/forms.html" import custom_panel_measurement_type %}
+{% from "macros/tables.html" import render_measurment_td %}
+{% extends 'base.html' %}
+
+{% block header %}Custom gene panel{% endblock %}
+
+{% block body %}
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>ID</dt><dd>{{ custom_panel.id }}</dd>
+        <dt>Created by</dt><dd>{{ custom_panel.user }}</dd>
+        <dt>Date</dt><dd>{{ custom_panel.date }}</dd>
+        <dt>Comments</dt><dd>{{ custom_panel.comments }}</dd>
+    </dl>
+</div>
+
+{{ custom_panel_measurement_type(form) }}
+
+{% if panel_measurements %}
+<h2>Panel Statistics</h2>
+<table class="table table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th># Genes</th>
+            <th># Samples</th>
+            <th>Mean</th>
+            <th>Min.</th>
+            <th>Max.</th>
+            {% for sample in custom_panel.samples %}
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ transcript_measurements|count }}</td>
+            <td>{{ samples|count }}</td>
+            {{ render_measurment_td(panel_measurements['mean']) }}
+            {{ render_measurment_td(panel_measurements['min']) }}
+            {{ render_measurment_td(panel_measurements['max']) }}
+            {% for sample in custom_panel.samples %}
+            {{ render_measurment_td(panel_measurements[sample]['measurement']) }}
+            {% endfor %}
+        </tr>
+    </tbody>
+</table>
+{% endif %}
+
+{% if transcript_measurements %}
+<h2>Gene Statistics</h2>
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Gene</th>
+            <th>Transcript</th>
+            <th>Mean</th>
+            <th>Min.</th>
+            <th>Max.</th>
+            {% for sample in custom_panel.samples %}
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for transcript in transcript_measurements %}
+        <tr>
+            <td><a href="{{ url_for('custom_panel_gene', id=custom_panel.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
+            <td><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
+            {% for sample in custom_panel.samples %}
+            {{ render_measurment_td(transcript_measurements[transcript][sample]) }}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "searching": false,
+            "order": [[ 0, 'asc' ]],
+        });
+    });
+</script>
+{% endblock %}

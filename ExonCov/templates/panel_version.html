@@ -1,0 +1,66 @@
+{% from "macros/forms.html" import render_sample_datatable_form %}
+{% from "macros/typography.html" import render_bool_glyph %}
+
+{% extends 'base.html' %}
+
+{% block header %}
+Gene panel - {{ panel.name_version }}
+{% if current_user.has_role('panel_admin') %}
+<small><a href="{{ url_for('panel_version_edit', id=panel.id) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+{% endif %}
+{% endblock %}
+
+{% block body %}
+<dl class="dl-horizontal">
+    <dt>Active</dt><dd>{{ render_bool_glyph(panel.active) }}</dd>
+    <dt>Validated</dt><dd>{{ render_bool_glyph(panel.validated) }}</dd>
+    {% if current_user.has_role('panel_admin') %}<dt>Comments</dt><dd>{{ panel.comments }}</dd>{% endif %}
+
+</dl>
+{{ render_sample_datatable_form(filter=false) }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Transcript</th>
+            <th>Gene</th>
+            <th>Chr</th>
+            <th>Start</th>
+            <th>End</th>
+            <th># Exons</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transcript in panel.transcripts %}
+        <tr>
+            <td>{{ transcript.name }}</td>
+            <td>{{ transcript.gene.id }}</td>
+            <td>{{ transcript.chr }}</td>
+            <td>{{ transcript.start }}</td>
+            <td>{{ transcript.end }}</td>
+            <td>{{ transcript.exon_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        var dataTable = $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "order": [[ 1, 'asc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            console.log(this.value)
+            dataTable.search(this.value).draw();
+        });
+    });
+</script>
+{% endblock %}

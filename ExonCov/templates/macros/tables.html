@@ -1,0 +1,7 @@
+{% macro render_measurment_td(measurement, type) %}
+{% if measurement|float > 98 or type == 'measurement_mean_coverage' %}
+    <td class="">{{measurement|float|round(2)}}</td>
+{% else %}
+    <td class="danger">{{measurement|float|round(2)}}</td>
+{% endif %}
+{% endmacro %}

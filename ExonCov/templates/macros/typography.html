@@ -1,0 +1,7 @@
+{% macro render_bool_glyph(bool) %}
+{% if bool %}
+    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+{% else %}
+    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+{% endif %}
+{% endmacro %}

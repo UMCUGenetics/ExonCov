@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/forms.html" import render_sample_datatable_form %}
+
+{% block header %}{{ gene.id }} - {{ sample.name }}{% endblock %}
+
+{% block body %}
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>Sample</dt><dd>{{ sample.name }}</dd>
+        <dt>Project</dt><dd>{{ sample.project.name }}</dd>
+        <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
+        <dt>Gene</dt><dd>{{ gene.id }}</dd>
+    </dl>
+</div>
+
+{{ render_sample_datatable_form() }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Transcript</th>
+            <th>Chr</th>
+            <th>Start</th>
+            <th>End</th>
+            <th># Exons</th>
+            <th>Size (bp)</th>
+            {% for type in measurement_types %}
+                <th>{{ measurement_types[type] }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for transcript_measurement in transcript_measurements %}
+        {% set transcript = transcript_measurement[0] %}
+        {% set measurement = transcript_measurement[1] %}
+        <tr>
+            <td><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            <td>{{ transcript.chr }}</td>
+            <td>{{ transcript.start }}</td>
+            <td>{{ transcript.end }}</td>
+            <td>{{ transcript.exon_count }}</td>
+            <td>{{ measurement.len }}</td>
+            {% for type in measurement_types %}
+                {{ render_measurment_td(measurement[type], type) }}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+$.fn.dataTable.ext.search.push(
+    function( settings, data, dataIndex ) {
+        var cutoff = parseFloat( $('#cutoff').val());
+        var measurementType = parseInt( $('#measurementType').val());
+        var measurement = parseFloat( data[measurementType + 6]); // correct for other columns
+
+        if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
+        {
+            return true;
+        }
+        return false;
+    }
+);
+
+    $(document).ready(function() {
+        var dataTable = $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "order": [[ 5, 'desc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            dataTable.search(this.value).draw();
+        });
+
+        $('#cutoff, #measurementType').bind("change keyup", function() {
+            dataTable.draw();
+        });
+    });
+</script>
+{% endblock %}

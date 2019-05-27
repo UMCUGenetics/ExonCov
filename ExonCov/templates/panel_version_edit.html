@@ -1,0 +1,23 @@
+{% from "macros/forms.html" import render_field, render_checkbox %}
+{% extends 'base.html' %}
+
+{% block header %}
+Gene panel - {{ panel.name_version }}
+{% endblock %}
+
+{% block body %}
+<div class="well">
+    <form method="POST" action="{{ url_for('panel_version_edit', id=panel.id) }}" class="form-horizontal">
+        {{ form.csrf_token }}
+        {{ render_checkbox(form.active) }}
+        {{ render_checkbox(form.validated) }}
+        {{ render_field(form.comments, rows="2") }}
+
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-10">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

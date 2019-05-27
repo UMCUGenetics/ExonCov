@@ -1,0 +1,65 @@
+{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/forms.html" import render_sample_datatable_form %}
+{% extends 'base.html' %}
+
+{% block header %}
+<div class="row">
+    <div class="col-md-8">{{ sample.name }} <small>Inactive panels</small></div>
+    <div class="col-md-4"><p class="text-right"><small><a href="{{ url_for('sample', id=sample.id) }}">View active panels</a></small></p></div>
+</div>
+{% endblock %}
+
+{% block body %}
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>Sample</dt><dd>{{ sample.name }}</dd>
+        <dt>Project</dt><dd>{{ sample.project.name }}</dd>
+        <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
+    </dl>
+</div>
+
+{{ render_sample_datatable_form(filter=false) }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Gene Panel</th>
+            <th>Size (bp)</th>
+            {% for type in measurement_types %}
+                <th>{{ measurement_types[type] }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel in panels %}
+        <tr>
+            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_id=panel) }}">{{ panels[panel]['name_version'] }}</a></td>
+            <td>{{ panels[panel]['len'] }}</td>
+            {% for type in measurement_types %}
+                {{ render_measurment_td(panels[panel][type], type) }}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        var dataTable = $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "order": [[ 0, 'asc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            console.log(this.value)
+            dataTable.search(this.value).draw();
+        });
+    });
+</script>
+{% endblock %}

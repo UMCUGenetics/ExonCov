@@ -1,0 +1,43 @@
+{% from "macros/forms.html" import render_inline_field %}
+{% from "macros/query.html" import render_pagination %}
+{% extends 'base.html' %}
+
+{% block header %}Samples{% endblock %}
+
+{% block body %}
+<div class="well">
+    <form method="GET" action="{{ url_for('samples') }}" class="form-inline">
+        {{ render_inline_field(form.sample) }}
+        {{ render_inline_field(form.project) }}
+        {{ render_inline_field(form.run) }}
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-10">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<table class="table table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th>Sample</th>
+            <th>Project</th>
+            <th>Sequencing runs</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sample in samples.items %}
+        <tr>
+            <td><a href="{{ url_for('sample', id=sample.id) }}">{{ sample.name }}</a></td>
+            <td>{{ sample.project.name }}</td>
+            <td><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></td>
+            <td>{{ sample.import_date }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{{ render_pagination(samples) }}
+{% endblock %}

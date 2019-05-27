@@ -1,0 +1,55 @@
+{% from "macros/forms.html" import render_sample_datatable_form %}
+{% from "macros/typography.html" import render_bool_glyph %}
+{% extends 'base.html' %}
+
+{% block header %}
+Gene panel - {{ panel.name }}
+{% if current_user.has_role('panel_admin') %}
+<small><a href="{{ url_for('panel_update', name=panel.name) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+{% endif %}
+{% endblock %}
+
+{% block body %}
+{{ render_sample_datatable_form(filter=false) }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Version</th>
+            <th># Genes</th>
+            <th>Active</th>
+            <th>Validated</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel_version in panel.versions %}
+        <tr>
+            <td><a href="{{ url_for('panel_version', id=panel_version.id) }}">{{ panel_version }}</a></td>
+            <td>{{ panel_version.gene_count }}</td>
+            <td>{{ render_bool_glyph(panel_version.active) }}</td>
+            <td>{{ render_bool_glyph(panel_version.validated) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        var dataTable = $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "order": [[ 0, 'desc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            console.log(this.value)
+            dataTable.search(this.value).draw();
+        });
+    });
+</script>
+{% endblock %}

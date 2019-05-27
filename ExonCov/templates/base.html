@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        <title>ExonCov</title>
+
+        <!-- Bootstrap -->
+        <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/select2.min.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/select2-bootstrap.min.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/datatables.min.css') }}" rel="stylesheet"/>
+        <link href="{{ url_for('static', filename='css/exoncov.css') }}" rel="stylesheet">
+    </head>
+    <body>
+        <div class="container-fluid">
+            {% include 'navbar.html' %}
+            <div class="container-fluid">
+                <div class="page-header"><h1>{% block header %}{% endblock %}</h1></div>
+                {% block body %}{% endblock %}
+            </div>
+        </div>
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+        <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+        <!-- Include all compiled plugins (below), or include individual files as needed -->
+        <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/select2.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/datatables.min.js') }}"></script>
+
+        {% block custom_javascript %}{% endblock %}
+    </body>
+</html>
