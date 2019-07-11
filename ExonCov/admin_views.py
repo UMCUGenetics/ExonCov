@@ -123,7 +123,7 @@ class SampleAdminView(CustomModelView):
     column_sortable_list = ['name', 'import_date']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'project', 'sequencing_runs', 'import_date', 'file_name', 'import_command']
+    form_columns = ['name', 'project', 'sequencing_runs', 'import_date', 'file_name', 'import_command', 'exon_measurement_file']
     form_ajax_refs = {
         'project': {
             'fields': ['name'],
