@@ -11,6 +11,8 @@
         <dt>Created by</dt><dd>{{ custom_panel.user }}</dd>
         <dt>Date</dt><dd>{{ custom_panel.date }}</dd>
         <dt>Comments</dt><dd>{{ custom_panel.comments }}</dd>
+        <dt>Gene</dt><dd>{{ gene.id }}</dd>
+        <dt>Preferred transcript</dt><dd><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=gene.default_transcript.name) }}">{{ gene.default_transcript.name }}</a></dd>
     </dl>
 </div>
 
@@ -32,7 +34,11 @@
     <tbody>
         {% for transcript in transcript_measurements %}
         <tr>
+            {% if transcript == gene.default_transcript %}
+            <td class="info"><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=transcript.name) }}">{{ transcript.name }} *</a></td>
+            {% else %}
             <td><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            {% endif %}
             {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
@@ -43,6 +49,7 @@
         {% endfor %}
     </tbody>
 </table>
+* Preferred transcript
 {% endblock %}
 
 {% block custom_javascript %}

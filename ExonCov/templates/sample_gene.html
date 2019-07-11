@@ -11,6 +11,7 @@
         <dt>Project</dt><dd>{{ sample.project.name }}</dd>
         <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
         <dt>Gene</dt><dd>{{ gene.id }}</dd>
+        <dt>Preferred transcript</dt><dd><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=gene.default_transcript.name) }}">{{ gene.default_transcript }}</a></dd>
     </dl>
 </div>
 
@@ -35,7 +36,11 @@
         {% set transcript = transcript_measurement[0] %}
         {% set measurement = transcript_measurement[1] %}
         <tr>
+            {% if transcript == gene.default_transcript %}
+            <td class="info"><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=transcript.name) }}">{{ transcript.name }} *</a></td>
+            {% else %}
             <td><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            {% endif %}
             <td>{{ transcript.chr }}</td>
             <td>{{ transcript.start }}</td>
             <td>{{ transcript.end }}</td>
@@ -48,6 +53,7 @@
         {% endfor %}
     </tbody>
 </table>
+* Preferred transcript
 {% endblock %}
 
 {% block custom_javascript %}
