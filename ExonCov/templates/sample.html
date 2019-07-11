@@ -42,6 +42,34 @@
         {% endfor %}
     </tbody>
 </table>
+
+{% if sample.custom_panels %}
+<div class="page-header"><h1> Custom panels </h1></div>
+<table class="table table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>User</th>
+            <th>Comments</th>
+            <th># Samples</th>
+            <th># Transcripts</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel in sample.custom_panels %}
+        <tr>
+            <td><a href="{{ url_for('custom_panel', id=panel.id) }}">{{ panel.id }}</a></td>
+            <td>{{ panel.date }}</td>
+            <td>{{ panel.user }}</td>
+            <td>{{ panel.comments }}</td>
+            <td>{{ panel.sample_count }}</td>
+            <td>{{ panel.gene_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
 {% endblock %}
 
 {% block custom_javascript %}
