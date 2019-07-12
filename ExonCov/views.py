@@ -10,8 +10,8 @@ from sqlalchemy import or_
 import pysam
 
 from ExonCov import app, db
-from .models import Sample, SampleProject, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, TranscriptMeasurement, panels_transcripts, exons_transcripts
-from .forms import CustomPanelForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
+from .models import Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, Exon, TranscriptMeasurement, panels_transcripts, exons_transcripts
+from .forms import MeasurementTypeForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
 from .utils import weighted_average
 
 
@@ -321,11 +321,11 @@ def custom_panel_new():
 def custom_panel(id):
     """Custom panel page."""
     custom_panel = CustomPanel.query.options(joinedload('transcripts')).get_or_404(id)
-    custom_panel_form = CustomPanelForm()
+    measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
     transcript_ids = [transcript.id for transcript in custom_panel.transcripts]
-    measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
     transcript_measurements = {}
     panel_measurements = {}
 
@@ -365,7 +365,7 @@ def custom_panel(id):
     panel_measurements['max'] = max(values)
     panel_measurements['mean'] = float(sum(values)) / len(values)
 
-    return render_template('custom_panel.html', form=custom_panel_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
+    return render_template('custom_panel.html', form=measurement_type_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
 
 
 @app.route('/panel/custom/<int:id>/transcript/<string:transcript_name>', methods=['GET', 'POST'])
@@ -373,11 +373,11 @@ def custom_panel(id):
 def custom_panel_transcript(id, transcript_name):
     """Custom panel transcript page."""
     custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
-    custom_panel_form = CustomPanelForm()
+    measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
     transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).first()
-    measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
     transcript_measurements = {}
     exon_measurements = {}
 
@@ -405,9 +405,7 @@ def custom_panel_transcript(id, transcript_name):
 
                         for row in sample_tabix.fetch(exon.chr, exon.start, exon.end):
                             row = dict(zip(header, row.split('\t')))
-                            print row, exon
                             if int(row['start']) == exon.start and int(row['end']) == exon.end:
-                                print row, exon
                                 exon_measurements[exon][sample] = float(row[measurement_type[0]])
                                 break
 
@@ -423,7 +421,7 @@ def custom_panel_transcript(id, transcript_name):
             exon_measurements[exon]['max'] = max(values)
             exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
 
-    return render_template('custom_panel_transcript.html', form=custom_panel_form, transcript=transcript, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
+    return render_template('custom_panel_transcript.html', form=measurement_type_form, transcript=transcript, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
 
 
 @app.route('/panel/custom/<int:id>/gene/<string:gene_id>', methods=['GET', 'POST'])
@@ -433,10 +431,10 @@ def custom_panel_gene(id, gene_id):
     custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
     gene = Gene.query.get_or_404(gene_id)
 
-    custom_panel_form = CustomPanelForm()
+    measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
-    measurement_type = [custom_panel_form.data['measurement_type'], dict(custom_panel_form.measurement_type.choices).get(custom_panel_form.data['measurement_type'])]
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
     transcript_measurements = {}
 
     if sample_ids and measurement_type:
@@ -455,4 +453,58 @@ def custom_panel_gene(id, gene_id):
             transcript_measurements[transcript]['max'] = max(values)
             transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
 
-    return render_template('custom_panel_gene.html', form=custom_panel_form, gene=gene, samples=samples, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
+    return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, samples=samples, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
+
+
+@app.route('/sample_set')
+@login_required
+@roles_required('panel_admin')
+def sample_sets():
+    """Sample sets page."""
+    sample_sets = SampleSet.query.filter_by(active=True).all()
+
+    return render_template('sample_sets.html', sample_sets=sample_sets)
+
+
+@app.route('/sample_set/<int:id>', methods=['GET', 'POST'])
+@login_required
+@roles_required('panel_admin')
+def sample_set(id):
+    """Sample set page."""
+    sample_set = SampleSet.query.get_or_404(id)
+    measurement_type_form = MeasurementTypeForm()
+
+    sample_ids = [sample.id for sample in sample_set.samples]
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    panels_measurements = {}
+
+    query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name).all()
+
+    for panel, transcript_measurement in query:
+        panel_name = panel.name_version
+        sample_name = transcript_measurement.sample.name
+        if panel_name not in panels_measurements:
+            panels_measurements[panel_name] = {
+                'panel': panel,
+                'samples': {},
+            }
+
+        if sample_name not in panels_measurements[panel_name]['samples']:
+            panels_measurements[panel_name]['samples'][sample_name] = {
+                'len': transcript_measurement.len,
+                'measurement': transcript_measurement[measurement_type[0]]
+            }
+        else:
+            panels_measurements[panel_name]['samples'][sample_name]['measurement'] = weighted_average(
+                [panels_measurements[panel_name]['samples'][sample_name]['measurement'], transcript_measurement[measurement_type[0]]],
+                [panels_measurements[panel_name]['samples'][sample_name]['len'], transcript_measurement.len]
+            )
+            panels_measurements[panel_name]['samples'][sample_name]['len'] += transcript_measurement.len
+
+    for panel_name in panels_measurements:
+        values = [panels_measurements[panel_name]['samples'][sample.name]['measurement'] for sample in sample_set.samples]
+        panels_measurements[panel_name]['min'] = min(values)
+        panels_measurements[panel_name]['max'] = max(values)
+        panels_measurements[panel_name]['mean'] = float(sum(values)) / len(values)
+
+    return render_template('sample_set.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panels_measurements=panels_measurements)

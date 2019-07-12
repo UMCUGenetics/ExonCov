@@ -1,0 +1,45 @@
+{% from "macros/forms.html" import measurement_type_form %}
+{% from "macros/tables.html" import render_measurment_td %}
+{% extends 'base.html' %}
+
+{% block header %}Sample set - {{ sample_set.name }}{% endblock %}
+
+{% block body %}
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>Sample set</dt><dd>{{ sample_set.name }}</dd>
+        <dt>Description</dt><dd>{{ sample_set.description }}</dd>
+        <dt>Sample count</dt><dd>{{ sample_set.sample_count }}</dd>
+    </dl>
+</div>
+
+{{ measurement_type_form(form) }}
+
+<table class="table table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th>Gene Panel</th>
+            <th>Mean</th>
+            <th>Min.</th>
+            <th>Max.</th>
+            {% for sample in sample_set.samples %}
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel in panels_measurements %}
+        <tr>
+            <td>{{ panel }}</td>
+            {{ render_measurment_td(panels_measurements[panel]['mean']) }}
+            {{ render_measurment_td(panels_measurements[panel]['min']) }}
+            {{ render_measurment_td(panels_measurements[panel]['max']) }}
+            {% for sample in sample_set.samples %}
+            {{ render_measurment_td(panels_measurements[panel]['samples'][sample.name]['measurement']) }}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

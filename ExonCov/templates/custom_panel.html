@@ -1,4 +1,4 @@
-{% from "macros/forms.html" import custom_panel_measurement_type %}
+{% from "macros/forms.html" import measurement_type_form %}
 {% from "macros/tables.html" import render_measurment_td %}
 {% extends 'base.html' %}
 
@@ -14,7 +14,7 @@
     </dl>
 </div>
 
-{{ custom_panel_measurement_type(form) }}
+{{ measurement_type_form(form) }}
 
 {% if panel_measurements %}
 <h2>Panel Statistics</h2>
@@ -34,7 +34,7 @@
     <tbody>
         <tr>
             <td>{{ transcript_measurements|count }}</td>
-            <td>{{ samples|count }}</td>
+            <td>{{ custom_panel.samples|count }}</td>
             {{ render_measurment_td(panel_measurements['mean']) }}
             {{ render_measurment_td(panel_measurements['min']) }}
             {{ render_measurment_td(panel_measurements['max']) }}

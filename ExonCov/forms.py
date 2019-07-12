@@ -102,7 +102,7 @@ class CustomPanelNewForm(FlaskForm):
         return True
 
 
-class CustomPanelForm(FlaskForm):
+class MeasurementTypeForm(FlaskForm):
     """Custom Panel form."""
 
     measurement_type = SelectField('Measurement type', default='measurement_percentage15', choices=[

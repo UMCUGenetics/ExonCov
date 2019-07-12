@@ -260,6 +260,11 @@ class SampleSet(db.Model):
     def __str__(self):
         return self.name
 
+    @hybrid_property
+    def sample_count(self):
+        """Calculate number of genes."""
+        return len(self.samples)
+
 
 class SampleProject(db.Model):
     """Sample Project"""
