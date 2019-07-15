@@ -320,7 +320,7 @@ def custom_panel_new():
 @login_required
 def custom_panel(id):
     """Custom panel page."""
-    custom_panel = CustomPanel.query.options(joinedload('transcripts')).get_or_404(id)
+    custom_panel = CustomPanel.query.get_or_404(id)
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
@@ -372,7 +372,7 @@ def custom_panel(id):
 @login_required
 def custom_panel_transcript(id, transcript_name):
     """Custom panel transcript page."""
-    custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
+    custom_panel = CustomPanel.query.get_or_404(id)
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
@@ -428,7 +428,7 @@ def custom_panel_transcript(id, transcript_name):
 @login_required
 def custom_panel_gene(id, gene_id):
     """Custom panel gene page."""
-    custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
+    custom_panel = CustomPanel.query.get_or_404(id)
     gene = Gene.query.get_or_404(gene_id)
 
     measurement_type_form = MeasurementTypeForm()
@@ -453,7 +453,7 @@ def custom_panel_gene(id, gene_id):
             transcript_measurements[transcript]['max'] = max(values)
             transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
 
-    return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, samples=samples, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
+    return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
 
 
 @app.route('/sample_set')
@@ -481,30 +481,137 @@ def sample_set(id):
     query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name).all()
 
     for panel, transcript_measurement in query:
-        panel_name = panel.name_version
-        sample_name = transcript_measurement.sample.name
-        if panel_name not in panels_measurements:
-            panels_measurements[panel_name] = {
+        sample = transcript_measurement.sample
+        if panel not in panels_measurements:
+            panels_measurements[panel] = {
                 'panel': panel,
                 'samples': {},
             }
 
-        if sample_name not in panels_measurements[panel_name]['samples']:
-            panels_measurements[panel_name]['samples'][sample_name] = {
+        if sample not in panels_measurements[panel]['samples']:
+            panels_measurements[panel]['samples'][sample] = {
                 'len': transcript_measurement.len,
                 'measurement': transcript_measurement[measurement_type[0]]
             }
         else:
-            panels_measurements[panel_name]['samples'][sample_name]['measurement'] = weighted_average(
-                [panels_measurements[panel_name]['samples'][sample_name]['measurement'], transcript_measurement[measurement_type[0]]],
-                [panels_measurements[panel_name]['samples'][sample_name]['len'], transcript_measurement.len]
+            panels_measurements[panel]['samples'][sample]['measurement'] = weighted_average(
+                [panels_measurements[panel]['samples'][sample]['measurement'], transcript_measurement[measurement_type[0]]],
+                [panels_measurements[panel]['samples'][sample]['len'], transcript_measurement.len]
             )
-            panels_measurements[panel_name]['samples'][sample_name]['len'] += transcript_measurement.len
+            panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
-    for panel_name in panels_measurements:
-        values = [panels_measurements[panel_name]['samples'][sample.name]['measurement'] for sample in sample_set.samples]
-        panels_measurements[panel_name]['min'] = min(values)
-        panels_measurements[panel_name]['max'] = max(values)
-        panels_measurements[panel_name]['mean'] = float(sum(values)) / len(values)
+    for panel in panels_measurements:
+        values = [panels_measurements[panel]['samples'][sample]['measurement'] for sample in sample_set.samples]
+        panels_measurements[panel]['min'] = min(values)
+        panels_measurements[panel]['max'] = max(values)
+        panels_measurements[panel]['mean'] = float(sum(values)) / len(values)
 
     return render_template('sample_set.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panels_measurements=panels_measurements)
+
+
+@app.route('/sample_set/<int:sample_set_id>/panel/<int:panel_id>', methods=['GET', 'POST'])
+@login_required
+@roles_required('panel_admin')
+def sample_set_panel(sample_set_id, panel_id):
+    """Sample set panel page."""
+    sample_set = SampleSet.query.get_or_404(sample_set_id)
+    panel = PanelVersion.query.options(joinedload('transcripts')).get_or_404(panel_id)
+    measurement_type_form = MeasurementTypeForm()
+
+    sample_ids = [sample.id for sample in sample_set.samples]
+    transcript_ids = [transcript.id for transcript in panel.transcripts]
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    transcript_measurements = {}
+
+    query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript').joinedload('gene')).all()
+
+    for transcript_measurement in query:
+        sample = transcript_measurement.sample
+        transcript = transcript_measurement.transcript
+
+        # Store transcript_measurements per transcript and sample
+        if transcript not in transcript_measurements:
+            transcript_measurements[transcript] = {}
+        transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
+
+    # Calculate min, mean, max
+    for transcript in transcript_measurements:
+        values = transcript_measurements[transcript].values()
+        transcript_measurements[transcript]['min'] = min(values)
+        transcript_measurements[transcript]['max'] = max(values)
+        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+
+    return render_template('sample_set_panel.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panel=panel, transcript_measurements=transcript_measurements)
+
+
+@app.route('/sample_set/<int:sample_set_id>/transcript/<string:transcript_name>', methods=['GET', 'POST'])
+@login_required
+@roles_required('panel_admin')
+def sample_set_transcript(sample_set_id, transcript_name):
+    """Sample set transcript page."""
+    sample_set = SampleSet.query.get_or_404(sample_set_id)
+    transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).first()
+    measurement_type_form = MeasurementTypeForm()
+
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    exon_measurements = {}
+
+    # Get exon measurements
+    for sample in sample_set.samples:
+        try:
+            sample_tabix = pysam.TabixFile(sample.exon_measurement_file)
+        except IOError:
+            exon_measurements = {}
+            break
+        else:
+            with sample_tabix:
+                header = sample_tabix.header[0].lstrip('#').split('\t')
+
+                for exon in transcript.exons:
+                    if exon not in exon_measurements:
+                        exon_measurements[exon] = {}
+
+                    for row in sample_tabix.fetch(exon.chr, exon.start, exon.end):
+                        row = dict(zip(header, row.split('\t')))
+                        if int(row['start']) == exon.start and int(row['end']) == exon.end:
+                            exon_measurements[exon][sample] = float(row[measurement_type[0]])
+                            break
+
+        for exon in exon_measurements:
+            values = exon_measurements[exon].values()
+            exon_measurements[exon]['min'] = min(values)
+            exon_measurements[exon]['max'] = max(values)
+            exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
+
+    return render_template('sample_set_transcript.html', form=measurement_type_form, transcript=transcript, sample_set=sample_set, measurement_type=measurement_type, exon_measurements=exon_measurements)
+
+
+@app.route('/sample_set/<int:sample_set_id>/gene/<string:gene_id>', methods=['GET', 'POST'])
+@login_required
+def sample_set_gene(sample_set_id, gene_id):
+    """Sample set gene page."""
+    sample_set = SampleSet.query.get_or_404(sample_set_id)
+    gene = Gene.query.get_or_404(gene_id)
+    measurement_type_form = MeasurementTypeForm()
+
+    sample_ids = [sample.id for sample in sample_set.samples]
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    transcript_measurements = {}
+
+    if sample_ids and measurement_type:
+        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).join(Transcript).filter_by(gene_id=gene_id).options(joinedload('sample')).options(joinedload('transcript')).all()
+        for transcript_measurement in query:
+            sample = transcript_measurement.sample
+            transcript = transcript_measurement.transcript
+
+            if transcript not in transcript_measurements:
+                transcript_measurements[transcript] = {}
+            transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
+
+        for transcript in transcript_measurements:
+            values = transcript_measurements[transcript].values()
+            transcript_measurements[transcript]['min'] = min(values)
+            transcript_measurements[transcript]['max'] = max(values)
+            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+
+    return render_template('sample_set_gene.html', form=measurement_type_form, gene=gene, sample_set=sample_set, measurement_type=measurement_type, transcript_measurements=transcript_measurements)

@@ -10,6 +10,7 @@
             <th>Sample set</th>
             <th>Description</th>
             <th>Sample count</th>
+            <th>Date</th>
         </tr>
     </thead>
     <tbody>
@@ -18,6 +19,7 @@
             <td><a href="{{ url_for('sample_set', id=sample_set.id) }}">{{ sample_set.name }}</a></td>
             <td>{{ sample_set.description }}</td>
             <td>{{ sample_set.sample_count }}</td>
+            <td>{{ sample_set.date }}</td>
         </tr>
         {% endfor %}
     </tbody>

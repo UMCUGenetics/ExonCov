@@ -9,6 +9,9 @@
     <dl class="dl-horizontal">
         <dt>Sample set</dt><dd>{{ sample_set.name }}</dd>
         <dt>Description</dt><dd>{{ sample_set.description }}</dd>
+        <dt>Gene</dt><dd>{{ gene.id }} </dd>
+        <dt>Preferred transcript</dt><dd><a href="{{ url_for('sample_set_transcript', sample_set_id=sample_set.id, transcript_name=gene.default_transcript.name) }}">{{ gene.default_transcript.name }}</a></dd>
+
     </dl>
 </div>
 
@@ -18,7 +21,7 @@
 <table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
-            <th>Gene Panel</th>
+            <th>Transcript</th>
             <th>Mean</th>
             <th>Min.</th>
             <th>Max.</th>
@@ -28,19 +31,24 @@
         </tr>
     </thead>
     <tbody>
-        {% for panel in panels_measurements %}
+        {% for transcript in transcript_measurements %}
         <tr>
-            <td><a href="{{ url_for('sample_set_panel', sample_set_id=sample_set.id, panel_id=panel.id) }}">{{ panel }}</td>
-            {{ render_measurment_td(panels_measurements[panel]['mean']) }}
-            {{ render_measurment_td(panels_measurements[panel]['min']) }}
-            {{ render_measurment_td(panels_measurements[panel]['max']) }}
+            {% if transcript == gene.default_transcript %}
+            <td class="info"><a href="{{ url_for('sample_set_transcript', sample_set_id=sample_set.id, transcript_name=transcript.name) }}">{{ transcript.name }} *</a></td>
+            {% else %}
+            <td><a href="{{ url_for('sample_set_transcript', sample_set_id=sample_set.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            {% endif %}
+            {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
             {% for sample in sample_set.samples %}
-            {{ render_measurment_td(panels_measurements[panel]['samples'][sample]['measurement']) }}
+            {{ render_measurment_td(transcript_measurements[transcript][sample]) }}
             {% endfor %}
         </tr>
         {% endfor %}
     </tbody>
 </table>
+* Preferred transcript
 {% endblock %}
 
 {% block custom_javascript %}

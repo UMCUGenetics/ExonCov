@@ -194,9 +194,9 @@ class CustomPanel(db.Model):
     comments = db.Column(db.Text())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
 
-    user = db.relationship('User', back_populates='custom_panels')
-    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels')
-    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels')
+    user = db.relationship('User', back_populates='custom_panels', lazy='joined')
+    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels', lazy='joined')
+    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels', lazy='joined')
 
     def __repr__(self):
         return "CustomPanel({0})".format(self.id)
@@ -230,7 +230,7 @@ class Sample(db.Model):
 
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
     project = db.relationship('SampleProject', back_populates='samples', lazy='joined')
-    sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, lazy='joined', backref=db.backref('samples'))
+    sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, backref=db.backref('samples'), lazy='joined')
     custom_panels = db.relationship('CustomPanel', secondary=custom_panels_samples, back_populates='samples')
     sets = db.relationship('SampleSet', secondary=sample_sets_samples, back_populates='samples')
 
@@ -252,7 +252,7 @@ class SampleSet(db.Model):
     description = db.Column(db.Text())
     active = db.Column(db.Boolean, index=True, default=False)
 
-    samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets')
+    samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets', lazy='joined')
 
     def __repr__(self):
         return "SampleSet({0})".format(str(self))

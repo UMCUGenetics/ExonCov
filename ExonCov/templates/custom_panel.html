@@ -14,7 +14,9 @@
     </dl>
 </div>
 
+<div class="row">
 {{ measurement_type_form(form) }}
+</div>
 
 {% if panel_measurements %}
 <h2>Panel Statistics</h2>
@@ -51,8 +53,8 @@
 <table class="table table-bordered table-hover table-condensed" id="data_table">
     <thead>
         <tr>
-            <th>Gene</th>
             <th>Transcript</th>
+            <th>Gene</th>
             <th>Mean</th>
             <th>Min.</th>
             <th>Max.</th>
@@ -64,8 +66,8 @@
     <tbody>
         {% for transcript in transcript_measurements %}
         <tr>
-            <td><a href="{{ url_for('custom_panel_gene', id=custom_panel.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
             <td><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            <td><a href="{{ url_for('custom_panel_gene', id=custom_panel.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
             {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
             {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
@@ -86,7 +88,7 @@
             "paging": false,
             "info": false,
             "searching": false,
-            "order": [[ 0, 'asc' ]],
+            "order": [[ 1, 'asc' ]],
         });
     });
 </script>
