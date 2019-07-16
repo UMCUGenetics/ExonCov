@@ -191,6 +191,7 @@ class CustomPanel(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
+    research_number = db.Column(db.String(255), server_default='')  # onderzoeksnummer @ lab
     comments = db.Column(db.Text())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
 

@@ -8,9 +8,10 @@
 <div class="well">
     <dl class="dl-horizontal">
         <dt>ID</dt><dd>{{ custom_panel.id }}</dd>
-        <dt>Created by</dt><dd>{{ custom_panel.user }}</dd>
         <dt>Date</dt><dd>{{ custom_panel.date }}</dd>
+        <dt>Research number</dt><dd>{{ custom_panel.research_number }}</dd>
         <dt>Comments</dt><dd>{{ custom_panel.comments }}</dd>
+        <dt>Created by</dt><dd>{{ custom_panel.user }}</dd>
         <dt>Gene</dt><dd>{{ gene.id }}</dd>
         <dt>Preferred transcript</dt><dd><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=gene.default_transcript.name) }}">{{ gene.default_transcript.name }}</a></dd>
     </dl>
