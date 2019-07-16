@@ -5,7 +5,6 @@
 {% block header %}
 <div class="row">
     <div class="col-md-8">{{ sample.name }}</div>
-    <div class="col-md-4"><p class="text-right"><small><a href="{{ url_for('sample_inactive_panels', id=sample.id) }}">View inactive panels</a></small></p></div>
 </div>
 {% endblock %}
 
@@ -18,33 +17,8 @@
     </dl>
 </div>
 
-{{ render_sample_datatable_form(filter=false) }}
-
-<table class="table table-bordered table-hover table-condensed" id="data_table">
-    <thead>
-        <tr>
-            <th>Gene Panel</th>
-            <th>Size (bp)</th>
-            {% for type in measurement_types %}
-                <th>{{ measurement_types[type] }}</th>
-            {% endfor %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for panel in panels %}
-        <tr>
-            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_id=panel) }}">{{ panels[panel]['name_version'] }}</a></td>
-            <td>{{ panels[panel]['len'] }}</td>
-            {% for type in measurement_types %}
-                {{ render_measurment_td(panels[panel][type], type) }}
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
 {% if sample.custom_panels %}
-<div class="page-header"><h1> Custom panels </h1></div>
+<div class="page-header"><h1>Custom panels</h1></div>
 <table class="table table-bordered table-hover table-condensed">
     <thead>
         <tr>
@@ -70,6 +44,36 @@
     </tbody>
 </table>
 {% endif %}
+
+<div class="row page-header">
+    <div class="col-md-3"><h1>Gene panels</h1></div>
+    <div class="col-md-9 text-right"><h1><small><a href="{{ url_for('sample_inactive_panels', id=sample.id) }}">View inactive gene panels</a></small></h1></div>
+</div>
+{{ render_sample_datatable_form(filter=false) }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Gene Panel</th>
+            <th>Size (bp)</th>
+            {% for type in measurement_types %}
+                <th>{{ measurement_types[type] }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for panel in panels %}
+        <tr>
+            <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_id=panel) }}">{{ panels[panel]['name_version'] }}</a></td>
+            <td>{{ panels[panel]['len'] }}</td>
+            {% for type in measurement_types %}
+                {{ render_measurment_td(panels[panel][type], type) }}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 {% endblock %}
 
 {% block custom_javascript %}
