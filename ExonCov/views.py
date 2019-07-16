@@ -307,6 +307,7 @@ def custom_panel_new():
             user=current_user,
             transcripts=custom_panel_form.transcripts,
             samples=samples,
+            research_number=custom_panel_form.data['research_number'],
             comments=custom_panel_form.data['comments']
         )
         db.session.add(custom_panel)
