@@ -21,4 +21,4 @@ def upgrade():
 
 
 def downgrade():
-    op.create_index('ix_exons_chr', 'exons', ['chr'], unique=False)
+    op.drop_column('custom_panels', 'research_number')
