@@ -56,7 +56,7 @@ class CustomPanelNewForm(FlaskForm):
     samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
     panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
-    research_number = StringField('Research number', description="Provide a research number (onderzoeksnummer) for INC99.")
+    research_number = StringField('Test reference number', description="Provide a test reference number (onderzoeksnummer) for INC99 tests.")
     comments = TextAreaField('Comments', description="Provide a short description.")
     transcripts = []  # Filled in validate function
 
