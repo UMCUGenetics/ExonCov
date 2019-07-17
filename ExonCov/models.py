@@ -124,6 +124,23 @@ class Gene(db.Model):
         return self.id
 
 
+class GeneAlias(db.Model):
+    """ Gene alias class."""
+
+    __tablename__ = 'gene_aliases'
+
+    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
+    gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
+
+    gene = db.relationship('Gene', backref='aliases', foreign_keys=[gene_id])
+
+    def __repr__(self):
+        return "GeneAlias({0})".format(self.id)
+
+    def __str__(self):
+        return self.id
+
+
 class Panel(db.Model):
     """Panel class."""
 

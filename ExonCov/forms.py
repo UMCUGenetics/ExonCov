@@ -7,7 +7,7 @@ from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectF
 from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField
 from wtforms import validators
 
-from .models import Sample, SampleSet, Gene, PanelVersion, Panel
+from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
 
 
 # Query factories
@@ -32,11 +32,15 @@ def parse_gene_list(gene_list, transcripts=[]):
     for gene_id in re.split('[\n\r,;\t ]+', gene_list):
         gene_id = gene_id.strip()
         if gene_id:
-            gene = Gene.query.filter(Gene.id == gene_id).first()
+            gene = Gene.query.get(gene_id)
             if gene is None:
-                errors.append('Unknown gene: {0}'.format(gene_id))
+                gene_alias = GeneAlias.query.get(gene_id)
+                if gene_alias:
+                    errors.append('Unkown gene: {0}. Possible alias: {1}. Please check before using alias.'.format(gene_id, gene_alias.gene_id))
+                else:
+                    errors.append('Unknown gene: {0}.'.format(gene_id))
             elif gene.default_transcript in transcripts:
-                errors.append('Multiple entries for gene: {0}'.format(gene_id))
+                errors.append('Multiple entries for gene: {0}.'.format(gene_id))
             else:
                 transcripts.append(gene.default_transcript)
     return errors, transcripts

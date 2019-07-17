@@ -17,7 +17,7 @@ import shutil
 import pysam
 
 from . import app, db, utils, user_datastore
-from .models import Role, Gene, Transcript, Exon, SequencingRun, Sample, SampleProject, samples_sequencingRun, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
+from .models import Role, Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, samples_sequencingRun, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
 from .utils import weighted_average
 
 
@@ -323,6 +323,64 @@ class CheckSamples(Command):
 
         if not error:
             print "No errors found."
+
+
+class ImportAliasTable(Command):
+    """Import gene aliases from HGNC"""
+
+    option_list = (
+        Option('hgnc_complete_set', help="Complete HGNC dataset (ftp://ftp.ebi.ac.uk/pub/databases/genenames/new/tsv/hgnc_complete_set.txt)"),
+    )
+
+    def run(self, hgnc_complete_set):
+        with open(hgnc_complete_set, 'r') as file:
+            header = file.readline().strip().split('\t')
+            for line in file:
+                data = line.strip().split('\t')
+
+                # skip lines without locus_group, refseq_accession, gene symbol or alias symbol
+                try:
+                    locus_group = data[header.index('locus_group')]
+                    refseq_accession = data[header.index('refseq_accession')]
+                    hgnc_gene_symbol = data[header.index('symbol')]
+                    hgnc_aliases = data[header.index('alias_symbol')].strip('"')
+                except IndexError:
+                    continue
+
+                # Only process protein-coding gene or non-coding RNA with 'NM' refseq_accession
+                if (locus_group == 'protein-coding gene' or locus_group == 'non-coding RNA') and 'NM' in refseq_accession and hgnc_aliases:
+                    # Possible gene id's
+                    hgnc_gene_ids = [hgnc_gene_symbol]
+                    hgnc_gene_ids.extend(hgnc_aliases.split('|'))
+
+                    # Find gene in database
+                    db_genes = []
+                    for hgnc_gene_id in hgnc_gene_ids:
+                        db_gene = Gene.query.get(hgnc_gene_id)
+                        if db_gene:
+                            db_genes.append(db_gene)
+
+                    # Check db genes
+                    if not db_genes:
+                        print "ERROR: No gene found for: {}\n".format(','.join(hgnc_gene_ids))
+                    elif len(db_genes) > 1:
+                        print "ERROR: Multiple genes found for: {}\n".format(','.join(hgnc_gene_ids))
+
+                    # Check and/or create aliases
+                    else:
+                        gene = db_genes[0]
+                        for hgnc_gene_id in hgnc_gene_ids:
+                            if hgnc_gene_id != gene.id:
+                                gene_alias = GeneAlias.query.get(hgnc_gene_id)
+                                if not gene_alias:  # create new gene alias if it does not exist
+                                    gene_alias = GeneAlias(id=hgnc_gene_id, gene_id=gene.id)
+                                    db.session.add(gene_alias)
+
+                                if gene_alias.gene_id != gene.id:  # check gene id
+                                    print "ERROR: DB gene alias does not match HGNC gene alias"
+                                    print "DB GENE: {0} \t DB ALIAS: {1}".format(gene_alias.gene_id, gene_alias.id)
+                                    print "HGNC GENE: {0} \t HGNC ALIAS: {1}\n".format(gene.id, hgnc_gene_id)
+                db.session.commit()
 
 
 class LoadDesign(Command):
