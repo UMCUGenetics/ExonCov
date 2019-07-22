@@ -383,6 +383,39 @@ class ImportAliasTable(Command):
                 db.session.commit()
 
 
+class PrintPanelBed(Command):
+    """Print bed file containing regions in active and validated panels"""
+
+    option_list = (
+        Option('-f', '--remove_flank', dest='remove_flank', default=False, action='store_true', help="Remove 20bp flank from exon coordinates."),
+    )
+
+    def run(self, remove_flank):
+        panel_versions = PanelVersion.query.filter_by(active=True).filter_by(validated=True).options(joinedload('transcripts'))
+        exons = []
+
+        for panel in panel_versions:
+            if 'FULL' not in panel.panel_name:  # skip FULL_autosomal and FULL_TARGET
+                for transcript in panel.transcripts:
+                    for exon in transcript.exons:
+                        if exon.id not in exons:
+                            exons.append(exon.id)
+                            if remove_flank:
+                                print "{chr}\t{start}\t{end}\t{gene}".format(
+                                    chr=exon.chr,
+                                    start=exon.start + 20,  # Add 20bp to remove flank
+                                    end=exon.end - 20,  # Substract 20bp to remove flank
+                                    gene=transcript.gene.id
+                                )
+                            else:
+                                print "{chr}\t{start}\t{end}\t{gene}".format(
+                                    chr=exon.chr,
+                                    start=exon.start,
+                                    end=exon.end,
+                                    gene=transcript.gene.id
+                                )
+
+
 class LoadDesign(Command):
     """Load design files to database."""
 

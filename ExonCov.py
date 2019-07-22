@@ -19,6 +19,7 @@ db_manager.add_command('migrate', MigrateCommand)
 db_manager.add_command('stats', cli.PrintStats())
 db_manager.add_command('panel_genes', cli.PrintPanelGenesTable())
 db_manager.add_command('import_alias_table', cli.ImportAliasTable())
+db_manager.add_command('export_panel_bed', cli.PrintPanelBed())
 #db_manager.add_command('load_design', cli.LoadDesign())
 
 if __name__ == "__main__":
