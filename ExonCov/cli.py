@@ -39,13 +39,15 @@ class PrintPanelGenesTable(Command):
     """Print tab delimited panel / genes table."""
 
     def run(self):
-        print '{panel}\t{gene}'.format(panel='panel_version', gene='gene')
+        print '{panel}\t{genes}'.format(panel='panel_version', genes='genes')
 
         panel_versions = PanelVersion.query.filter_by(active=True).options(joinedload('transcripts'))
 
         for panel in panel_versions:
-            for transcript in panel.transcripts:
-                print '{panel}\t{gene}'.format(panel=panel.name_version, gene=transcript.gene_id)
+            print '{panel}\t{genes}'.format(
+                panel=panel.name_version,
+                genes='\t'.join([transcript.gene_id for transcript in panel.transcripts])
+            )
 
 
 class ImportBam(Command):
