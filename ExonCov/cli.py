@@ -6,6 +6,7 @@ import time
 import subprocess
 import os
 import shlex
+import urllib
 
 from flask_script import Command, Option
 from flask_security.utils import encrypt_password
@@ -328,61 +329,54 @@ class CheckSamples(Command):
 
 
 class ImportAliasTable(Command):
-    """Import gene aliases from HGNC"""
+    """Import gene aliases from HGNC (ftp://ftp.ebi.ac.uk/pub/databases/genenames/new/tsv/hgnc_complete_set.txt)"""
 
-    option_list = (
-        Option('hgnc_complete_set', help="Complete HGNC dataset (ftp://ftp.ebi.ac.uk/pub/databases/genenames/new/tsv/hgnc_complete_set.txt)"),
-    )
+    def run(self):
+        hgnc_file = urllib.urlopen('ftp://ftp.ebi.ac.uk/pub/databases/genenames/new/tsv/hgnc_complete_set.txt')
+        header = hgnc_file.readline().strip().split('\t')
+        for line in hgnc_file:
+            data = line.strip().split('\t')
 
-    def run(self, hgnc_complete_set):
-        with open(hgnc_complete_set, 'r') as file:
-            header = file.readline().strip().split('\t')
-            for line in file:
-                data = line.strip().split('\t')
+            # skip lines without locus_group, refseq_accession, gene symbol or alias symbol
+            try:
+                locus_group = data[header.index('locus_group')]
+                refseq_accession = data[header.index('refseq_accession')]
+                hgnc_gene_symbol = data[header.index('symbol')]  # Current hgnc gene symbol
+                hgnc_prev_symbols = data[header.index('prev_symbol')].strip('"')   # Use only previous gene symbols as aliases
+            except IndexError:
+                continue
 
-                # skip lines without locus_group, refseq_accession, gene symbol or alias symbol
-                try:
-                    locus_group = data[header.index('locus_group')]
-                    refseq_accession = data[header.index('refseq_accession')]
-                    hgnc_gene_symbol = data[header.index('symbol')]
-                    hgnc_aliases = data[header.index('alias_symbol')].strip('"')
-                except IndexError:
-                    continue
+            # Only process protein-coding gene or non-coding RNA with 'NM' refseq_accession
+            if (locus_group == 'protein-coding gene' or locus_group == 'non-coding RNA') and 'NM' in refseq_accession and hgnc_prev_symbols:
+                # Possible gene id's
+                hgnc_gene_ids = [hgnc_gene_symbol]
+                hgnc_gene_ids.extend(hgnc_prev_symbols.split('|'))
 
-                # Only process protein-coding gene or non-coding RNA with 'NM' refseq_accession
-                if (locus_group == 'protein-coding gene' or locus_group == 'non-coding RNA') and 'NM' in refseq_accession and hgnc_aliases:
-                    # Possible gene id's
-                    hgnc_gene_ids = [hgnc_gene_symbol]
-                    hgnc_gene_ids.extend(hgnc_aliases.split('|'))
+                # Find gene in database
+                db_genes_ids = []
+                for hgnc_gene_id in hgnc_gene_ids:
+                    db_gene = Gene.query.get(hgnc_gene_id)
+                    if db_gene:
+                        db_genes_ids.append(db_gene.id)
 
-                    # Find gene in database
-                    db_genes = []
-                    for hgnc_gene_id in hgnc_gene_ids:
-                        db_gene = Gene.query.get(hgnc_gene_id)
-                        if db_gene:
-                            db_genes.append(db_gene)
+                # Check db genes
+                if not db_genes_ids:
+                    print "ERROR: No gene in database found for: {0}".format(','.join(hgnc_gene_ids))
 
-                    # Check db genes
-                    if not db_genes:
-                        print "ERROR: No gene found for: {}\n".format(','.join(hgnc_gene_ids))
-                    elif len(db_genes) > 1:
-                        print "ERROR: Multiple genes found for: {}\n".format(','.join(hgnc_gene_ids))
-
-                    # Check and/or create aliases
-                    else:
-                        gene = db_genes[0]
+                # Create aliases
+                else:
+                    for db_gene_id in db_genes_ids:
                         for hgnc_gene_id in hgnc_gene_ids:
-                            if hgnc_gene_id != gene.id:
-                                gene_alias = GeneAlias.query.get(hgnc_gene_id)
-                                if not gene_alias:  # create new gene alias if it does not exist
-                                    gene_alias = GeneAlias(id=hgnc_gene_id, gene_id=gene.id)
+                            if hgnc_gene_id not in db_genes_ids:
+                                try:
+                                    gene_alias = GeneAlias(id=hgnc_gene_id, gene_id=db_gene_id)
                                     db.session.add(gene_alias)
-
-                                if gene_alias.gene_id != gene.id:  # check gene id
-                                    print "ERROR: DB gene alias does not match HGNC gene alias"
-                                    print "DB GENE: {0} \t DB ALIAS: {1}".format(gene_alias.gene_id, gene_alias.id)
-                                    print "HGNC GENE: {0} \t HGNC ALIAS: {1}\n".format(gene.id, hgnc_gene_id)
-                db.session.commit()
+                                    db.session.commit()
+                                except IntegrityError:
+                                    db.session.rollback()
+                                    continue
+                            elif hgnc_gene_id != db_gene_id:  # but does exist as gene in database
+                                print "ERROR: Can not import alias: {0} for gene: {1}".format(hgnc_gene_id, db_gene_id)
 
 
 class PrintPanelBed(Command):

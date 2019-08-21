@@ -130,7 +130,7 @@ class GeneAlias(db.Model):
     __tablename__ = 'gene_aliases'
 
     id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
-    gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), index=True)
+    gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), primary_key=True)
 
     gene = db.relationship('Gene', backref='aliases', foreign_keys=[gene_id])
 

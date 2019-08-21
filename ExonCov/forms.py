@@ -34,9 +34,12 @@ def parse_gene_list(gene_list, transcripts=[]):
         if gene_id:
             gene = Gene.query.get(gene_id)
             if gene is None:
-                gene_alias = GeneAlias.query.get(gene_id)
-                if gene_alias:
-                    errors.append('Unkown gene: {0}. Possible alias: {1}. Please check before using alias.'.format(gene_id, gene_alias.gene_id))
+                gene_aliases = GeneAlias.query.filter_by(id=gene_id).all()
+                if gene_aliases:
+                    errors.append('Unkown gene: {0}. Possible aliases: {1}. Please check before using alias.'.format(
+                        gene_id,
+                        ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
+                    ))
                 else:
                     errors.append('Unknown gene: {0}.'.format(gene_id))
             elif gene.default_transcript in transcripts:
