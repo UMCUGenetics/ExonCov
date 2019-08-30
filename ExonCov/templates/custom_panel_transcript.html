@@ -11,7 +11,7 @@
         <dt>Date</dt><dd>{{ custom_panel.date }}</dd>
         <dt>Test reference number</dt><dd>{{ custom_panel.research_number }}</dd>
         <dt>Comments</dt><dd>{{ custom_panel.comments }}</dd>
-        <dt>Created by</dt><dd>{{ custom_panel.user }}</dd>
+        <dt>Created by</dt><dd>{{ custom_panel.created_by }}</dd>
         <dt>Gene</dt><dd><a href="{{ url_for('custom_panel_gene', id=custom_panel.id, gene_id=transcript.gene_id) }}">{{ transcript.gene_id }}</a></dd>
         <dt>Transcript</dt><dd>{{ transcript.name }}</dd>
     </dl>

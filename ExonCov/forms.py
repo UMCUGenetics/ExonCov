@@ -207,3 +207,9 @@ class PanelVersionEditForm(FlaskForm):
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     active = BooleanField('Active')
     validated = BooleanField('Validated')
+
+
+class CustomPanelValidateForm(FlaskForm):
+    """Custom Panel set validation status form."""
+
+    confirm = BooleanField('Confirm', validators=[validators.InputRequired()])

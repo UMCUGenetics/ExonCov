@@ -211,8 +211,12 @@ class CustomPanel(db.Model):
     research_number = db.Column(db.String(255), server_default='')  # onderzoeksnummer @ lab
     comments = db.Column(db.Text())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
+    validated = db.Column(db.Boolean, index=True, default=False)
+    validated_user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
+    validated_date = db.Column(db.Date())
 
-    user = db.relationship('User', back_populates='custom_panels', lazy='joined')
+    created_by = db.relationship('User', lazy='joined', foreign_keys=[user_id])
+    validated_by = db.relationship('User', lazy='joined', foreign_keys=[validated_user_id])
     samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels', lazy='joined')
     transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels', lazy='joined')
 
@@ -367,7 +371,6 @@ class User(db.Model, UserMixin):
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
     roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
-    custom_panels = db.relationship('CustomPanel', back_populates='user')
     panel_versions = db.relationship('PanelVersion', back_populates='user')
 
     def __init__(self, email, password, first_name, last_name, active, roles):

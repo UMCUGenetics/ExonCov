@@ -54,9 +54,9 @@ class PanelVersionAdminView(CustomModelView):
 
 class CustomPanelAdminView(CustomModelView):
     """Custom panel admin view."""
-    column_list = ['user', 'date', 'comments']
+    column_list = ['created_by', 'date', 'comments']
 
-    form_columns = ['user', 'date', 'samples', 'transcripts', 'comments']
+    form_columns = ['created_by', 'date', 'samples', 'transcripts', 'comments']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],

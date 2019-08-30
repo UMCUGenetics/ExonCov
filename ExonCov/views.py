@@ -1,6 +1,7 @@
 """ExonCov views."""
 
 import time
+import datetime
 
 from flask import render_template, request, redirect, url_for
 from flask_security import login_required, roles_required
@@ -11,7 +12,7 @@ import pysam
 
 from ExonCov import app, db
 from .models import Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, TranscriptMeasurement, panels_transcripts
-from .forms import MeasurementTypeForm, CustomPanelNewForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
+from .forms import MeasurementTypeForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
 from .utils import weighted_average
 
 
@@ -455,6 +456,27 @@ def custom_panel_gene(id, gene_id):
             transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
 
     return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
+
+
+@app.route('/panel/custom/<int:id>/set_validated', methods=['GET', 'POST'])
+@login_required
+def custom_panel_validated(id):
+    """Set validation status to true."""
+    custom_panel = CustomPanel.query.get_or_404(id)
+
+    custom_panel_validate_form = CustomPanelValidateForm()
+
+    if custom_panel_validate_form.validate_on_submit():
+
+        custom_panel.validated = True
+        custom_panel.validated_by = current_user
+        custom_panel.validated_date = datetime.date.today()
+        db.session.add(custom_panel)
+        db.session.commit()
+
+        return redirect(url_for('custom_panel', id=custom_panel.id))
+    else:
+        return render_template('custom_panel_validate_confirm.html', form=custom_panel_validate_form, custom_panel=custom_panel)
 
 
 @app.route('/sample_set')
