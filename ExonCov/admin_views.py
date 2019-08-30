@@ -43,7 +43,7 @@ class PanelVersionAdminView(CustomModelView):
     """Panel version admin view."""
     column_searchable_list = ['panel_name']
 
-    form_columns = ['panel', 'version_year', 'version_revision', 'active', 'validated', 'transcripts', 'comments']
+    form_columns = ['panel', 'version_year', 'version_revision', 'comments', 'active', 'validated', 'transcripts']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
@@ -54,9 +54,11 @@ class PanelVersionAdminView(CustomModelView):
 
 class CustomPanelAdminView(CustomModelView):
     """Custom panel admin view."""
-    column_list = ['created_by', 'date', 'comments']
+    column_list = ['id', 'created_by', 'date', 'research_number', 'comments', 'validated', 'validated_by', 'validated_date']
+    column_searchable_list = ['id', 'comments', 'research_number']
 
-    form_columns = ['created_by', 'date', 'samples', 'transcripts', 'comments']
+    form_columns = ['created_by', 'date', 'research_number', 'comments', 'validated', 'validated_by', 'validated_date', 'samples', 'transcripts']
+
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
@@ -148,7 +150,7 @@ class SampleSetAdminView(CustomModelView):
     """Sample set admin view."""
     column_list = ['name', 'date']
 
-    form_columns = ['name', 'date', 'description', 'samples', 'active']
+    form_columns = ['name', 'date', 'description',  'active', 'samples']
     form_ajax_refs = {
         'samples': {
             'fields': ['name'],
