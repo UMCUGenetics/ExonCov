@@ -611,6 +611,7 @@ def sample_set_transcript(sample_set_id, transcript_name):
 
 @app.route('/sample_set/<int:sample_set_id>/gene/<string:gene_id>', methods=['GET', 'POST'])
 @login_required
+@roles_required('panel_admin')
 def sample_set_gene(sample_set_id, gene_id):
     """Sample set gene page."""
     sample_set = SampleSet.query.get_or_404(sample_set_id)
