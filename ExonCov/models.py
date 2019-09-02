@@ -176,7 +176,7 @@ class PanelVersion(db.Model):
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
-    user = db.relationship('User', back_populates='panel_versions')
+    user = db.relationship('User')
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
 
     def __repr__(self):
@@ -371,7 +371,6 @@ class User(db.Model, UserMixin):
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
     roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
-    panel_versions = db.relationship('PanelVersion', back_populates='user')
 
     def __init__(self, email, password, first_name, last_name, active, roles):
         self.email = email
