@@ -305,7 +305,7 @@ def custom_panel_new():
             samples += custom_panel_form.data['sample_set'].samples
 
         custom_panel = CustomPanel(
-            user=current_user,
+            created_by=current_user,
             transcripts=custom_panel_form.transcripts,
             samples=samples,
             research_number=custom_panel_form.data['research_number'],
