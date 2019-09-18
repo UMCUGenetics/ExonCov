@@ -1,0 +1,27 @@
+{% from "macros/forms.html" import render_sample_datatable_form %}
+{% extends 'base.html' %}
+
+{% block header %}Sample sets{% endblock %}
+
+{% block body %}
+<table class="table table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th>Sample set</th>
+            <th>Description</th>
+            <th>Sample count</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sample_set in sample_sets %}
+        <tr>
+            <td><a href="{{ url_for('sample_set', id=sample_set.id) }}">{{ sample_set.name }}</a></td>
+            <td>{{ sample_set.description }}</td>
+            <td>{{ sample_set.sample_count }}</td>
+            <td>{{ sample_set.date }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

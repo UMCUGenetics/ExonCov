@@ -1,0 +1,67 @@
+{% from "macros/forms.html" import measurement_type_form, render_sample_datatable_form %}
+{% from "macros/tables.html" import render_measurment_td %}
+{% extends 'base.html' %}
+
+{% block header %}Sample set - {{ sample_set.name }}{% endblock %}
+
+{% block body %}
+<div class="well">
+    <dl class="dl-horizontal">
+        <dt>Sample set</dt><dd>{{ sample_set.name }}</dd>
+        <dt>Description</dt><dd>{{ sample_set.description }}</dd>
+        <dt>Panel</dt><dd>{{ panel.name_version }} </dd>
+    </dl>
+</div>
+
+{{ render_sample_datatable_form(filter=false) }}
+{{ measurement_type_form(form) }}
+
+<table class="table table-bordered table-hover table-condensed" id="data_table">
+    <thead>
+        <tr>
+            <th>Transcript</th>
+            <th>Gene</th>
+            <th>Mean</th>
+            <th>Min.</th>
+            <th>Max.</th>
+            {% for sample in sample_set.samples %}
+            <th>{{ sample.name }} {{ measurement_type[1] }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for transcript in transcript_measurements %}
+        <tr>
+            <td><a href="{{ url_for('sample_set_transcript', sample_set_id=sample_set.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
+            <td><a href="{{ url_for('sample_set_gene', sample_set_id=sample_set.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
+            {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
+            {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
+            {% for sample in sample_set.samples %}
+            {{ render_measurment_td(transcript_measurements[transcript][sample]) }}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        var dataTable = $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "order": [[ 1, 'asc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            console.log(this.value)
+            dataTable.search(this.value).draw();
+        });
+    });
+</script>
+{% endblock %}

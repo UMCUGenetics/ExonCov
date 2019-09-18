@@ -7,7 +7,7 @@ from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectF
 from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField
 from wtforms import validators
 
-from .models import Sample, SampleSet, Gene, PanelVersion, Panel
+from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
 
 
 # Query factories
@@ -32,11 +32,18 @@ def parse_gene_list(gene_list, transcripts=[]):
     for gene_id in re.split('[\n\r,;\t ]+', gene_list):
         gene_id = gene_id.strip()
         if gene_id:
-            gene = Gene.query.filter(Gene.id == gene_id).first()
+            gene = Gene.query.get(gene_id)
             if gene is None:
-                errors.append('Unknown gene: {0}'.format(gene_id))
+                gene_aliases = GeneAlias.query.filter_by(id=gene_id).all()
+                if gene_aliases:
+                    errors.append('Unkown gene: {0}. Possible aliases: {1}. Please check before using alias.'.format(
+                        gene_id,
+                        ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
+                    ))
+                else:
+                    errors.append('Unknown gene: {0}.'.format(gene_id))
             elif gene.default_transcript in transcripts:
-                errors.append('Multiple entries for gene: {0}'.format(gene_id))
+                errors.append('Multiple entries for gene: {0}.'.format(gene_id))
             else:
                 transcripts.append(gene.default_transcript)
     return errors, transcripts
@@ -56,7 +63,8 @@ class CustomPanelNewForm(FlaskForm):
     samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
     panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[])
-    comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
+    research_number = StringField('Test reference number', description="Provide a test reference number (onderzoeksnummer) for INC99 tests.")
+    comments = TextAreaField('Comments', description="Provide a short description.")
     transcripts = []  # Filled in validate function
 
     def validate(self):
@@ -99,10 +107,17 @@ class CustomPanelNewForm(FlaskForm):
                     self.gene_list.errors.extend(errors)
                     return False
 
+        # Parse research_number and comments
+        if not self.research_number.data and not self.comments.data:
+            message = 'Please provide a research number or a short description in the comments field.'
+            self.research_number.errors.append(message)
+            self.comments.errors.append(message)
+            return False
+
         return True
 
 
-class CustomPanelForm(FlaskForm):
+class MeasurementTypeForm(FlaskForm):
     """Custom Panel form."""
 
     measurement_type = SelectField('Measurement type', default='measurement_percentage15', choices=[
@@ -192,3 +207,9 @@ class PanelVersionEditForm(FlaskForm):
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     active = BooleanField('Active')
     validated = BooleanField('Validated')
+
+
+class CustomPanelValidateForm(FlaskForm):
+    """Custom Panel set validation status form."""
+
+    confirm = BooleanField('Confirm', validators=[validators.InputRequired()])

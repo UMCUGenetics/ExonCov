@@ -11,6 +11,7 @@
         {{ render_select2_field(form.sample_set) }}
         {{ render_select2_field(form.panel) }}
         {{ render_field(form.gene_list, rows="6") }}
+        {{ render_field(form.research_number) }}
         {{ render_field(form.comments, rows="2") }}
 
         <div class="form-group">
@@ -20,7 +21,6 @@
         </div>
     </form>
 </div>
-
 {% endblock %}
 
 {% block custom_javascript %}

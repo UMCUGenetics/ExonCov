@@ -124,6 +124,23 @@ class Gene(db.Model):
         return self.id
 
 
+class GeneAlias(db.Model):
+    """ Gene alias class."""
+
+    __tablename__ = 'gene_aliases'
+
+    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
+    gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), primary_key=True)
+
+    gene = db.relationship('Gene', backref='aliases', foreign_keys=[gene_id])
+
+    def __repr__(self):
+        return "GeneAlias({0})".format(self.id)
+
+    def __str__(self):
+        return self.id
+
+
 class Panel(db.Model):
     """Panel class."""
 
@@ -159,7 +176,7 @@ class PanelVersion(db.Model):
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
-    user = db.relationship('User', back_populates='panel_versions')
+    user = db.relationship('User')
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
 
     def __repr__(self):
@@ -191,12 +208,17 @@ class CustomPanel(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
+    research_number = db.Column(db.String(255), server_default='')  # onderzoeksnummer @ lab
     comments = db.Column(db.Text())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
+    validated = db.Column(db.Boolean, index=True, default=False)
+    validated_user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
+    validated_date = db.Column(db.Date())
 
-    user = db.relationship('User', back_populates='custom_panels')
-    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels')
-    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels')
+    created_by = db.relationship('User', lazy='joined', foreign_keys=[user_id])
+    validated_by = db.relationship('User', lazy='joined', foreign_keys=[validated_user_id])
+    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels', lazy='joined')
+    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels', lazy='joined')
 
     def __repr__(self):
         return "CustomPanel({0})".format(self.id)
@@ -230,7 +252,7 @@ class Sample(db.Model):
 
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
     project = db.relationship('SampleProject', back_populates='samples', lazy='joined')
-    sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, lazy='joined', backref=db.backref('samples'))
+    sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, backref=db.backref('samples'), lazy='joined')
     custom_panels = db.relationship('CustomPanel', secondary=custom_panels_samples, back_populates='samples')
     sets = db.relationship('SampleSet', secondary=sample_sets_samples, back_populates='samples')
 
@@ -252,13 +274,18 @@ class SampleSet(db.Model):
     description = db.Column(db.Text())
     active = db.Column(db.Boolean, index=True, default=False)
 
-    samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets')
+    samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets', lazy='joined')
 
     def __repr__(self):
         return "SampleSet({0})".format(str(self))
 
     def __str__(self):
         return self.name
+
+    @hybrid_property
+    def sample_count(self):
+        """Calculate number of genes."""
+        return len(self.samples)
 
 
 class SampleProject(db.Model):
@@ -344,8 +371,6 @@ class User(db.Model, UserMixin):
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
     roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
-    custom_panels = db.relationship('CustomPanel', back_populates='user')
-    panel_versions = db.relationship('PanelVersion', back_populates='user')
 
     def __init__(self, email, password, first_name, last_name, active, roles):
         self.email = email

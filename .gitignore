@@ -61,3 +61,4 @@ target/
 .DS_Store
 
 test_files/
+data/
