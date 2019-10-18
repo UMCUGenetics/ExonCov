@@ -16,6 +16,11 @@ from .forms import MeasurementTypeForm, CustomPanelNewForm, CustomPanelValidateF
 from .utils import weighted_average
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
 @app.route('/')
 @app.route('/sample')
 @login_required
