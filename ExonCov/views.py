@@ -189,7 +189,7 @@ def panels():
 @login_required
 def panel(name):
     """Panel page."""
-    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first()
+    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first_or_404()
     return render_template('panel.html', panel=panel)
 
 
@@ -198,7 +198,7 @@ def panel(name):
 @roles_required('panel_admin')
 def panel_update(name):
     """Update panel page."""
-    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first()
+    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first_or_404()
     panel_last_version = panel.last_version
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
