@@ -12,7 +12,7 @@ import pysam
 
 from ExonCov import app, db
 from .models import Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, TranscriptMeasurement, panels_transcripts
-from .forms import MeasurementTypeForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
+from .forms import MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
 from .utils import weighted_average
 
 
@@ -185,8 +185,6 @@ def sample_gene(sample_id, gene_id):
 def panels():
     """Panel overview page."""
     panels = Panel.query.options(joinedload('versions')).all()
-    custom_panels = CustomPanel.query.order_by(CustomPanel.id.desc()).all()
-
     return render_template('panels.html', panels=panels, custom_panels=custom_panels)
 
 
@@ -296,7 +294,25 @@ def panel_version_edit(id):
     return render_template('panel_version_edit.html', form=form, panel=panel)
 
 
-@app.route('/panel/custom', methods=['GET', 'POST'])
+@app.route('/panel/custom')
+@login_required
+def custom_panels():
+    """Custom panel overview page."""
+    custom_panel_form = CustomPanelForm(request.args, meta={'csrf': False})
+    page = request.args.get('page', default=1, type=int)
+    search = request.args.get('search')
+
+    custom_panels = CustomPanel.query.order_by(CustomPanel.id.desc())
+
+    if search and custom_panel_form.validate():
+        custom_panels = custom_panels.filter(or_(CustomPanel.research_number.like('%{0}%'.format(search)), CustomPanel.comments.like('%{0}%'.format(search))))
+
+    custom_panels = custom_panels.paginate(page=page, per_page=10)
+
+    return render_template('custom_panels.html', form=custom_panel_form, custom_panels=custom_panels)
+
+
+@app.route('/panel/custom/new', methods=['GET', 'POST'])
 @login_required
 def custom_panel_new():
     """New custom panel page."""
