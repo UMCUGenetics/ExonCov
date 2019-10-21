@@ -305,9 +305,13 @@ def custom_panels():
     custom_panels = CustomPanel.query.order_by(CustomPanel.id.desc())
 
     if search and custom_panel_form.validate():
-        custom_panels = custom_panels.filter(or_(CustomPanel.research_number.like('%{0}%'.format(search)), CustomPanel.comments.like('%{0}%'.format(search))))
+        custom_panels = custom_panels.filter(or_(
+            CustomPanel.id.like('%{0}%'.format(search)),
+            CustomPanel.research_number.like('%{0}%'.format(search)),
+            CustomPanel.comments.like('%{0}%'.format(search)),
+        ))
 
-    custom_panels = custom_panels.paginate(page=page, per_page=10)
+    custom_panels = custom_panels.paginate(page=page, per_page=15)
 
     return render_template('custom_panels.html', form=custom_panel_form, custom_panels=custom_panels)
 
