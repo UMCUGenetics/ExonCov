@@ -126,7 +126,16 @@ def sample_panel(sample_id, panel_id):
         'measurement_percentage30': '>30'
     }
     transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
-    return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
+
+    panel_summary = [[], []]
+    for transcript, measurement in transcript_measurements:
+        print transcript, measurement
+        if measurement.measurement_percentage15 == 100:
+            panel_summary[0].append(transcript)
+        else:
+            panel_summary[1].append([transcript, measurement.measurement_percentage15])
+
+    return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types, panel_summary=panel_summary)
 
 
 @app.route('/sample/<int:sample_id>/transcript/<string:transcript_name>')

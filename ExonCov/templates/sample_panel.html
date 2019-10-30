@@ -48,6 +48,23 @@
         {% endfor %}
     </tbody>
 </table>
+
+<div class="row page-header">
+    <div class="col-md-3"><h3>Panel summary</h3></div>
+</div>
+
+{% if panel_summary[0] %}
+    {% if transcript_measurements|length <= 25  %}
+        <p>100 % coverage for {% for transcript in panel_summary[0] %} {{transcript.gene}} ({{transcript}}) {%- if not loop.last -%},{% endif %}{% endfor %}.</p>
+        {% else %}
+        <p>100% coverage for {{ panel_summary[0]|length }} genes.</p>
+    {% endif %}
+{% endif %}
+
+{% if panel_summary[1] %}
+    <p>{% for transcript_measurement in panel_summary[1] %} {{transcript_measurement[0].gene}} ({{transcript_measurement[0]}}) = {{transcript_measurement[1]}}% {%- if not loop.last -%},{% endif %}{% endfor %}.</p>
+{% endif %}
+
 {% endblock %}
 
 {% block custom_javascript %}
