@@ -118,6 +118,12 @@ def sample_panel(sample_id, panel_id):
     """Sample panel page."""
     sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get_or_404(sample_id)
     panel = PanelVersion.query.get_or_404(panel_id)
+    panel_stats = {
+        'average': 0,
+        'size': 0,
+        '100': [],
+        'not_100': []
+    }
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -127,15 +133,23 @@ def sample_panel(sample_id, panel_id):
     }
     transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
 
-    panel_summary = [[], []]
     for transcript, measurement in transcript_measurements:
-        print transcript, measurement
         if measurement.measurement_percentage15 == 100:
-            panel_summary[0].append(transcript)
+            panel_stats['100'].append(transcript)
         else:
-            panel_summary[1].append([transcript, measurement.measurement_percentage15])
+            panel_stats['not_100'].append([transcript, measurement.measurement_percentage15])
+        # Calculate weighted average
+        if not panel_stats['average']:
+            panel_stats['average'] = measurement.measurement_percentage15
+            panel_stats['size'] = measurement.len
+        else:
+            panel_stats['average'] = weighted_average(
+                [panel_stats['average'], measurement.measurement_percentage15],
+                [panel_stats['size'], measurement.len]
+            )
+            panel_stats['size'] += measurement.len
 
-    return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types, panel_summary=panel_summary)
+    return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types, panel_stats=panel_stats)
 
 
 @app.route('/sample/<int:sample_id>/transcript/<string:transcript_name>')
