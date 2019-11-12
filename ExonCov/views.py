@@ -12,8 +12,13 @@ import pysam
 
 from ExonCov import app, db
 from .models import Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, TranscriptMeasurement, panels_transcripts
-from .forms import MeasurementTypeForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
+from .forms import MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
 from .utils import weighted_average
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 
 @app.route('/')
@@ -28,7 +33,7 @@ def samples():
     run = request.args.get('run')
     samples_per_page = 10
 
-    samples = Sample.query.order_by(Sample.import_date.desc()).order_by(Sample.name.asc())
+    samples = Sample.query.order_by(Sample.import_date.desc()).order_by(Sample.name.asc()).options(joinedload('sequencing_runs')).options(joinedload('project'))
     if (sample or project or run) and sample_form.validate():
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
@@ -47,7 +52,7 @@ def samples():
 @login_required
 def sample(id):
     """Sample page."""
-    sample = Sample.query.get_or_404(id)
+    sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).options(joinedload('custom_panels')).get_or_404(id)
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
@@ -79,7 +84,7 @@ def sample(id):
 @login_required
 def sample_inactive_panels(id):
     """Sample inactive panels page."""
-    sample = Sample.query.get_or_404(id)
+    sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get_or_404(id)
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
@@ -111,7 +116,7 @@ def sample_inactive_panels(id):
 @login_required
 def sample_panel(sample_id, panel_id):
     """Sample panel page."""
-    sample = Sample.query.get_or_404(sample_id)
+    sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get_or_404(sample_id)
     panel = PanelVersion.query.get_or_404(panel_id)
 
     measurement_types = {
@@ -128,8 +133,8 @@ def sample_panel(sample_id, panel_id):
 @login_required
 def sample_transcript(sample_id, transcript_name):
     """Sample transcript page."""
-    sample = Sample.query.get_or_404(sample_id)
-    transcript = Transcript.query.filter_by(name=transcript_name).first()
+    sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get_or_404(sample_id)
+    transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('exons')).first()
 
     exon_measurements = []
     try:
@@ -161,7 +166,7 @@ def sample_transcript(sample_id, transcript_name):
 @login_required
 def sample_gene(sample_id, gene_id):
     """Sample gene page."""
-    sample = Sample.query.get_or_404(sample_id)
+    sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get_or_404(sample_id)
     gene = Gene.query.get_or_404(gene_id)
 
     measurement_types = {
@@ -180,8 +185,6 @@ def sample_gene(sample_id, gene_id):
 def panels():
     """Panel overview page."""
     panels = Panel.query.options(joinedload('versions')).all()
-    custom_panels = CustomPanel.query.order_by(CustomPanel.id.desc()).all()
-
     return render_template('panels.html', panels=panels, custom_panels=custom_panels)
 
 
@@ -189,7 +192,7 @@ def panels():
 @login_required
 def panel(name):
     """Panel page."""
-    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first()
+    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first_or_404()
     return render_template('panel.html', panel=panel)
 
 
@@ -198,7 +201,7 @@ def panel(name):
 @roles_required('panel_admin')
 def panel_update(name):
     """Update panel page."""
-    panel = Panel.query.filter_by(name=name).first()
+    panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first_or_404()
     panel_last_version = panel.last_version
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
@@ -291,7 +294,29 @@ def panel_version_edit(id):
     return render_template('panel_version_edit.html', form=form, panel=panel)
 
 
-@app.route('/panel/custom', methods=['GET', 'POST'])
+@app.route('/panel/custom')
+@login_required
+def custom_panels():
+    """Custom panel overview page."""
+    custom_panel_form = CustomPanelForm(request.args, meta={'csrf': False})
+    page = request.args.get('page', default=1, type=int)
+    search = request.args.get('search')
+
+    custom_panels = CustomPanel.query.order_by(CustomPanel.id.desc())
+
+    if search and custom_panel_form.validate():
+        custom_panels = custom_panels.filter(or_(
+            CustomPanel.id.like('%{0}%'.format(search)),
+            CustomPanel.research_number.like('%{0}%'.format(search)),
+            CustomPanel.comments.like('%{0}%'.format(search)),
+        ))
+
+    custom_panels = custom_panels.paginate(page=page, per_page=15)
+
+    return render_template('custom_panels.html', form=custom_panel_form, custom_panels=custom_panels)
+
+
+@app.route('/panel/custom/new', methods=['GET', 'POST'])
 @login_required
 def custom_panel_new():
     """New custom panel page."""
@@ -322,7 +347,7 @@ def custom_panel_new():
 @login_required
 def custom_panel(id):
     """Custom panel page."""
-    custom_panel = CustomPanel.query.get_or_404(id)
+    custom_panel = CustomPanel.query.options(joinedload('transcripts')).options(joinedload('samples')).get_or_404(id)
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
@@ -374,11 +399,11 @@ def custom_panel(id):
 @login_required
 def custom_panel_transcript(id, transcript_name):
     """Custom panel transcript page."""
-    custom_panel = CustomPanel.query.get_or_404(id)
+    custom_panel = CustomPanel.query.options(joinedload('samples')).get_or_404(id)
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
-    transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).first()
+    transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).options(joinedload('exons')).first()
     measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
     transcript_measurements = {}
     exon_measurements = {}
@@ -484,7 +509,7 @@ def custom_panel_validated(id):
 @roles_required('panel_admin')
 def sample_sets():
     """Sample sets page."""
-    sample_sets = SampleSet.query.filter_by(active=True).all()
+    sample_sets = SampleSet.query.options(joinedload('samples')).filter_by(active=True).all()
 
     return render_template('sample_sets.html', sample_sets=sample_sets)
 
@@ -494,7 +519,7 @@ def sample_sets():
 @roles_required('panel_admin')
 def sample_set(id):
     """Sample set page."""
-    sample_set = SampleSet.query.get_or_404(id)
+    sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(id)
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in sample_set.samples]
@@ -537,7 +562,7 @@ def sample_set(id):
 @roles_required('panel_admin')
 def sample_set_panel(sample_set_id, panel_id):
     """Sample set panel page."""
-    sample_set = SampleSet.query.get_or_404(sample_set_id)
+    sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(sample_set_id)
     panel = PanelVersion.query.options(joinedload('transcripts')).get_or_404(panel_id)
     measurement_type_form = MeasurementTypeForm()
 
@@ -572,8 +597,8 @@ def sample_set_panel(sample_set_id, panel_id):
 @roles_required('panel_admin')
 def sample_set_transcript(sample_set_id, transcript_name):
     """Sample set transcript page."""
-    sample_set = SampleSet.query.get_or_404(sample_set_id)
-    transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).first()
+    sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(sample_set_id)
+    transcript = Transcript.query.filter_by(name=transcript_name).options(joinedload('gene')).options(joinedload('exons')).first()
     measurement_type_form = MeasurementTypeForm()
 
     measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
@@ -614,7 +639,7 @@ def sample_set_transcript(sample_set_id, transcript_name):
 @roles_required('panel_admin')
 def sample_set_gene(sample_set_id, gene_id):
     """Sample set gene page."""
-    sample_set = SampleSet.query.get_or_404(sample_set_id)
+    sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(sample_set_id)
     gene = Gene.query.get_or_404(gene_id)
     measurement_type_form = MeasurementTypeForm()
 

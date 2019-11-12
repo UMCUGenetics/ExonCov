@@ -215,10 +215,10 @@ class CustomPanel(db.Model):
     validated_user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
     validated_date = db.Column(db.Date())
 
-    created_by = db.relationship('User', lazy='joined', foreign_keys=[user_id])
-    validated_by = db.relationship('User', lazy='joined', foreign_keys=[validated_user_id])
-    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels', lazy='joined')
-    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels', lazy='joined')
+    created_by = db.relationship('User', foreign_keys=[user_id])
+    validated_by = db.relationship('User', foreign_keys=[validated_user_id])
+    samples = db.relationship('Sample', secondary=custom_panels_samples, back_populates='custom_panels')
+    transcripts = db.relationship('Transcript', secondary=custom_panels_transcripts, back_populates='custom_panels')
 
     def __repr__(self):
         return "CustomPanel({0})".format(self.id)
@@ -251,8 +251,8 @@ class Sample(db.Model):
     exon_measurement_file = db.Column(db.Text(), nullable=False)
 
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
-    project = db.relationship('SampleProject', back_populates='samples', lazy='joined')
-    sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, backref=db.backref('samples'), lazy='joined')
+    project = db.relationship('SampleProject', back_populates='samples')
+    sequencing_runs = db.relationship('SequencingRun', secondary=samples_sequencingRun, backref=db.backref('samples'))
     custom_panels = db.relationship('CustomPanel', secondary=custom_panels_samples, back_populates='samples')
     sets = db.relationship('SampleSet', secondary=sample_sets_samples, back_populates='samples')
 
@@ -274,7 +274,7 @@ class SampleSet(db.Model):
     description = db.Column(db.Text())
     active = db.Column(db.Boolean, index=True, default=False)
 
-    samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets', lazy='joined')
+    samples = db.relationship('Sample', secondary=sample_sets_samples, back_populates='sets')
 
     def __repr__(self):
         return "SampleSet({0})".format(str(self))
@@ -295,7 +295,7 @@ class SampleProject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
 
-    samples = db.relationship('Sample', back_populates='project', lazy='joined')
+    samples = db.relationship('Sample', back_populates='project')
 
     def __repr__(self):
         return "SampleProject({0})".format(str(self))

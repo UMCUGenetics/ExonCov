@@ -281,11 +281,12 @@ class SearchSample(Command):
     def run(self, sample_name):
         samples = Sample.query.filter_by(name=sample_name).all()
 
-        print "Sample ID\tSample Name\tSequencing Runs\tCustom Panels"
+        print "Sample ID\tSample Name\tProject\tSequencing Runs\tCustom Panels"
         for sample in samples:
-            print "{id}\t{name}\t{runs}\t{custom_panels}".format(
+            print "{id}\t{name}\t{project}\t{runs}\t{custom_panels}".format(
                 id=sample.id,
                 name=sample.name,
+                project=sample.project,
                 runs=sample.sequencing_runs,
                 custom_panels=sample.custom_panels,
             )

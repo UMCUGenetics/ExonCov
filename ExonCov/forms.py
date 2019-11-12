@@ -56,6 +56,11 @@ class SampleForm(FlaskForm):
     run = StringField('Sequencing run')
 
 
+class CustomPanelForm(FlaskForm):
+    """Query custom panels by test reference number or comments field"""
+    search = StringField('Search')
+
+
 class CustomPanelNewForm(FlaskForm):
     """Custom Panel New form."""
 
