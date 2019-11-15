@@ -48,26 +48,6 @@
         {% endfor %}
     </tbody>
 </table>
-
-<div class="row page-header">
-    <div class="col-md-3"><h3>Panel summary</h3></div>
-</div>
-<div class="well">
-    Panel coverage >15 = {{ panel_stats['average']|float|round(2) }}%.
-    {% if panel_stats['100'] %}
-        {% if transcript_measurements|length <= 25  %}
-            <p>100 % coverage for {% for transcript in panel_stats['100'] %} {{transcript.gene}} ({{transcript}}) {%- if not loop.last -%},{% endif %}{% endfor %}.</p>
-            {% else %}
-            <p>100% coverage for {{ panel_stats['100']|length }} genes.</p>
-        {% endif %}
-    {% endif %}
-
-    {% if panel_stats['not_100'] %}
-        <p>{% for transcript_measurement in panel_stats['not_100'] %} {{transcript_measurement[0].gene}} ({{transcript_measurement[0]}}) = {{transcript_measurement[1]}}% {%- if not loop.last -%},{% endif %}{% endfor %}.</p>
-    {% endif %}
-</div>
-
-
 {% endblock %}
 
 {% block custom_javascript %}

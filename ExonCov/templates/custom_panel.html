@@ -90,6 +90,26 @@
 </table>
 {% endif %}
 
+<div class="row page-header">
+    <div class="col-md-3"><h3>Panel summary</h3></div>
+</div>
+<div class="well">
+    {% for sample in custom_panel.samples %}
+    <h4>{{ sample.name }}</h4>
+    <p>Panel coverage {{ measurement_type[1] }} = {{ panel_measurements[sample]['measurement']|float|round(2) }}%.</p>
+    <p>100 % coverage for:
+    {% for gene in sample_stats[sample][0]|sort %}
+    {{ gene }}{%- if not loop.last -%},{% else %}.{% endif %}
+    {% endfor %}
+    </p>
+    <p><100 % coverage for:
+    {% for gene in sample_stats[sample][1]|sort %}
+    {{ gene }}{%- if not loop.last -%},{% else %}.{% endif %}
+    {% endfor %}
+    </p>
+    {% endfor %}
+</div>
+
 {% endblock %}
 
 {% block custom_javascript %}
