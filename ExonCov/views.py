@@ -399,7 +399,6 @@ def custom_panel(id):
     panel_measurements['min'] = min(values)
     panel_measurements['max'] = max(values)
     panel_measurements['mean'] = float(sum(values)) / len(values)
-    print sample_stats
     return render_template('custom_panel.html', form=measurement_type_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements, sample_stats=sample_stats)
 
 
