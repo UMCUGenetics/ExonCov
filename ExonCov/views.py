@@ -357,7 +357,7 @@ def custom_panel(id):
     measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
     transcript_measurements = {}
     panel_measurements = {}
-    sample_stats = {sample: [[], []] for sample in custom_panel.samples}
+    sample_stats = {sample: [[], {}] for sample in custom_panel.samples}
 
     query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript').joinedload('gene')).all()
 
@@ -371,9 +371,9 @@ def custom_panel(id):
         transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
         if transcript_measurement[measurement_type[0]] == 100:
-            sample_stats[sample][0].append(transcript.gene.id)
+            sample_stats[sample][0].append('{0}({1})'.format(transcript.gene.id, transcript.name))
         else:
-            sample_stats[sample][1].append(transcript.gene.id)
+            sample_stats[sample][1]['{0}({1})'.format(transcript.gene.id, transcript.name)] = transcript_measurement[measurement_type[0]]
 
         # Calculate weighted average per sample for entire panel
         if sample not in panel_measurements:

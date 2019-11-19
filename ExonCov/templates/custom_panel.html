@@ -105,7 +105,7 @@
     </p>
     <p><100 % coverage for:
     {% for gene in sample_stats[sample][1]|sort %}
-    {{ gene }}{%- if not loop.last -%},{% else %}.{% endif %}
+    {{ gene }} = {{ sample_stats[sample][1][gene]|float|round(2) }}% {%- if not loop.last -%},{% else %}.{% endif %}
     {% endfor %}
     </p>
     {% endfor %}
