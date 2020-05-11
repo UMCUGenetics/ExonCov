@@ -97,13 +97,13 @@
 <div class="well">
     {% for sample in custom_panel.samples %}
     <h4>{{ sample.name }}</h4>
-    <p>Panel coverage {{ measurement_type[1] }} = {{ panel_measurements[sample]['measurement']|float|round(2) }}%.</p>
-    <p>100 % coverage for:
+    <p>Genpanel dekking {{ measurement_type[1] }}X = {{ panel_measurements[sample]['measurement']|float|round(2) }}%.</p>
+    <p>Genen met volledige dekking:
     {% for gene in sample_stats[sample][0]|sort %}
     {{ gene }}{%- if not loop.last -%},{% else %}.{% endif %}
     {% endfor %}
     </p>
-    <p><100 % coverage for:
+    <p>Genen met onvolledige dekking:
     {% for gene in sample_stats[sample][1]|sort %}
     {{ gene }} = {{ sample_stats[sample][1][gene]|float|round(2) }}% {%- if not loop.last -%},{% else %}.{% endif %}
     {% endfor %}
