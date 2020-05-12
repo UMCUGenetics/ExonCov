@@ -125,7 +125,9 @@ def sample_panel(sample_id, panel_id):
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
+
     transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
+
     return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
 
 
@@ -355,6 +357,7 @@ def custom_panel(id):
     measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
     transcript_measurements = {}
     panel_measurements = {}
+    sample_stats = {sample: [[], {}] for sample in custom_panel.samples}
 
     query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter(TranscriptMeasurement.transcript_id.in_(transcript_ids)).options(joinedload('transcript').joinedload('gene')).all()
 
@@ -366,6 +369,11 @@ def custom_panel(id):
         if transcript not in transcript_measurements:
             transcript_measurements[transcript] = {}
         transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
+
+        if transcript_measurement[measurement_type[0]] == 100:
+            sample_stats[sample][0].append('{0}({1})'.format(transcript.gene.id, transcript.name))
+        else:
+            sample_stats[sample][1]['{0}({1})'.format(transcript.gene.id, transcript.name)] = transcript_measurement[measurement_type[0]]
 
         # Calculate weighted average per sample for entire panel
         if sample not in panel_measurements:
@@ -391,8 +399,7 @@ def custom_panel(id):
     panel_measurements['min'] = min(values)
     panel_measurements['max'] = max(values)
     panel_measurements['mean'] = float(sum(values)) / len(values)
-
-    return render_template('custom_panel.html', form=measurement_type_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements)
+    return render_template('custom_panel.html', form=measurement_type_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements, sample_stats=sample_stats)
 
 
 @app.route('/panel/custom/<int:id>/transcript/<string:transcript_name>', methods=['GET', 'POST'])
