@@ -9,7 +9,6 @@ import shlex
 import urllib
 
 from flask_script import Command, Option
-from flask_security.utils import encrypt_password
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
@@ -17,8 +16,8 @@ import tempfile
 import shutil
 import pysam
 
-from . import app, db, utils, user_datastore
-from .models import Role, Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, samples_sequencingRun, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
+from . import app, db, utils
+from .models import Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
 from .utils import weighted_average
 
 
@@ -26,29 +25,58 @@ class PrintStats(Command):
     """Print database stats."""
 
     def run(self):
-        print "Number of genes: {0}".format(Gene.query.count())
-        print "Number of transcripts: {0}".format(Transcript.query.count())
-        print "Number of exons: {0}".format(Exon.query.count())
-        print "Number of panels: {0}".format(Panel.query.count())
-        print "Number of custom panels: {0}".format(CustomPanel.query.count())
-        print "Number of samples: {0}".format(Sample.query.count())
-        print "Number of sequencing runs: {0}".format(SequencingRun.query.count())
-        print "Number of sequencing projects: {0}".format(SampleProject.query.count())
+        print("Number of genes: {0}".format(Gene.query.count()))
+        print("Number of transcripts: {0}".format(Transcript.query.count()))
+        print("Number of exons: {0}".format(Exon.query.count()))
+        print("Number of panels: {0}".format(Panel.query.count()))
+        print("Number of custom panels: {0}".format(CustomPanel.query.count()))
+        print("Number of samples: {0}".format(Sample.query.count()))
+        print("Number of sequencing runs: {0}".format(SequencingRun.query.count()))
+        print("Number of sequencing projects: {0}".format(SampleProject.query.count()))
+
+        print("Number of projects and samples per year:")
+        projects_year = {}
+        for project in SampleProject.query.options(joinedload('samples')):
+            if project.name[0:6].isdigit() and project.samples:
+                project_year = project.name[0:2]
+                if project_year not in projects_year:
+                    projects_year[project_year] = [0, 0]
+                projects_year[project_year][0] += 1
+                projects_year[project_year][1] += len(project.samples)
+
+        print("Year\tProjects\tSamples")
+        for year, count in sorted(projects_year.items()):
+            print("{year}\t{project_count}\t{sample_count}".format(year=year, project_count=count[0], sample_count=count[1]))
 
 
 class PrintPanelGenesTable(Command):
     """Print tab delimited panel / genes table."""
 
     def run(self):
-        print '{panel}\t{genes}'.format(panel='panel_version', genes='genes')
+        print('{panel}\t{genes}'.format(panel='panel_version', genes='genes'))
 
         panel_versions = PanelVersion.query.filter_by(active=True).options(joinedload('transcripts'))
 
         for panel in panel_versions:
-            print '{panel}\t{genes}'.format(
+            print('{panel}\t{genes}'.format(
                 panel=panel.name_version,
                 genes='\t'.join([transcript.gene_id for transcript in panel.transcripts])
-            )
+            ))
+
+
+class PrintTranscripts(Command):
+    """Print tab delimited transcript / gene table"""
+
+    def run(self):
+        print('{transcript}\t{gene}'.format(transcript='Transcript', gene='Gene'))
+
+        transcripts = Transcript.query.options(joinedload('gene'))
+
+        for transcript in transcripts:
+            print('{transcript}\t{gene}'.format(
+                transcript=transcript.name,
+                gene=transcript.gene
+            ))
 
 
 class ImportBam(Command):
@@ -150,7 +178,7 @@ class ImportBam(Command):
         with open(exon_measurement_file_path, "w") as exon_measurement_file:
             for line in p.stdout:
                 if print_output:
-                    print line
+                    print(line)
 
                 # Header
                 if line.startswith('#'):
@@ -281,15 +309,15 @@ class SearchSample(Command):
     def run(self, sample_name):
         samples = Sample.query.filter_by(name=sample_name).all()
 
-        print "Sample ID\tSample Name\tProject\tSequencing Runs\tCustom Panels"
+        print("Sample ID\tSample Name\tProject\tSequencing Runs\tCustom Panels")
         for sample in samples:
-            print "{id}\t{name}\t{project}\t{runs}\t{custom_panels}".format(
+            print("{id}\t{name}\t{project}\t{runs}\t{custom_panels}".format(
                 id=sample.id,
                 name=sample.name,
                 project=sample.project,
                 runs=sample.sequencing_runs,
                 custom_panels=sample.custom_panels,
-            )
+            ))
 
 
 class RemoveSample(Command):
@@ -322,11 +350,11 @@ class CheckSamples(Command):
         sample_transcript_count = db.session.query(Sample.name, func.count(TranscriptMeasurement.id)).outerjoin(TranscriptMeasurement).group_by(Sample.id).all()
         for sample_count in sample_transcript_count:
             if sample_count[1] != transcript_count:
-                print "ERROR: Sample:{0} TranscriptMeasurement:{1} Exons:{2}".format(sample_count[0], sample_count[1], transcript_count)
+                print("ERROR: Sample:{0} TranscriptMeasurement:{1} Exons:{2}".format(sample_count[0], sample_count[1], transcript_count))
                 error = True
 
         if not error:
-            print "No errors found."
+            print("No errors found.")
 
 
 class ImportAliasTable(Command):
@@ -362,7 +390,7 @@ class ImportAliasTable(Command):
 
                 # Check db genes
                 if not db_genes_ids:
-                    print "ERROR: No gene in database found for: {0}".format(','.join(hgnc_gene_ids))
+                    print("ERROR: No gene in database found for: {0}".format(','.join(hgnc_gene_ids)))
 
                 # Create aliases
                 else:
@@ -377,7 +405,7 @@ class ImportAliasTable(Command):
                                     db.session.rollback()
                                     continue
                             elif hgnc_gene_id != db_gene_id:  # but does exist as gene in database
-                                print "ERROR: Can not import alias: {0} for gene: {1}".format(hgnc_gene_id, db_gene_id)
+                                print("ERROR: Can not import alias: {0} for gene: {1}".format(hgnc_gene_id, db_gene_id))
 
 
 class PrintPanelBed(Command):
@@ -398,19 +426,19 @@ class PrintPanelBed(Command):
                         if exon.id not in exons:
                             exons.append(exon.id)
                             if remove_flank:
-                                print "{chr}\t{start}\t{end}\t{gene}".format(
+                                print("{chr}\t{start}\t{end}\t{gene}".format(
                                     chr=exon.chr,
                                     start=exon.start + 20,  # Add 20bp to remove flank
                                     end=exon.end - 20,  # Substract 20bp to remove flank
                                     gene=transcript.gene.id
-                                )
+                                ))
                             else:
-                                print "{chr}\t{start}\t{end}\t{gene}".format(
+                                print("{chr}\t{start}\t{end}\t{gene}".format(
                                     chr=exon.chr,
                                     start=exon.start,
                                     end=exon.end,
                                     gene=transcript.gene.id
-                                )
+                                ))
 
 
 class LoadDesign(Command):
@@ -429,7 +457,7 @@ class LoadDesign(Command):
 
         # Parse Exon file
         with open(exon_file, 'r') as f:
-            print "Loading exon file: {0}".format(exon_file)
+            print("Loading exon file: {0}".format(exon_file))
             for line in f:
                 data = line.rstrip().split('\t')
                 chr, start, end = data[:3]
@@ -444,7 +472,7 @@ class LoadDesign(Command):
                 try:
                     transcript_data = set(data[6].split(':'))
                 except IndexError:
-                    print "Warning: No transcripts for exon: {0}.".format(exon)
+                    print("Warning: No transcripts for exon: {0}.".format(exon))
                     transcript_data = []
 
                 # Create transcripts
@@ -461,7 +489,7 @@ class LoadDesign(Command):
 
                             # Sanity check chromosome
                             if transcript.chr != exon.chr:
-                                print "Warning: Different chromosomes for {0} and {1}".format(transcript, exon)
+                                print("Warning: Different chromosomes for {0} and {1}".format(transcript, exon))
 
                         else:
                             transcript = Transcript(
@@ -486,7 +514,7 @@ class LoadDesign(Command):
         # Load gene and transcript file
         genes = {}
         with open(gene_transcript_file, 'r') as f:
-            print "Loading gene transcript file: {0}".format(gene_transcript_file)
+            print("Loading gene transcript file: {0}".format(gene_transcript_file))
             for line in f:
                 if not line.startswith('#'):
                     data = line.rstrip().split('\t')
@@ -502,13 +530,13 @@ class LoadDesign(Command):
                         gene.transcripts.append(transcripts[transcript_name])
                         db.session.add(gene)
                     else:
-                        print "Warning: Unkown transcript {0} for gene {1}".format(transcript_name, gene_id)
+                        print("Warning: Unkown transcript {0} for gene {1}".format(transcript_name, gene_id))
             db.session.commit()
 
         # Setup preferred transcript dictonary
         preferred_transcripts = {}  # key = gene, value = transcript
         with open(preferred_transcripts_file, 'r') as f:
-            print "Loading preferred transcripts file: {0}".format(preferred_transcripts_file)
+            print("Loading preferred transcripts file: {0}".format(preferred_transcripts_file))
             for line in f:
                 if not line.startswith('#'):
                     # Parse data
@@ -524,7 +552,7 @@ class LoadDesign(Command):
 
         # Setup gene panel
         with open(gene_panel_file, 'r') as f:
-            print "Loading gene panel file: {0}".format(gene_panel_file)
+            print("Loading gene panel file: {0}".format(gene_panel_file))
             panels = {}
             for line in f:
                 data = line.rstrip().split('\t')
@@ -558,6 +586,6 @@ class LoadDesign(Command):
                         transcript = transcripts[preferred_transcripts[gene]]
                         panel_version.transcripts.append(transcript)
                     else:
-                        print "WARNING: Unkown gene: {0}".format(gene)
+                        print("WARNING: Unkown gene: {0}".format(gene))
                 db.session.add(panel_version)
             db.session.commit()
