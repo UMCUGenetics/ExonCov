@@ -409,15 +409,22 @@ class ImportAliasTable(Command):
 
 
 class PrintPanelBed(Command):
-    """Print bed file containing regions in active and validated panels"""
+    """Print bed file containing regions in active and validated panels. FULL_autosomal and FULL_TARGET are filtered from the list."""
 
     option_list = (
         Option('-f', '--remove_flank', dest='remove_flank', default=False, action='store_true', help="Remove 20bp flank from exon coordinates."),
+        Option('-p', '--panel', dest='panel', help="Filter on panel name (including version, for example AMY01v19.1).")
     )
 
-    def run(self, remove_flank):
-        panel_versions = PanelVersion.query.filter_by(active=True).filter_by(validated=True).options(joinedload('transcripts'))
+    def run(self, remove_flank, panel):
         exons = []
+
+        if panel:
+            panel_name, version = panel.split('v')
+            version_year, version_revision = version.split('.')
+            panel_versions = PanelVersion.query.filter_by(panel_name=panel_name).filter_by(version_year=version_year).filter_by(version_revision=version_revision).options(joinedload('transcripts'))
+        else:
+            panel_versions = PanelVersion.query.filter_by(active=True).filter_by(validated=True).options(joinedload('transcripts'))
 
         for panel in panel_versions:
             if 'FULL' not in panel.panel_name:  # skip FULL_autosomal and FULL_TARGET
