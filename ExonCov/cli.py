@@ -65,18 +65,23 @@ class PrintPanelGenesTable(Command):
 
 
 class PrintTranscripts(Command):
-    """Print tab delimited transcript / gene table"""
+    """Print tab delimited gene / transcript table"""
 
-    def run(self):
-        print('{transcript}\t{gene}'.format(transcript='Transcript', gene='Gene'))
+    option_list = (
+        Option('-p', '--preferred_transcripts', dest='preferred_transcripts', default=False, action='store_true', help="Print preferred transcripts only"),
+    )
 
-        transcripts = Transcript.query.options(joinedload('gene'))
+    def run(self, preferred_transcripts):
+        print('{gene}\t{transcript}'.format( gene='Gene', transcript='Transcript'))
 
-        for transcript in transcripts:
-            print('{transcript}\t{gene}'.format(
-                transcript=transcript.name,
-                gene=transcript.gene
-            ))
+        genes = Gene.query.options(joinedload('transcripts'))
+
+        for gene in genes:
+            if preferred_transcripts:
+                print('{gene}\t{transcript}'.format(gene=gene.id, transcript=gene.default_transcript.name))
+            else:
+                for transcript in gene.transcripts:
+                    print('{gene}\t{transcript}'.format(gene=gene.id,transcript=transcript.name))
 
 
 class ImportBam(Command):
