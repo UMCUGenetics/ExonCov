@@ -9,8 +9,10 @@
     <dl class="dl-horizontal">
         <dt>Sample</dt><dd>{{ sample.name }}</dd>
         <dt>Project</dt><dd>{{ sample.project.name }}</dd>
+        <dt>Type</dt><dd>{{ sample.type }}</dd>
         <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
         <dt>Panel</dt><dd>{{ panel.name_version }} </dd>
+        <dt>Minimal % 15x</dt><dd>{{ panel.coverage_requirement_15 }}</dd>
     </dl>
 </div>
 
@@ -42,7 +44,7 @@
             <td>{{ transcript.end }}</td>
             <td>{{ transcript.exon_count }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(measurement[type], type) }}
+                {{ render_measurment_td(measurement[type], type, panel) }}
             {% endfor %}
         </tr>
         {% endfor %}

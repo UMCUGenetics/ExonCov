@@ -89,6 +89,7 @@ class ImportBam(Command):
 
     option_list = (
         Option('project_name'),
+        Option('sample_type', choices=['WES', 'WGS', 'RNA']),
         Option('bam'),
         Option('-b', '--exon_bed', dest='exon_bed_file', default=app.config['EXON_BED_FILE']),
         Option('-t', '--threads', dest='threads', default=1),
@@ -158,6 +159,7 @@ class ImportBam(Command):
         sample = Sample(
             name=sample_name,
             project=sample_project,
+            type=sample_type,
             file_name=bam,
             import_command=sambamba_command,
             sequencing_runs=sequencing_runs.values(),

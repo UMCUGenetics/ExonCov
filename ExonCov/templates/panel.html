@@ -10,6 +10,15 @@ Gene panel - {{ panel.name }}
 {% endblock %}
 
 {% block body %}
+<dl class="dl-horizontal">
+    <dt>Disease description</dt><dd>{{ panel.disease_description_eng }}</dd>
+    <dt>Ziekteomschrijving</dt><dd>{{ panel.disease_description_nl }}</dd>
+    <dt>Comments</dt><dd>{{ panel.comments }}</dd>
+    <dt>Alissa</dt><dd>{{ panel.patientfolder_alissa }}</dd>
+    <dt>Clinical geneticist</dt><dd>{{ panel.clinical_geneticist }}</dd>
+    <dt>Staff member</dt><dd>{{ panel.staff_member }}</dd>
+</dl>
+
 {{ render_sample_datatable_form(filter=false) }}
 
 <table class="table table-bordered table-hover table-condensed" id="data_table">

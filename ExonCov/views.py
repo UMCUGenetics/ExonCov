@@ -67,6 +67,7 @@ def sample(id):
             panels[panel.id] = {
                 'len': transcript_measurement.len,
                 'name_version': panel.name_version,
+                'coverage_requirement_15': panel.coverage_requirement_15
             }
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
@@ -99,6 +100,7 @@ def sample_inactive_panels(id):
             panels[panel.id] = {
                 'len': transcript_measurement.len,
                 'name_version': panel.name_version,
+                'coverage_requirement_15': panel.coverage_requirement_15
             }
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = transcript_measurement[measurement_type]

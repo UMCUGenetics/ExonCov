@@ -147,6 +147,12 @@ class Panel(db.Model):
     __tablename__ = 'panels'
 
     name = db.Column(db.String(50), primary_key=True)
+    disease_description_eng = db.Column(db.String(255))
+    disease_description_nl = db.Column(db.String(255))
+    patientfolder_alissa = db.Column(db.String(255))
+    clinical_geneticist = db.Column(db.String(255))
+    staff_member = db.Column(db.String(255))
+    comments = db.Column(db.Text())
 
     versions = db.relationship('PanelVersion', back_populates='panel', order_by="PanelVersion.id")
 
@@ -172,6 +178,8 @@ class PanelVersion(db.Model):
     active = db.Column(db.Boolean, index=True, default=False)
     validated = db.Column(db.Boolean, index=True, default=False)
     comments = db.Column(db.Text())
+    coverage_requirement_15 = db.Column(db.Float, default=0.99)
+    
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
@@ -249,6 +257,7 @@ class Sample(db.Model):
     import_command = db.Column(db.Text(), nullable=False)
     project_id = db.Column(db.Integer(), db.ForeignKey('sample_projects.id'), nullable=False, index=True)
     exon_measurement_file = db.Column(db.Text(), nullable=False)
+    type = db.Column(db.String(255), nullable=False)
 
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
     project = db.relationship('SampleProject', back_populates='samples')
@@ -294,6 +303,7 @@ class SampleProject(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    type = db.Column(db.String(255), nullable=False)
 
     samples = db.relationship('Sample', back_populates='project')
 

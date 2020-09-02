@@ -9,6 +9,7 @@
     <dl class="dl-horizontal">
         <dt>Sample</dt><dd>{{ sample.name }}</dd>
         <dt>Project</dt><dd>{{ sample.project.name }}</dd>
+        <dt>Type</dt><dd>{{ sample.type }}</dd>
         <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
     </dl>
 </div>
@@ -35,7 +36,7 @@
             <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_id=panel) }}">{{ panels[panel]['name_version'] }}</a></td>
             <td>{{ panels[panel]['len'] }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(panels[panel][type], type) }}
+                {{ render_measurment_td(panels[panel][type], type, panels[panel]) }}
             {% endfor %}
         </tr>
         {% endfor %}

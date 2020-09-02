@@ -33,17 +33,17 @@ class CustomModelView(ModelView):
 
 class PanelAdminView(CustomModelView):
     """Panel admin view."""
-    column_list = ['name', 'versions']
+    column_list = ['name', 'versions', 'disease_description_eng', 'clinical_geneticist', 'staff_member', 'comments']
     column_searchable_list = ['name']
 
-    form_columns = ['name']
+    form_columns = ['name', 'disease_description_nl', 'disease_description_eng', 'comments' ,'patientfolder_alissa', 'clinical_geneticist', 'staff_member']
 
 
 class PanelVersionAdminView(CustomModelView):
     """Panel version admin view."""
     column_searchable_list = ['panel_name']
 
-    form_columns = ['panel', 'version_year', 'version_revision', 'comments', 'active', 'validated', 'transcripts']
+    form_columns = ['panel', 'version_year', 'version_revision', 'comments', 'coverage_requirement_15', 'active', 'validated', 'transcripts']
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
@@ -121,11 +121,11 @@ class ExonAdminView(CustomModelView):
 
 class SampleAdminView(CustomModelView):
     """Sample admin view."""
-    column_list = ['name', 'project', 'sequencing_runs', 'import_date']
+    column_list = ['name', 'type', 'project', 'sequencing_runs', 'import_date']
     column_sortable_list = ['name', 'import_date']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'project', 'sequencing_runs', 'import_date', 'file_name', 'import_command', 'exon_measurement_file']
+    form_columns = ['name', 'type', 'project', 'sequencing_runs', 'import_date', 'file_name', 'import_command', 'exon_measurement_file']
     form_ajax_refs = {
         'project': {
             'fields': ['name'],
