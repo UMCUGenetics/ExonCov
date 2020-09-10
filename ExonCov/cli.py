@@ -98,7 +98,7 @@ class ImportBam(Command):
         Option('--temp', dest='temp_path', default=None),
     )
 
-    def run(self, bam, project_name, exon_bed_file, threads, overwrite, print_output, temp_path):
+    def run(self, project_name, sample_type, bam, exon_bed_file, threads, overwrite, print_output, temp_path):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
