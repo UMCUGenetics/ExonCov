@@ -312,7 +312,7 @@ class SearchSample(Command):
     )
 
     def run(self, sample_name):
-        samples = Sample.query.filter_by(name=sample_name).all()
+        samples = Sample.query.filter(Sample.name.like('%{0}%'.format(sample_name))).all()
 
         print("Sample ID\tSample Name\tProject\tSequencing Runs\tCustom Panels")
         for sample in samples:
