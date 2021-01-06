@@ -134,7 +134,8 @@ class ImportBam(Command):
         sample_project, sample_project_exists = utils.get_one_or_create(
             db.session,
             SampleProject,
-            name=project_name
+            name=project_name,
+            type=''
         )  # returns object and exists bool
 
         # Look for sample in database
