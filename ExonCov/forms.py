@@ -148,6 +148,11 @@ class CreatePanelForm(FlaskForm):
 
     name = StringField('Name', validators=[validators.InputRequired()])
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
+    disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
+    patientfolder_alissa = StringField('Alissa', validators=[validators.InputRequired()])
+    clinical_geneticist = StringField('Clinical geneticist', validators=[validators.InputRequired()])
+    staff_member = StringField('Staff member', validators=[validators.InputRequired()])
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     transcript = []  # Filled in validate function
 
@@ -177,7 +182,7 @@ class CreatePanelForm(FlaskForm):
         return True
 
 
-class UpdatePanelForm(FlaskForm):
+class PanelNewVersionForm(FlaskForm):
     """Update Panel form."""
 
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
@@ -205,6 +210,16 @@ class UpdatePanelForm(FlaskForm):
             return False
 
         return True
+
+
+class PanelEditForm(FlaskForm):
+    """Panel edit form."""
+    disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
+    disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
+    patientfolder_alissa = StringField('Alissa', validators=[validators.InputRequired()])
+    clinical_geneticist = StringField('Clinical geneticist', validators=[validators.InputRequired()])
+    staff_member = StringField('Staff member', validators=[validators.InputRequired()])
+    comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
 
 
 class PanelVersionEditForm(FlaskForm):

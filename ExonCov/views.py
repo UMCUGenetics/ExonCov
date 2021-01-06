@@ -11,8 +11,14 @@ from sqlalchemy import or_
 import pysam
 
 from ExonCov import app, db
-from .models import Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, TranscriptMeasurement, panels_transcripts
-from .forms import MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
+from .models import (
+    Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript,
+    TranscriptMeasurement, panels_transcripts
+)
+from .forms import (
+    MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm,
+    CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm
+)
 from .utils import weighted_average
 
 
@@ -200,16 +206,16 @@ def panel(name):
     return render_template('panel.html', panel=panel)
 
 
-@app.route('/panel/<string:name>/update', methods=['GET', 'POST'])
+@app.route('/panel/<string:name>/new_version', methods=['GET', 'POST'])
 @login_required
 @roles_required('panel_admin')
-def panel_update(name):
-    """Update panel page."""
+def panel_new_version(name):
+    """Create new panel version page."""
     panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first_or_404()
     panel_last_version = panel.last_version
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
-    update_panel_form = UpdatePanelForm(gene_list=genes, coverage_requirement_15=panel_last_version.coverage_requirement_15)
+    update_panel_form = PanelNewVersionForm(gene_list=genes, coverage_requirement_15=panel_last_version.coverage_requirement_15)
 
     if update_panel_form.validate_on_submit():
         transcripts = update_panel_form.transcripts
@@ -241,9 +247,38 @@ def panel_update(name):
                 db.session.commit()
                 return redirect(url_for('panel', name=panel.name))
             else:
-                return render_template('panel_update_confirm.html', form=update_panel_form, panel=panel_last_version, year=year, revision=revision)
+                return render_template('panel_new_version_confirm.html', form=update_panel_form, panel=panel_last_version, year=year, revision=revision)
 
-    return render_template('panel_update.html', form=update_panel_form, panel=panel_last_version)
+    return render_template('panel_new_version.html', form=update_panel_form, panel=panel_last_version)
+
+
+@app.route('/panel/<string:name>/edit', methods=['GET', 'POST'])
+@roles_required('panel_admin')
+def panel_edit(name):
+    """Set validation status to true."""
+    panel = Panel.query.filter_by(name=name).first_or_404()
+    panel_edit_form = PanelEditForm(
+        comments=panel.comments,
+        disease_description_eng=panel.disease_description_eng,
+        disease_description_nl=panel.disease_description_nl,
+        patientfolder_alissa=panel.patientfolder_alissa,
+        clinical_geneticist=panel.clinical_geneticist,
+        staff_member=panel.staff_member,
+    )
+
+    if panel_edit_form.validate_on_submit():
+        panel.comments = panel_edit_form.comments.data
+        panel.disease_description_eng = panel_edit_form.disease_description_eng.data
+        panel.disease_description_nl = panel_edit_form.disease_description_nl.data
+        panel.patientfolder_alissa = panel_edit_form.patientfolder_alissa.data
+        panel.clinical_geneticist = panel_edit_form.clinical_geneticist.data
+        panel.staff_member = panel_edit_form.staff_member.data
+
+        db.session.add(panel)
+        db.session.commit()
+        return redirect(url_for('panel', name=panel.name))
+
+    return render_template('panel_edit.html', form=panel_edit_form, panel=panel)
 
 
 @app.route('/panel/new', methods=['GET', 'POST'])
@@ -257,12 +292,21 @@ def panel_new():
         panel_name = new_panel_form.data['name']
         transcripts = new_panel_form.transcripts
 
-        new_panel = Panel(name=panel_name)
+        new_panel = Panel(
+            name=panel_name,
+            comments=new_panel_form.comments.data,
+            disease_description_eng=new_panel_form.disease_description_eng.data,
+            disease_description_nl=new_panel_form.disease_description_nl.data,
+            patientfolder_alissa=new_panel_form.patientfolder_alissa.data,
+            clinical_geneticist=new_panel_form.clinical_geneticist.data,
+            staff_member=new_panel_form.staff_member.data
+        )
+
         new_panel_version = PanelVersion(
             panel_name=panel_name,
             version_year=time.strftime('%y'),
             version_revision=1, transcripts=transcripts,
-            comments=new_panel_form.data['comments'],
+            comments=new_panel_form.comments.data,
             user=current_user
             )
 

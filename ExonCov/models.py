@@ -178,7 +178,7 @@ class PanelVersion(db.Model):
     active = db.Column(db.Boolean, index=True, default=False)
     validated = db.Column(db.Boolean, index=True, default=False)
     comments = db.Column(db.Text())
-    coverage_requirement_15 = db.Column(db.Float, default=0.99)
+    coverage_requirement_15 = db.Column(db.Float, default=99)
     
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)

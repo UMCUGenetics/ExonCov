@@ -5,7 +5,7 @@
 
 {% block body %}
 <div class="well">
-    <form method="POST" action="{{ url_for('panel_update', name=panel.panel_name) }}" class="form-horizontal">
+    <form method="POST" action="{{ url_for('panel_new_version', name=panel.panel_name) }}" class="form-horizontal">
         {{ form.csrf_token }}
         {{ render_field(form.gene_list, rows="12") }}
         {{ render_field(form.coverage_requirement_15) }}

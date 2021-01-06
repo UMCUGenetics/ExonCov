@@ -5,7 +5,8 @@
 {% block header %}
 Gene panel - {{ panel.name }}
 {% if current_user.has_role('panel_admin') %}
-<small><a href="{{ url_for('panel_update', name=panel.name) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+<small><a href="{{ url_for('panel_edit', name=panel.name) }}"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></a></small>
+<small><a href="{{ url_for('panel_new_version', name=panel.name) }}"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a></small>
 {% endif %}
 {% endblock %}
 
@@ -13,10 +14,10 @@ Gene panel - {{ panel.name }}
 <dl class="dl-horizontal">
     <dt>Disease description</dt><dd>{{ panel.disease_description_eng }}</dd>
     <dt>Ziekteomschrijving</dt><dd>{{ panel.disease_description_nl }}</dd>
-    <dt>Comments</dt><dd>{{ panel.comments }}</dd>
     <dt>Alissa</dt><dd>{{ panel.patientfolder_alissa }}</dd>
     <dt>Clinical geneticist</dt><dd>{{ panel.clinical_geneticist }}</dd>
     <dt>Staff member</dt><dd>{{ panel.staff_member }}</dd>
+    <dt>Comments</dt><dd>{{ panel.comments }}</dd>
 </dl>
 
 {{ render_sample_datatable_form(filter=false) }}
@@ -28,6 +29,7 @@ Gene panel - {{ panel.name }}
             <th># Genes</th>
             <th>Active</th>
             <th>Validated</th>
+            <th>Minimal % 15x</th>
         </tr>
     </thead>
     <tbody>
@@ -37,6 +39,7 @@ Gene panel - {{ panel.name }}
             <td>{{ panel_version.gene_count }}</td>
             <td>{{ render_bool_glyph(panel_version.active) }}</td>
             <td>{{ render_bool_glyph(panel_version.validated) }}</td>
+            <td>{{ panel_version.coverage_requirement_15 }}</td>
         </tr>
         {% endfor %}
     </tbody>
