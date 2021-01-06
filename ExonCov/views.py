@@ -209,7 +209,7 @@ def panel_update(name):
     panel_last_version = panel.last_version
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
-    update_panel_form = UpdatePanelForm(gene_list=genes)
+    update_panel_form = UpdatePanelForm(gene_list=genes, coverage_requirement_15=panel_last_version.coverage_requirement_15)
 
     if update_panel_form.validate_on_submit():
         transcripts = update_panel_form.transcripts
@@ -233,6 +233,7 @@ def panel_update(name):
                     version_year=year,
                     version_revision=revision,
                     transcripts=transcripts,
+                    coverage_requirement_15=update_panel_form.coverage_requirement_15.data,
                     comments=update_panel_form.data['comments'],
                     user=current_user
                 )
@@ -285,12 +286,18 @@ def panel_version(id):
 def panel_version_edit(id):
     """Set validation status to true."""
     panel = PanelVersion.query.get_or_404(id)
-    form = PanelVersionEditForm(active=panel.active, validated=panel.validated, comments=panel.comments)
+    form = PanelVersionEditForm(
+        active=panel.active,
+        validated=panel.validated,
+        comments=panel.comments,
+        coverage_requirement_15=panel.coverage_requirement_15
+    )
 
     if form.validate_on_submit():
         panel.active = form.active.data
         panel.validated = form.validated.data
         panel.comments = form.comments.data
+        panel.coverage_requirement_15 = form.coverage_requirement_15.data
         db.session.add(panel)
         db.session.commit()
         return redirect(url_for('panel_version', id=panel.id))

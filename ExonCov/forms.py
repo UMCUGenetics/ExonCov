@@ -4,7 +4,7 @@ import re
 from flask_wtf import FlaskForm
 from flask_security.forms import RegisterForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
-from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField
+from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField, FloatField
 from wtforms import validators
 
 from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
@@ -181,6 +181,7 @@ class UpdatePanelForm(FlaskForm):
     """Update Panel form."""
 
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    coverage_requirement_15 = FloatField('Minimal % 15x')
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     confirm = BooleanField('Confirm')
     transcript = []  # Filled in validate function
@@ -212,6 +213,7 @@ class PanelVersionEditForm(FlaskForm):
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     active = BooleanField('Active')
     validated = BooleanField('Validated')
+    coverage_requirement_15 = FloatField('Minimal % 15x')
 
 
 class CustomPanelValidateForm(FlaskForm):

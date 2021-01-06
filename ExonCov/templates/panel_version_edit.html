@@ -11,7 +11,9 @@ Gene panel - {{ panel.name_version }}
         {{ form.csrf_token }}
         {{ render_checkbox(form.active) }}
         {{ render_checkbox(form.validated) }}
+        {{ render_field(form.coverage_requirement_15) }}
         {{ render_field(form.comments, rows="2") }}
+        
 
         <div class="form-group">
             <div class="col-sm-offset-1 col-sm-10">
