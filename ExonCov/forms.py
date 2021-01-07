@@ -148,6 +148,7 @@ class CreatePanelForm(FlaskForm):
 
     name = StringField('Name', validators=[validators.InputRequired()])
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    coverage_requirement_15 = FloatField('Minimal % 15x', default=99, validators=[validators.InputRequired()])
     disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
     disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
     patientfolder_alissa = StringField('Alissa', validators=[validators.InputRequired()])
@@ -183,7 +184,7 @@ class CreatePanelForm(FlaskForm):
 
 
 class PanelNewVersionForm(FlaskForm):
-    """Update Panel form."""
+    """New panel version form."""
 
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
     coverage_requirement_15 = FloatField('Minimal % 15x')

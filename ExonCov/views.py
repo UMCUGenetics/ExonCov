@@ -305,7 +305,9 @@ def panel_new():
         new_panel_version = PanelVersion(
             panel_name=panel_name,
             version_year=time.strftime('%y'),
-            version_revision=1, transcripts=transcripts,
+            version_revision=1,
+            transcripts=transcripts,
+            coverage_requirement_15=new_panel_form.coverage_requirement_15.data,
             comments=new_panel_form.comments.data,
             user=current_user
             )
