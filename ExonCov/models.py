@@ -386,7 +386,7 @@ class EventLog(db.Model):
     table = db.Column(db.String(255), nullable=False)
     action = db.Column(db.String(255), nullable=False)
     modified_on = db.Column(db.DateTime, default=datetime.datetime.now)
-    data = db.Column(db.JSON(), nullable=False)
+    data = db.Column(db.Text(), nullable=False)
 
     user = db.relationship('User')
 

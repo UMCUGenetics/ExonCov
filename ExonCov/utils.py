@@ -1,4 +1,6 @@
 """Utility functions."""
+import json
+
 from flask import request, url_for
 from flask_login import current_user
 from sqlalchemy.orm.exc import NoResultFound
@@ -62,6 +64,6 @@ def event_logger(connection, log_model, model_name, action, event_data):
             'user_id': current_user.id,
             'table': model_name,
             'action': action,
-            'data': event_data
+            'data': json.dumps(event_data)
         }
     )

@@ -24,7 +24,7 @@ def upgrade():
         sa.Column('table', sa.String(length=255), nullable=False),
         sa.Column('action', sa.String(length=255), nullable=False),
         sa.Column('modified_on', sa.DateTime(), nullable=True),
-        sa.Column('data', sa.JSON(), nullable=False),
+        sa.Column('data', sa.Text(), nullable=False),
         sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
         sa.PrimaryKeyConstraint('id')
     )
