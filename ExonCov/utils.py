@@ -49,9 +49,12 @@ def weighted_average(values, weights):
 
 
 def event_logger(connection, log_model, model_name, action, event_data):
-    # cleanup event data
-    for item in ['_sa_instance_state', 'user', 'transcripts']:
-        event_data.pop(item, None)
+    # Cleanup and transform item to str
+    for item in event_data.keys():
+        if item in ['_sa_instance_state', 'user', 'transcripts', 'panel']:
+            event_data.pop(item, None)
+        else:
+            event_data[item] = str(event_data[item])
 
     connection.execute(
         log_model.__table__.insert(),
