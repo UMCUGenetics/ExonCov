@@ -7,17 +7,20 @@ import subprocess
 import os
 import shlex
 import urllib
+import datetime
 
 from flask_script import Command, Option
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.expression import func
 import tempfile
 import shutil
 import pysam
 
 from . import app, db, utils
-from .models import Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel, PanelVersion, CustomPanel
+from .models import Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel
+from .models import PanelVersion, CustomPanel, SampleSet
 from .utils import weighted_average
 
 
@@ -72,7 +75,7 @@ class PrintTranscripts(Command):
     )
 
     def run(self, preferred_transcripts):
-        print('{gene}\t{transcript}'.format( gene='Gene', transcript='Transcript'))
+        print('{gene}\t{transcript}'.format(gene='Gene', transcript='Transcript'))
 
         genes = Gene.query.options(joinedload('transcripts'))
 
@@ -81,7 +84,7 @@ class PrintTranscripts(Command):
                 print('{gene}\t{transcript}'.format(gene=gene.id, transcript=gene.default_transcript.name))
             else:
                 for transcript in gene.transcripts:
-                    print('{gene}\t{transcript}'.format(gene=gene.id,transcript=transcript.name))
+                    print('{gene}\t{transcript}'.format(gene=gene.id, transcript=transcript.name))
 
 
 class ImportBam(Command):
@@ -363,6 +366,57 @@ class CheckSamples(Command):
 
         if not error:
             print("No errors found.")
+
+
+class CreateSampleSet(Command):
+    """Create (random) sample set."""
+
+    option_list = (
+        Option('name'),
+        Option('-d', '--max_days', dest='max_days', type=int, default=180),
+        Option('-s', '--sample_filter', dest='sample_filter', default=''),
+        Option('-t', '--sample_type', dest='sample_type', default='WES'),
+        Option('-n', '--sample_number', dest='sample_number', type=int, default=100),
+    )
+
+    def run(self, name, max_days, sample_filter, sample_type, sample_number):
+        description = '{0} random {1} samples. Maximum age: {2} days. Sample name filter: {3}'.format(sample_number, sample_type, max_days, sample_filter)
+        filter_date = datetime.date.today() - datetime.timedelta(days=max_days)
+
+        samples = Sample.query.filter(Sample.name.like('%{0}%'.format(sample_filter))).filter_by(type=sample_type).order_by(func.rand())
+        sample_count = 0
+
+        sample_set = SampleSet(
+            name=name,
+            description=description,
+        )
+
+        for sample in samples:
+            if sample.import_date > filter_date and not sample.project.type:  # Do not use samples with 'special' project type (validation etc)
+                sample_set.samples.append(sample)
+                sample_count += 1
+
+            if sample_count >= sample_number:
+                break
+
+        if len(sample_set.samples) != sample_number:
+            print 'Not enough samples found to create sample set, found {0} samples.'.format(len(sample_set.samples))
+        else:
+            print 'Creating new random sample set:'
+            print '\tName: {0}'.format(sample_set.name)
+            print '\tDescription: {0}'.format(sample_set.description)
+            print '\tSamples:'
+            for sample in sample_set.samples:
+                print '\t\t{0}\t{1}\t{2}\t{3}'.format(sample.name, sample.project, sample.type, sample.import_date)
+
+            confirmation = ''
+            while confirmation not in ['y', 'n']:
+                confirmation = raw_input('Please check samples and press [Y/y] to continue or [N/n] to abort. ').lower()
+
+            if confirmation == 'y':
+                db.session.add(sample_set)
+                db.session.commit()
+                print 'Sample set created, make sure to activate it via the admin page.'
 
 
 class ImportAliasTable(Command):
