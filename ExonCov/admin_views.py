@@ -152,10 +152,10 @@ class SampleAdminView(CustomModelView):
 
 class SampleProjectAdminView(CustomModelView):
     """SequencingRun admin view."""
-    column_list = ['name']
-    column_searchable_list = ['name']
+    column_list = ['name', 'type']
+    column_searchable_list = ['name', 'type']
 
-    form_columns = ['name']
+    form_columns = ['name', 'type']
 
 
 class SampleSetAdminView(CustomModelView):

@@ -24,7 +24,7 @@ def upgrade():
     op.add_column('panels', sa.Column('disease_description_nl', sa.String(length=255), nullable=True))
     op.add_column('panels', sa.Column('patientfolder_alissa', sa.String(length=255), nullable=True))
     op.add_column('panels', sa.Column('staff_member', sa.String(length=255), nullable=True))
-    op.add_column('sample_projects', sa.Column('type', sa.String(length=255), nullable=False))
+    op.add_column('sample_projects', sa.Column('type', sa.String(length=255), nullable=True))
     op.add_column('samples', sa.Column('type', sa.String(length=255), nullable=False))
 
 

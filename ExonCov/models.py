@@ -307,7 +307,7 @@ class SampleProject(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
-    type = db.Column(db.String(255), nullable=False)
+    type = db.Column(db.String(255))
 
     samples = db.relationship('Sample', back_populates='project')
 
@@ -315,7 +315,10 @@ class SampleProject(db.Model):
         return "SampleProject({0})".format(str(self))
 
     def __str__(self):
-        return self.name
+        if self.type:
+            return '{0} ({1})'.format(self.name, self.type)
+        else:
+            return self.name
 
 
 class SequencingRun(db.Model):
