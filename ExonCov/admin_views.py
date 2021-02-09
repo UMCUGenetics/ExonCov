@@ -33,12 +33,12 @@ class CustomModelView(ModelView):
 
 class PanelAdminView(CustomModelView):
     """Panel admin view."""
-    column_list = ['name', 'versions', 'disease_description_eng', 'clinical_geneticist', 'staff_member', 'comments']
+    column_list = ['name', 'versions', 'disease_description_eng', 'clinic_contact', 'staff_member', 'comments']
     column_searchable_list = ['name']
 
     form_columns = [
         'name', 'disease_description_nl', 'disease_description_eng', 'comments', 'patientfolder_alissa',
-        'clinical_geneticist', 'staff_member'
+        'clinic_contact', 'staff_member'
     ]
 
 

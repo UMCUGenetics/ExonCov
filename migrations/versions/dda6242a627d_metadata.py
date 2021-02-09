@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     op.add_column('panel_versions', sa.Column('coverage_requirement_15', sa.Float(), nullable=True))
-    op.add_column('panels', sa.Column('clinical_geneticist', sa.String(length=255), nullable=True))
+    op.add_column('panels', sa.Column('clinic_contact', sa.String(length=255), nullable=True))
     op.add_column('panels', sa.Column('comments', sa.Text(), nullable=True))
     op.add_column('panels', sa.Column('disease_description_eng', sa.String(length=255), nullable=True))
     op.add_column('panels', sa.Column('disease_description_nl', sa.String(length=255), nullable=True))
@@ -36,5 +36,5 @@ def downgrade():
     op.drop_column('panels', 'disease_description_nl')
     op.drop_column('panels', 'disease_description_eng')
     op.drop_column('panels', 'comments')
-    op.drop_column('panels', 'clinical_geneticist')
+    op.drop_column('panels', 'clinic_contact')
     op.drop_column('panel_versions', 'coverage_requirement_15')

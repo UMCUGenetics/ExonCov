@@ -262,7 +262,7 @@ def panel_edit(name):
         disease_description_eng=panel.disease_description_eng,
         disease_description_nl=panel.disease_description_nl,
         patientfolder_alissa=panel.patientfolder_alissa,
-        clinical_geneticist=panel.clinical_geneticist,
+        clinic_contact=panel.clinic_contact,
         staff_member=panel.staff_member,
     )
 
@@ -271,7 +271,7 @@ def panel_edit(name):
         panel.disease_description_eng = panel_edit_form.disease_description_eng.data
         panel.disease_description_nl = panel_edit_form.disease_description_nl.data
         panel.patientfolder_alissa = panel_edit_form.patientfolder_alissa.data
-        panel.clinical_geneticist = panel_edit_form.clinical_geneticist.data
+        panel.clinic_contact = panel_edit_form.clinic_contact.data
         panel.staff_member = panel_edit_form.staff_member.data
 
         db.session.add(panel)
@@ -298,7 +298,7 @@ def panel_new():
             disease_description_eng=new_panel_form.disease_description_eng.data,
             disease_description_nl=new_panel_form.disease_description_nl.data,
             patientfolder_alissa=new_panel_form.patientfolder_alissa.data,
-            clinical_geneticist=new_panel_form.clinical_geneticist.data,
+            clinic_contact=new_panel_form.clinic_contact.data,
             staff_member=new_panel_form.staff_member.data
         )
 

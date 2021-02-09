@@ -152,7 +152,7 @@ class CreatePanelForm(FlaskForm):
     disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
     disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
     patientfolder_alissa = StringField('Alissa', validators=[validators.InputRequired()])
-    clinical_geneticist = StringField('Clinical geneticist', validators=[validators.InputRequired()])
+    clinic_contact = StringField('Clinic contact(s)', validators=[validators.InputRequired()])
     staff_member = StringField('Staff member', validators=[validators.InputRequired()])
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     transcript = []  # Filled in validate function
@@ -218,7 +218,7 @@ class PanelEditForm(FlaskForm):
     disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
     disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
     patientfolder_alissa = StringField('Alissa', validators=[validators.InputRequired()])
-    clinical_geneticist = StringField('Clinical geneticist', validators=[validators.InputRequired()])
+    clinic_contact = StringField('Clinic contact(s)', validators=[validators.InputRequired()])
     staff_member = StringField('Staff member', validators=[validators.InputRequired()])
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
 
