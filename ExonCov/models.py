@@ -113,7 +113,11 @@ class Gene(db.Model):
     __tablename__ = 'genes'
 
     id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
-    default_transcript_id = db.Column(db.Integer(), db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), index=True)
+    default_transcript_id = db.Column(
+        db.Integer(),
+        db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'),
+        index=True
+    )
 
     default_transcript = db.relationship('Transcript', foreign_keys=[default_transcript_id])
 
@@ -179,7 +183,7 @@ class PanelVersion(db.Model):
     validated = db.Column(db.Boolean, index=True, default=False)
     comments = db.Column(db.Text())
     coverage_requirement_15 = db.Column(db.Float)
-    
+
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
@@ -368,6 +372,20 @@ class TranscriptMeasurement(db.Model):
 
     def __getitem__(self, item):
         return getattr(self, item)
+
+
+class EventLog(db.Model):
+    """Store database events"""
+    __tablename__ = 'event_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
+    table = db.Column(db.String(255), nullable=False)
+    action = db.Column(db.String(255), nullable=False)
+    modified_on = db.Column(db.DateTime, default=datetime.datetime.now)
+    data = db.Column(db.JSON(), nullable=False)
+
+    user = db.relationship('User')
 
 
 class User(db.Model, UserMixin):

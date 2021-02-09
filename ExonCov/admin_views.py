@@ -4,7 +4,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
 from . import db, admin
-from .models import Exon, Transcript, Gene, Panel, PanelVersion, CustomPanel, Sample, SampleProject, SampleSet, SequencingRun, User, Role
+import models
 
 
 class CustomModelView(ModelView):
@@ -36,14 +36,20 @@ class PanelAdminView(CustomModelView):
     column_list = ['name', 'versions', 'disease_description_eng', 'clinical_geneticist', 'staff_member', 'comments']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'disease_description_nl', 'disease_description_eng', 'comments' ,'patientfolder_alissa', 'clinical_geneticist', 'staff_member']
+    form_columns = [
+        'name', 'disease_description_nl', 'disease_description_eng', 'comments', 'patientfolder_alissa',
+        'clinical_geneticist', 'staff_member'
+    ]
 
 
 class PanelVersionAdminView(CustomModelView):
     """Panel version admin view."""
     column_searchable_list = ['panel_name']
 
-    form_columns = ['panel', 'version_year', 'version_revision', 'comments', 'coverage_requirement_15', 'active', 'validated', 'transcripts']
+    form_columns = [
+        'panel', 'version_year', 'version_revision', 'comments', 'coverage_requirement_15', 'active', 'validated',
+        'transcripts'
+    ]
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
@@ -57,7 +63,10 @@ class CustomPanelAdminView(CustomModelView):
     column_list = ['id', 'created_by', 'date', 'research_number', 'comments', 'validated', 'validated_by', 'validated_date']
     column_searchable_list = ['id', 'comments', 'research_number']
 
-    form_columns = ['created_by', 'date', 'research_number', 'comments', 'validated', 'validated_by', 'validated_date', 'samples', 'transcripts']
+    form_columns = [
+        'created_by', 'date', 'research_number', 'comments', 'validated', 'validated_by', 'validated_date',
+        'samples', 'transcripts'
+    ]
 
     form_ajax_refs = {
         'transcripts': {
@@ -125,7 +134,10 @@ class SampleAdminView(CustomModelView):
     column_sortable_list = ['name', 'import_date']
     column_searchable_list = ['name']
 
-    form_columns = ['name', 'type', 'project', 'sequencing_runs', 'import_date', 'file_name', 'import_command', 'exon_measurement_file']
+    form_columns = [
+        'name', 'type', 'project', 'sequencing_runs', 'import_date', 'file_name', 'import_command',
+        'exon_measurement_file'
+    ]
     form_ajax_refs = {
         'project': {
             'fields': ['name'],
@@ -167,29 +179,41 @@ class SequencingRunAdminView(CustomModelView):
     form_columns = ['name', 'platform_unit']
 
 
-class UserAdmin(CustomModelView):
+class UserAdminView(CustomModelView):
     """User admin model."""
 
     can_create = False
 
     column_list = ('first_name', 'last_name', 'email', 'roles', 'active')
+    column_searchable_list = ['first_name', 'last_name', 'email']
 
     form_columns = ('first_name', 'last_name', 'email', 'roles', 'active', 'password')
 
 
+class EventLogAdminView(CustomModelView):
+    """EventLog admin model."""
+    column_filters = ['table', 'action', 'modified_on']
+    column_searchable_list = ['data']
+
+    can_create = False
+    can_edit = False
+    can_view_details = True
+
+
 # Link view classes and models
-admin.add_view(PanelAdminView(Panel, db.session))
-admin.add_view(PanelVersionAdminView(PanelVersion, db.session))
-admin.add_view(CustomPanelAdminView(CustomPanel, db.session))
+admin.add_view(PanelAdminView(models.Panel, db.session))
+admin.add_view(PanelVersionAdminView(models.PanelVersion, db.session))
+admin.add_view(CustomPanelAdminView(models.CustomPanel, db.session))
 
-admin.add_view(SampleAdminView(Sample, db.session))
-admin.add_view(SampleProjectAdminView(SampleProject, db.session))
-admin.add_view(SampleSetAdminView(SampleSet, db.session))
-admin.add_view(SequencingRunAdminView(SequencingRun, db.session))
+admin.add_view(SampleAdminView(models.Sample, db.session))
+admin.add_view(SampleProjectAdminView(models.SampleProject, db.session))
+admin.add_view(SampleSetAdminView(models.SampleSet, db.session))
+admin.add_view(SequencingRunAdminView(models.SequencingRun, db.session))
 
-admin.add_view(GeneAdminView(Gene, db.session))
-admin.add_view(TranscriptAdminView(Transcript, db.session))
-admin.add_view(ExonAdminView(Exon, db.session))
+admin.add_view(GeneAdminView(models.Gene, db.session))
+admin.add_view(TranscriptAdminView(models.Transcript, db.session))
+admin.add_view(ExonAdminView(models.Exon, db.session))
 
-admin.add_view(UserAdmin(User, db.session))
-admin.add_view(CustomModelView(Role, db.session))
+admin.add_view(UserAdminView(models.User, db.session))
+admin.add_view(CustomModelView(models.Role, db.session))
+admin.add_view(EventLogAdminView(models.EventLog, db.session))
