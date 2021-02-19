@@ -35,7 +35,11 @@ Gene panel - {{ panel.name_version }}
         {% for transcript in panel.transcripts %}
         <tr>
             <td>{{ transcript.name }}</td>
+            {% if transcript.gene in panel.core_genes %}
+            <td class="info">{{ transcript.gene.id }} *</td>
+            {% else %}
             <td>{{ transcript.gene.id }}</td>
+            {% endif %}
             <td>{{ transcript.chr }}</td>
             <td>{{ transcript.start }}</td>
             <td>{{ transcript.end }}</td>
@@ -44,6 +48,9 @@ Gene panel - {{ panel.name_version }}
         {% endfor %}
     </tbody>
 </table>
+{% if panel.core_genes %}
+* Core gene
+{% endif %}
 {% endblock %}
 
 {% block custom_javascript %}

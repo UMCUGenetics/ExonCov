@@ -8,6 +8,7 @@
     <form method="POST" action="{{ url_for('panel_new_version', name=panel.panel_name) }}" class="form-horizontal">
         {{ form.csrf_token }}
         {{ render_field(form.gene_list, rows="12") }}
+        {{ render_field(form.core_gene_list, rows="12") }}
         {{ render_field(form.coverage_requirement_15) }}
         {{ render_field(form.comments, rows="2") }}
         <div class="form-group">

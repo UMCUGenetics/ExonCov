@@ -215,7 +215,8 @@ def panel_new_version(name):
     panel_last_version = panel.last_version
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
-    update_panel_form = PanelNewVersionForm(gene_list=genes, coverage_requirement_15=panel_last_version.coverage_requirement_15)
+    core_genes = '\n'.join([gene.id for gene in panel_last_version.core_genes])
+    update_panel_form = PanelNewVersionForm(gene_list=genes, core_gene_list=core_genes, coverage_requirement_15=panel_last_version.coverage_requirement_15)
 
     if update_panel_form.validate_on_submit():
         transcripts = update_panel_form.transcripts
@@ -239,6 +240,7 @@ def panel_new_version(name):
                     version_year=year,
                     version_revision=revision,
                     transcripts=transcripts,
+                    core_genes=update_panel_form.core_genes,
                     coverage_requirement_15=update_panel_form.coverage_requirement_15.data,
                     comments=update_panel_form.data['comments'],
                     user=current_user
@@ -291,6 +293,7 @@ def panel_new():
     if new_panel_form.validate_on_submit():
         panel_name = new_panel_form.data['name']
         transcripts = new_panel_form.transcripts
+        core_genes = new_panel_form.core_genes
 
         new_panel = Panel(
             name=panel_name,
@@ -307,6 +310,7 @@ def panel_new():
             version_year=time.strftime('%y'),
             version_revision=1,
             transcripts=transcripts,
+            core_genes=core_genes,
             coverage_requirement_15=new_panel_form.coverage_requirement_15.data,
             comments=new_panel_form.comments.data,
             user=current_user
@@ -332,11 +336,14 @@ def panel_version(id):
 def panel_version_edit(id):
     """Set validation status to true."""
     panel = PanelVersion.query.get_or_404(id)
+    core_genes = '\n'.join([gene.id for gene in panel.core_genes])
+
     form = PanelVersionEditForm(
         active=panel.active,
         validated=panel.validated,
         comments=panel.comments,
-        coverage_requirement_15=panel.coverage_requirement_15
+        coverage_requirement_15=panel.coverage_requirement_15,
+        core_gene_list=core_genes
     )
 
     if form.validate_on_submit():
@@ -344,6 +351,7 @@ def panel_version_edit(id):
         panel.validated = form.validated.data
         panel.comments = form.comments.data
         panel.coverage_requirement_15 = form.coverage_requirement_15.data
+        panel.core_genes = form.core_genes
         db.session.add(panel)
         db.session.commit()
         return redirect(url_for('panel_version', id=panel.id))

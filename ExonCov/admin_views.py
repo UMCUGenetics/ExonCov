@@ -48,11 +48,15 @@ class PanelVersionAdminView(CustomModelView):
 
     form_columns = [
         'panel', 'version_year', 'version_revision', 'comments', 'coverage_requirement_15', 'active', 'validated',
-        'transcripts'
+        'transcripts', 'core_genes'
     ]
     form_ajax_refs = {
         'transcripts': {
             'fields': ['name', 'gene_id'],
+            'page_size': 10
+        },
+        'core_genes': {
+            'fields': ['id'],
             'page_size': 10
         }
     }

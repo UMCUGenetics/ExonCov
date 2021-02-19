@@ -22,6 +22,12 @@ panels_transcripts = db.Table(
     db.Column('transcript_id', db.ForeignKey('transcripts.id'), primary_key=True)
 )
 
+panels_core_genes = db.Table(
+    'panels_core_genes',
+    db.Column('panel_id', db.ForeignKey('panel_versions.id'), primary_key=True),
+    db.Column('gene_id', db.ForeignKey('genes.id'), primary_key=True)
+)
+
 custom_panels_transcripts = db.Table(
     'custom_panels_transcripts',
     db.Column('custom_panel_id', db.ForeignKey('custom_panels.id'), primary_key=True),
@@ -190,6 +196,7 @@ class PanelVersion(db.Model):
     panel = db.relationship('Panel', back_populates='versions')
     user = db.relationship('User')
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
+    core_genes = db.relationship('Gene', secondary=panels_core_genes)
 
     def __repr__(self):
         return "PanelVersion({0})".format(self.name_version)
