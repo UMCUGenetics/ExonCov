@@ -125,7 +125,7 @@ def sample_inactive_panels(id):
 def sample_panel(sample_id, panel_id):
     """Sample panel page."""
     sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get_or_404(sample_id)
-    panel = PanelVersion.query.get_or_404(panel_id)
+    panel = PanelVersion.query.options(joinedload('core_genes')).get_or_404(panel_id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -134,7 +134,7 @@ def sample_panel(sample_id, panel_id):
         'measurement_percentage30': '>30'
     }
 
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
+    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).options(joinedload(Transcript.gene)).all()
 
     return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
 
