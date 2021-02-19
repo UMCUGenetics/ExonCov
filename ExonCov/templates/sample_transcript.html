@@ -38,7 +38,7 @@
             <td>{{ exon_measurement.end }}</td>
             <td>{{ exon_measurement.len }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(exon_measurement[type], type) }}
+                {{ render_measurment_td(exon_measurement[type]) }}
             {% endfor %}
         </tr>
         {% endfor %}

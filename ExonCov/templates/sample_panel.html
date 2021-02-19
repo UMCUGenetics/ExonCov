@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/tables.html" import render_gene_measurment_td %}
 {% from "macros/forms.html" import render_sample_datatable_form %}
 
 {% block header %}{{ panel.name_version }} - {{ sample.name }}{% endblock %}
@@ -36,20 +36,32 @@
         {% for transcript_measurement in transcript_measurements %}
         {% set transcript = transcript_measurement[0] %}
         {% set measurement = transcript_measurement[1] %}
+        {% if transcript.gene in panel.core_genes %}
+            {% set core_gene = True %}
+        {% else %}
+            {% set core_gene = False %}
+        {% endif %}
         <tr>
             <td><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
-            <td><a href="{{ url_for('sample_gene', sample_id=sample.id, gene_id=transcript.gene_id) }}">{{ transcript.gene_id }}</a></td>
+            {% if core_gene %}
+                <td class="info"><a href="{{ url_for('sample_gene', sample_id=sample.id, gene_id=transcript.gene_id) }}">{{ transcript.gene_id }} *</a></td>
+            {% else %}
+                <td><a href="{{ url_for('sample_gene', sample_id=sample.id, gene_id=transcript.gene_id) }}">{{ transcript.gene_id }}</a></td>
+            {% endif %}
             <td>{{ transcript.chr }}</td>
             <td>{{ transcript.start }}</td>
             <td>{{ transcript.end }}</td>
             <td>{{ transcript.exon_count }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(measurement[type], type, panel) }}
+                {{ render_gene_measurment_td(measurement[type], type, core_gene) }}
             {% endfor %}
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% if panel.core_genes %}
+    * Core gene
+{% endif %}
 {% endblock %}
 
 {% block custom_javascript %}

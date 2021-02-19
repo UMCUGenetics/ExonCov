@@ -1,5 +1,5 @@
 {% from "macros/forms.html" import measurement_type_form, render_sample_datatable_form %}
-{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/tables.html" import render_gene_measurment_td %}
 {% extends 'base.html' %}
 
 {% block header %}Sample set - {{ sample_set.name }}{% endblock %}
@@ -31,19 +31,31 @@
     </thead>
     <tbody>
         {% for transcript in transcript_measurements %}
+        {% if transcript.gene in panel.core_genes %}
+            {% set core_gene = True %}
+        {% else %}
+            {% set core_gene = False %}
+        {% endif %}
         <tr>
             <td><a href="{{ url_for('sample_set_transcript', sample_set_id=sample_set.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
-            <td><a href="{{ url_for('sample_set_gene', sample_set_id=sample_set.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
-            {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
-            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
-            {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
+            {% if core_gene %}
+                <td class="info"><a href="{{ url_for('sample_set_gene', sample_set_id=sample_set.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }} *</td>
+            {% else %}
+                <td><a href="{{ url_for('sample_set_gene', sample_set_id=sample_set.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
+            {% endif %}
+            {{ render_gene_measurment_td(transcript_measurements[transcript]['mean'], measurement_type[0], core_gene) }}
+            {{ render_gene_measurment_td(transcript_measurements[transcript]['min'], measurement_type[0], core_gene) }}
+            {{ render_gene_measurment_td(transcript_measurements[transcript]['max'], measurement_type[0], core_gene) }}
             {% for sample in sample_set.samples %}
-            {{ render_measurment_td(transcript_measurements[transcript][sample]) }}
+            {{ render_gene_measurment_td(transcript_measurements[transcript][sample], measurement_type[0], core_gene) }}
             {% endfor %}
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% if panel.core_genes %}
+    * Core gene
+{% endif %}
 {% endblock %}
 
 {% block custom_javascript %}
