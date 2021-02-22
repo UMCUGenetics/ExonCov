@@ -19,8 +19,10 @@ import shutil
 import pysam
 
 from . import app, db, utils
-from .models import Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel
-from .models import PanelVersion, CustomPanel, SampleSet
+from .models import (
+    Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel,
+    PanelVersion, CustomPanel, SampleSet
+)
 from .utils import weighted_average
 
 
