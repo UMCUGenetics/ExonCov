@@ -11,8 +11,14 @@ from sqlalchemy import or_
 import pysam
 
 from ExonCov import app, db
-from .models import Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript, TranscriptMeasurement, panels_transcripts
-from .forms import MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm, CreatePanelForm, UpdatePanelForm, PanelVersionEditForm
+from .models import (
+    Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript,
+    TranscriptMeasurement, panels_transcripts
+)
+from .forms import (
+    MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm,
+    CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm
+)
 from .utils import weighted_average
 
 
@@ -67,6 +73,7 @@ def sample(id):
             panels[panel.id] = {
                 'len': transcript_measurement.len,
                 'name_version': panel.name_version,
+                'coverage_requirement_15': panel.coverage_requirement_15
             }
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
@@ -99,6 +106,7 @@ def sample_inactive_panels(id):
             panels[panel.id] = {
                 'len': transcript_measurement.len,
                 'name_version': panel.name_version,
+                'coverage_requirement_15': panel.coverage_requirement_15
             }
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = transcript_measurement[measurement_type]
@@ -117,7 +125,7 @@ def sample_inactive_panels(id):
 def sample_panel(sample_id, panel_id):
     """Sample panel page."""
     sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get_or_404(sample_id)
-    panel = PanelVersion.query.get_or_404(panel_id)
+    panel = PanelVersion.query.options(joinedload('core_genes')).get_or_404(panel_id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
@@ -126,9 +134,24 @@ def sample_panel(sample_id, panel_id):
         'measurement_percentage30': '>30'
     }
 
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
+    transcript_measurements = (
+        db.session.query(Transcript, TranscriptMeasurement)
+        .join(panels_transcripts)
+        .filter(panels_transcripts.columns.panel_id == panel.id)
+        .join(TranscriptMeasurement)
+        .filter_by(sample_id=sample.id)
+        .options(joinedload(Transcript.exons, innerjoin=True))
+        .options(joinedload(Transcript.gene))
+        .all()
+    )
 
-    return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
+    return render_template(
+        'sample_panel.html',
+        sample=sample,
+        panel=panel,
+        transcript_measurements=transcript_measurements,
+        measurement_types=measurement_types
+    )
 
 
 @app.route('/sample/<int:sample_id>/transcript/<string:transcript_name>')
@@ -198,16 +221,21 @@ def panel(name):
     return render_template('panel.html', panel=panel)
 
 
-@app.route('/panel/<string:name>/update', methods=['GET', 'POST'])
+@app.route('/panel/<string:name>/new_version', methods=['GET', 'POST'])
 @login_required
 @roles_required('panel_admin')
-def panel_update(name):
-    """Update panel page."""
+def panel_new_version(name):
+    """Create new panel version page."""
     panel = Panel.query.filter_by(name=name).options(joinedload('versions').joinedload('transcripts')).first_or_404()
     panel_last_version = panel.last_version
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
-    update_panel_form = UpdatePanelForm(gene_list=genes)
+    core_genes = '\n'.join([gene.id for gene in panel_last_version.core_genes])
+    update_panel_form = PanelNewVersionForm(
+        gene_list=genes,
+        core_gene_list=core_genes,
+        coverage_requirement_15=panel_last_version.coverage_requirement_15
+    )
 
     if update_panel_form.validate_on_submit():
         transcripts = update_panel_form.transcripts
@@ -231,6 +259,8 @@ def panel_update(name):
                     version_year=year,
                     version_revision=revision,
                     transcripts=transcripts,
+                    core_genes=update_panel_form.core_genes,
+                    coverage_requirement_15=update_panel_form.coverage_requirement_15.data,
                     comments=update_panel_form.data['comments'],
                     user=current_user
                 )
@@ -238,9 +268,44 @@ def panel_update(name):
                 db.session.commit()
                 return redirect(url_for('panel', name=panel.name))
             else:
-                return render_template('panel_update_confirm.html', form=update_panel_form, panel=panel_last_version, year=year, revision=revision)
+                return render_template(
+                    'panel_new_version_confirm.html',
+                    form=update_panel_form,
+                    panel=panel_last_version,
+                    year=year,
+                    revision=revision
+                )
 
-    return render_template('panel_update.html', form=update_panel_form, panel=panel_last_version)
+    return render_template('panel_new_version.html', form=update_panel_form, panel=panel_last_version)
+
+
+@app.route('/panel/<string:name>/edit', methods=['GET', 'POST'])
+@roles_required('panel_admin')
+def panel_edit(name):
+    """Set validation status to true."""
+    panel = Panel.query.filter_by(name=name).first_or_404()
+    panel_edit_form = PanelEditForm(
+        comments=panel.comments,
+        disease_description_eng=panel.disease_description_eng,
+        disease_description_nl=panel.disease_description_nl,
+        patientfolder_alissa=panel.patientfolder_alissa,
+        clinic_contact=panel.clinic_contact,
+        staff_member=panel.staff_member,
+    )
+
+    if panel_edit_form.validate_on_submit():
+        panel.comments = panel_edit_form.comments.data
+        panel.disease_description_eng = panel_edit_form.disease_description_eng.data
+        panel.disease_description_nl = panel_edit_form.disease_description_nl.data
+        panel.patientfolder_alissa = panel_edit_form.patientfolder_alissa.data
+        panel.clinic_contact = panel_edit_form.clinic_contact.data
+        panel.staff_member = panel_edit_form.staff_member.data
+
+        db.session.add(panel)
+        db.session.commit()
+        return redirect(url_for('panel', name=panel.name))
+
+    return render_template('panel_edit.html', form=panel_edit_form, panel=panel)
 
 
 @app.route('/panel/new', methods=['GET', 'POST'])
@@ -253,13 +318,26 @@ def panel_new():
     if new_panel_form.validate_on_submit():
         panel_name = new_panel_form.data['name']
         transcripts = new_panel_form.transcripts
+        core_genes = new_panel_form.core_genes
 
-        new_panel = Panel(name=panel_name)
+        new_panel = Panel(
+            name=panel_name,
+            comments=new_panel_form.comments.data,
+            disease_description_eng=new_panel_form.disease_description_eng.data,
+            disease_description_nl=new_panel_form.disease_description_nl.data,
+            patientfolder_alissa=new_panel_form.patientfolder_alissa.data,
+            clinic_contact=new_panel_form.clinic_contact.data,
+            staff_member=new_panel_form.staff_member.data
+        )
+
         new_panel_version = PanelVersion(
             panel_name=panel_name,
             version_year=time.strftime('%y'),
-            version_revision=1, transcripts=transcripts,
-            comments=new_panel_form.data['comments'],
+            version_revision=1,
+            transcripts=transcripts,
+            core_genes=core_genes,
+            coverage_requirement_15=new_panel_form.coverage_requirement_15.data,
+            comments=new_panel_form.comments.data,
             user=current_user
             )
 
@@ -283,12 +361,22 @@ def panel_version(id):
 def panel_version_edit(id):
     """Set validation status to true."""
     panel = PanelVersion.query.get_or_404(id)
-    form = PanelVersionEditForm(active=panel.active, validated=panel.validated, comments=panel.comments)
+    core_genes = '\n'.join([gene.id for gene in panel.core_genes])
+
+    form = PanelVersionEditForm(
+        active=panel.active,
+        validated=panel.validated,
+        comments=panel.comments,
+        coverage_requirement_15=panel.coverage_requirement_15,
+        core_gene_list=core_genes
+    )
 
     if form.validate_on_submit():
         panel.active = form.active.data
         panel.validated = form.validated.data
         panel.comments = form.comments.data
+        panel.coverage_requirement_15 = form.coverage_requirement_15.data
+        panel.core_genes = form.core_genes
         db.session.add(panel)
         db.session.commit()
         return redirect(url_for('panel_version', id=panel.id))

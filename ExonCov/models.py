@@ -22,6 +22,12 @@ panels_transcripts = db.Table(
     db.Column('transcript_id', db.ForeignKey('transcripts.id'), primary_key=True)
 )
 
+panels_core_genes = db.Table(
+    'panels_core_genes',
+    db.Column('panel_id', db.ForeignKey('panel_versions.id'), primary_key=True),
+    db.Column('gene_id', db.ForeignKey('genes.id'), primary_key=True)
+)
+
 custom_panels_transcripts = db.Table(
     'custom_panels_transcripts',
     db.Column('custom_panel_id', db.ForeignKey('custom_panels.id'), primary_key=True),
@@ -113,7 +119,11 @@ class Gene(db.Model):
     __tablename__ = 'genes'
 
     id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
-    default_transcript_id = db.Column(db.Integer(), db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'), index=True)
+    default_transcript_id = db.Column(
+        db.Integer(),
+        db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'),
+        index=True
+    )
 
     default_transcript = db.relationship('Transcript', foreign_keys=[default_transcript_id])
 
@@ -147,6 +157,12 @@ class Panel(db.Model):
     __tablename__ = 'panels'
 
     name = db.Column(db.String(50), primary_key=True)
+    disease_description_eng = db.Column(db.String(255))
+    disease_description_nl = db.Column(db.String(255))
+    patientfolder_alissa = db.Column(db.String(255))
+    clinic_contact  = db.Column(db.String(255))
+    staff_member = db.Column(db.String(255))
+    comments = db.Column(db.Text())
 
     versions = db.relationship('PanelVersion', back_populates='panel', order_by="PanelVersion.id")
 
@@ -172,12 +188,15 @@ class PanelVersion(db.Model):
     active = db.Column(db.Boolean, index=True, default=False)
     validated = db.Column(db.Boolean, index=True, default=False)
     comments = db.Column(db.Text())
+    coverage_requirement_15 = db.Column(db.Float)
+
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
     panel = db.relationship('Panel', back_populates='versions')
     user = db.relationship('User')
     transcripts = db.relationship('Transcript', secondary=panels_transcripts, back_populates='panels')
+    core_genes = db.relationship('Gene', secondary=panels_core_genes)
 
     def __repr__(self):
         return "PanelVersion({0})".format(self.name_version)
@@ -249,6 +268,7 @@ class Sample(db.Model):
     import_command = db.Column(db.Text(), nullable=False)
     project_id = db.Column(db.Integer(), db.ForeignKey('sample_projects.id'), nullable=False, index=True)
     exon_measurement_file = db.Column(db.Text(), nullable=False)
+    type = db.Column(db.String(255), nullable=False)
 
     transcript_measurements = db.relationship('TranscriptMeasurement', cascade="all,delete", back_populates='sample')
     project = db.relationship('SampleProject', back_populates='samples')
@@ -294,6 +314,7 @@ class SampleProject(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    type = db.Column(db.String(255))
 
     samples = db.relationship('Sample', back_populates='project')
 
@@ -301,7 +322,10 @@ class SampleProject(db.Model):
         return "SampleProject({0})".format(str(self))
 
     def __str__(self):
-        return self.name
+        if self.type:
+            return '{0} ({1})'.format(self.name, self.type)
+        else:
+            return self.name
 
 
 class SequencingRun(db.Model):
@@ -358,6 +382,20 @@ class TranscriptMeasurement(db.Model):
 
     def __getitem__(self, item):
         return getattr(self, item)
+
+
+class EventLog(db.Model):
+    """Store database events"""
+    __tablename__ = 'event_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
+    table = db.Column(db.String(255), nullable=False)
+    action = db.Column(db.String(255), nullable=False)
+    modified_on = db.Column(db.DateTime, default=datetime.datetime.now)
+    data = db.Column(db.Text(), nullable=False)
+
+    user = db.relationship('User')
 
 
 class User(db.Model, UserMixin):

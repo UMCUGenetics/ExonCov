@@ -2,20 +2,19 @@
 {% extends 'base.html' %}
 
 {% block header %}
-Gene panel - {{ panel.name_version }}
+Gene panel - {{ panel.name }}
 {% endblock %}
 
 {% block body %}
 <div class="well">
-    <form method="POST" action="{{ url_for('panel_version_edit', id=panel.id) }}" class="form-horizontal">
+    <form method="POST" action="{{ url_for('panel_edit', name=panel.name) }}" class="form-horizontal">
         {{ form.csrf_token }}
-        {{ render_checkbox(form.active) }}
-        {{ render_checkbox(form.validated) }}
-        {{ render_field(form.coverage_requirement_15) }}
-        {{ render_field(form.core_gene_list, rows="12") }}
+        {{ render_field(form.disease_description_eng) }}
+        {{ render_field(form.disease_description_nl) }}
+        {{ render_field(form.patientfolder_alissa) }}
+        {{ render_field(form.clinic_contact) }}
+        {{ render_field(form.staff_member) }}
         {{ render_field(form.comments, rows="2") }}
-
-
         <div class="form-group">
             <div class="col-sm-offset-1 col-sm-10">
                 <button type="submit" class="btn btn-primary">Submit</button>

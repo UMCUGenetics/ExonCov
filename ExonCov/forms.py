@@ -4,7 +4,7 @@ import re
 from flask_wtf import FlaskForm
 from flask_security.forms import RegisterForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
-from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField
+from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField, FloatField
 from wtforms import validators
 
 from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
@@ -26,27 +26,56 @@ def all_panels():
     return PanelVersion.query.filter_by(active=True).filter_by(validated=True).all()
 
 
+def get_gene(gene_id):
+    """Find gene or gene aliases."""
+    error = ''
+    gene = Gene.query.get(gene_id)
+
+    # Find possible gene alias if gene not found
+    if not gene:
+        gene_aliases = GeneAlias.query.filter_by(id=gene_id).all()
+        if gene_aliases:
+            error = 'Unkown gene: {0}. Possible aliases: {1}. Please check before using alias.'.format(
+                gene_id,
+                ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
+            )
+        else:
+            error = 'Unknown gene: {0}.'.format(gene_id)
+
+    return gene, error
+
+
 def parse_gene_list(gene_list, transcripts=[]):
     """Parse data from gene_list form field"""
     errors = []
     for gene_id in re.split('[\n\r,;\t ]+', gene_list):
         gene_id = gene_id.strip()
         if gene_id:
-            gene = Gene.query.get(gene_id)
-            if gene is None:
-                gene_aliases = GeneAlias.query.filter_by(id=gene_id).all()
-                if gene_aliases:
-                    errors.append('Unkown gene: {0}. Possible aliases: {1}. Please check before using alias.'.format(
-                        gene_id,
-                        ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
-                    ))
-                else:
-                    errors.append('Unknown gene: {0}.'.format(gene_id))
+            gene, error = get_gene(gene_id)
+
+            if not gene:
+                errors.append(error)
             elif gene.default_transcript in transcripts:
                 errors.append('Multiple entries for gene: {0}.'.format(gene_id))
             else:
                 transcripts.append(gene.default_transcript)
     return errors, transcripts
+
+
+def parse_core_gene_list(gene_list, genes=[]):
+    """Parse data from gene_list form field"""
+    errors = []
+    for gene_id in re.split('[\n\r,;\t ]+', gene_list):
+        gene_id = gene_id.strip()
+        if gene_id:
+            gene, error = get_gene(gene_id)
+            if not gene:
+                errors.append(error)
+            elif gene in genes:
+                errors.append('Multiple entries for gene: {0}.'.format(gene_id))
+            else:
+                genes.append(gene)
+    return errors, genes
 
 
 class SampleForm(FlaskForm):
@@ -147,14 +176,29 @@ class CreatePanelForm(FlaskForm):
     """Create Panel form."""
 
     name = StringField('Name', validators=[validators.InputRequired()])
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    gene_list = TextAreaField(
+        'Gene list',
+        description="List of genes seperated by newline, space, ',' or ';'.",
+        validators=[validators.InputRequired()]
+    )
+    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, ',' or ';'.")
+    coverage_requirement_15 = FloatField('Minimal % 15x', default=99, validators=[validators.InputRequired()])
+    disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
+    disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
+    patientfolder_alissa = StringField('Alissa', validators=[validators.InputRequired()])
+    clinic_contact = StringField('Clinic contact(s)', validators=[validators.InputRequired()])
+    staff_member = StringField('Staff member', validators=[validators.InputRequired()])
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
+
     transcript = []  # Filled in validate function
+    core_genes = []
 
     def validate(self):
-        """Extra validation, used to validate gene list and panel name."""
-        # Default validation as defined in field validators
-        self.transcripts = []  # Reset transcripts on validation
+        """Additional validation, used to validate gene list and panel name."""
+
+        # Reset on validation
+        self.transcripts = []
+        self.core_genes = []
 
         if not FlaskForm.validate(self):
             return False
@@ -164,31 +208,50 @@ class CreatePanelForm(FlaskForm):
             errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
             if errors:
                 self.gene_list.errors.extend(errors)
-                return False
+
+        if self.core_gene_list.data:
+            # Parse gene_list
+            errors, self.core_genes = parse_core_gene_list(self.core_gene_list.data, self.core_genes)
+            for gene in self.core_genes:
+                if gene.id not in self.gene_list.data:
+                    errors.append('Core gene {0} not found in gene list.'.format(gene.id))
+            if errors:
+                self.core_gene_list.errors.extend(errors)
 
         if self.name.data:
             panel = Panel.query.filter_by(name=self.name.data).first()
             if panel:
                 self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.')
 
-        if self.gene_list.errors or self.name.errors:
+        if self.gene_list.errors or self.core_gene_list.errors or self.name.errors:
             return False
 
         return True
 
 
-class UpdatePanelForm(FlaskForm):
-    """Update Panel form."""
+class PanelNewVersionForm(FlaskForm):
+    """New panel version form."""
 
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    gene_list = TextAreaField(
+        'Gene list',
+        description="List of genes seperated by newline, space, ',' or ';'.",
+        validators=[validators.InputRequired()]
+    )
+    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, ',' or ';'.")
+    coverage_requirement_15 = FloatField('Minimal % 15x')
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     confirm = BooleanField('Confirm')
-    transcript = []  # Filled in validate function
+
+    # Filled in validate function
+    transcript = []
+    core_genes = []
 
     def validate(self):
-        """Extra validation, used to validate gene list."""
-        # Default validation as defined in field validators
-        self.transcripts = []  # Reset transcripts on validation
+        """Additional validation, used to validate gene list."""
+
+        # Reset before validation
+        self.transcripts = []
+        self.core_genes = []
 
         if not FlaskForm.validate(self):
             return False
@@ -198,12 +261,30 @@ class UpdatePanelForm(FlaskForm):
             errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
             if errors:
                 self.gene_list.errors.extend(errors)
-                return False
 
-        if self.gene_list.errors:
+        if self.core_gene_list.data:
+            # Parse gene_list
+            errors, self.core_genes = parse_core_gene_list(self.core_gene_list.data, self.core_genes)
+            for gene in self.core_genes:
+                if gene.id not in self.gene_list.data:
+                    errors.append('Core gene {0} not found in gene list.'.format(gene.id))
+            if errors:
+                self.core_gene_list.errors.extend(errors)
+
+        if self.gene_list.errors or self.core_gene_list.errors:
             return False
 
         return True
+
+
+class PanelEditForm(FlaskForm):
+    """Panel edit form."""
+    disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
+    disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
+    patientfolder_alissa = StringField('Alissa', validators=[validators.InputRequired()])
+    clinic_contact = StringField('Clinic contact(s)', validators=[validators.InputRequired()])
+    staff_member = StringField('Staff member', validators=[validators.InputRequired()])
+    comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
 
 
 class PanelVersionEditForm(FlaskForm):
@@ -212,6 +293,26 @@ class PanelVersionEditForm(FlaskForm):
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     active = BooleanField('Active')
     validated = BooleanField('Validated')
+    coverage_requirement_15 = FloatField('Minimal % 15x')
+    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, ',' or ';'.")
+
+    core_genes = []
+
+    def validate(self):
+        """Extra validation, used to validate core gene list."""
+        self.core_genes = []  # Reset core_genes on validation
+
+        if not FlaskForm.validate(self):
+            return False
+
+        if self.core_gene_list.data:
+            # Parse gene_list
+            errors, self.core_genes = parse_core_gene_list(self.core_gene_list.data, self.core_genes)
+            if errors:
+                self.core_gene_list.errors.extend(errors)
+                return False
+
+        return True
 
 
 class CustomPanelValidateForm(FlaskForm):

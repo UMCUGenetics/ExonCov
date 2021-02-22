@@ -1,5 +1,8 @@
 """Utility functions."""
+import json
+
 from flask import request, url_for
+from flask_login import current_user
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 
@@ -45,3 +48,22 @@ def url_for_other_page(page):
 
 def weighted_average(values, weights):
     return sum(x * y for x, y in zip(values, weights)) / sum(weights)
+
+
+def event_logger(connection, log_model, model_name, action, event_data):
+    # Cleanup and transform item to str
+    for item in event_data.keys():
+        if item in ['_sa_instance_state', 'user']:
+            event_data.pop(item, None)
+        else:
+            event_data[item] = str(event_data[item])
+
+    connection.execute(
+        log_model.__table__.insert(),
+        {
+            'user_id': current_user.id,
+            'table': model_name,
+            'action': action,
+            'data': json.dumps(event_data)
+        }
+    )

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/tables.html" import render_gene_measurment_td %}
 {% from "macros/forms.html" import render_sample_datatable_form %}
 
 {% block header %}{{ gene.id }} - {{ sample.name }}{% endblock %}
@@ -8,7 +8,8 @@
 <div class="well">
     <dl class="dl-horizontal">
         <dt>Sample</dt><dd>{{ sample.name }}</dd>
-        <dt>Project</dt><dd>{{ sample.project.name }}</dd>
+        <dt>Project</dt><dd>{{ sample.project }}</dd>
+        <dt>Type</dt><dd>{{ sample.type }}</dd>
         <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
         <dt>Gene</dt><dd>{{ gene.id }}</dd>
         <dt>Preferred transcript</dt><dd><a href="{{ url_for('sample_transcript', sample_id=sample.id, transcript_name=gene.default_transcript.name) }}">{{ gene.default_transcript }}</a></dd>
@@ -47,7 +48,7 @@
             <td>{{ transcript.exon_count }}</td>
             <td>{{ measurement.len }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(measurement[type], type) }}
+                {{ render_gene_measurment_td(measurement[type], type) }}
             {% endfor %}
         </tr>
         {% endfor %}
