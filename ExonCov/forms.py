@@ -199,7 +199,7 @@ class CreatePanelForm(FlaskForm):
 
         if self.gene_list.data:
             # Parse gene_list
-            errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts )
+            errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
             if errors:
                 self.gene_list.errors.extend(errors)
                 return False
