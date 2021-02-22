@@ -134,9 +134,24 @@ def sample_panel(sample_id, panel_id):
         'measurement_percentage30': '>30'
     }
 
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).join(panels_transcripts).filter(panels_transcripts.columns.panel_id == panel.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).options(joinedload(Transcript.gene)).all()
+    transcript_measurements = (
+        db.session.query(Transcript, TranscriptMeasurement)
+        .join(panels_transcripts)
+        .filter(panels_transcripts.columns.panel_id == panel.id)
+        .join(TranscriptMeasurement)
+        .filter_by(sample_id=sample.id)
+        .options(joinedload(Transcript.exons, innerjoin=True))
+        .options(joinedload(Transcript.gene))
+        .all()
+    )
 
-    return render_template('sample_panel.html', sample=sample, panel=panel, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
+    return render_template(
+        'sample_panel.html',
+        sample=sample,
+        panel=panel,
+        transcript_measurements=transcript_measurements,
+        measurement_types=measurement_types
+    )
 
 
 @app.route('/sample/<int:sample_id>/transcript/<string:transcript_name>')
@@ -216,7 +231,11 @@ def panel_new_version(name):
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
     core_genes = '\n'.join([gene.id for gene in panel_last_version.core_genes])
-    update_panel_form = PanelNewVersionForm(gene_list=genes, core_gene_list=core_genes, coverage_requirement_15=panel_last_version.coverage_requirement_15)
+    update_panel_form = PanelNewVersionForm(
+        gene_list=genes,
+        core_gene_list=core_genes,
+        coverage_requirement_15=panel_last_version.coverage_requirement_15
+    )
 
     if update_panel_form.validate_on_submit():
         transcripts = update_panel_form.transcripts
@@ -249,7 +268,13 @@ def panel_new_version(name):
                 db.session.commit()
                 return redirect(url_for('panel', name=panel.name))
             else:
-                return render_template('panel_new_version_confirm.html', form=update_panel_form, panel=panel_last_version, year=year, revision=revision)
+                return render_template(
+                    'panel_new_version_confirm.html',
+                    form=update_panel_form,
+                    panel=panel_last_version,
+                    year=year,
+                    revision=revision
+                )
 
     return render_template('panel_new_version.html', form=update_panel_form, panel=panel_last_version)
 

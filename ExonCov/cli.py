@@ -382,10 +382,17 @@ class CreateSampleSet(Command):
     )
 
     def run(self, name, max_days, sample_filter, sample_type, sample_number):
-        description = '{0} random {1} samples. Maximum age: {2} days. Sample name filter: {3}'.format(sample_number, sample_type, max_days, sample_filter)
+        description = '{0} random {1} samples. Maximum age: {2} days. Sample name filter: {3}'.format(
+            sample_number, sample_type, max_days, sample_filter
+        )
         filter_date = datetime.date.today() - datetime.timedelta(days=max_days)
 
-        samples = Sample.query.filter(Sample.name.like('%{0}%'.format(sample_filter))).filter_by(type=sample_type).order_by(func.rand())
+        samples = (
+            Sample.query
+            .filter(Sample.name.like('%{0}%'.format(sample_filter)))
+            .filter_by(type=sample_type)
+            .order_by(func.rand())
+        )
         sample_count = 0
 
         sample_set = SampleSet(
@@ -394,7 +401,8 @@ class CreateSampleSet(Command):
         )
 
         for sample in samples:
-            if sample.import_date > filter_date and not sample.project.type:  # Do not use samples with 'special' project type (validation etc)
+            # Do not use samples with 'special' project type (validation etc)
+            if sample.import_date > filter_date and not sample.project.type:
                 sample_set.samples.append(sample)
                 sample_count += 1
 

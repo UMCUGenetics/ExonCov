@@ -176,7 +176,11 @@ class CreatePanelForm(FlaskForm):
     """Create Panel form."""
 
     name = StringField('Name', validators=[validators.InputRequired()])
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    gene_list = TextAreaField(
+        'Gene list',
+        description="List of genes seperated by newline, space, ',' or ';'.",
+        validators=[validators.InputRequired()]
+    )
     core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, ',' or ';'.")
     coverage_requirement_15 = FloatField('Minimal % 15x', default=99, validators=[validators.InputRequired()])
     disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
@@ -190,9 +194,11 @@ class CreatePanelForm(FlaskForm):
     core_genes = []
 
     def validate(self):
-        """Extra validation, used to validate gene list and panel name."""
-        # Default validation as defined in field validators
-        self.transcripts = []  # Reset transcripts on validation
+        """Additional validation, used to validate gene list and panel name."""
+
+        # Reset on validation
+        self.transcripts = []
+        self.core_genes = []
 
         if not FlaskForm.validate(self):
             return False
@@ -202,7 +208,6 @@ class CreatePanelForm(FlaskForm):
             errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
             if errors:
                 self.gene_list.errors.extend(errors)
-                return False
 
         if self.core_gene_list.data:
             # Parse gene_list
@@ -212,14 +217,13 @@ class CreatePanelForm(FlaskForm):
                     errors.append('Core gene {0} not found in gene list.'.format(gene.id))
             if errors:
                 self.core_gene_list.errors.extend(errors)
-                return False
 
         if self.name.data:
             panel = Panel.query.filter_by(name=self.name.data).first()
             if panel:
                 self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.')
 
-        if self.gene_list.errors or self.name.errors:
+        if self.gene_list.errors or self.core_gene_list.errors or self.name.errors:
             return False
 
         return True
@@ -228,7 +232,11 @@ class CreatePanelForm(FlaskForm):
 class PanelNewVersionForm(FlaskForm):
     """New panel version form."""
 
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, ',' or ';'.", validators=[validators.InputRequired()])
+    gene_list = TextAreaField(
+        'Gene list',
+        description="List of genes seperated by newline, space, ',' or ';'.",
+        validators=[validators.InputRequired()]
+    )
     core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, ',' or ';'.")
     coverage_requirement_15 = FloatField('Minimal % 15x')
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
@@ -239,7 +247,7 @@ class PanelNewVersionForm(FlaskForm):
     core_genes = []
 
     def validate(self):
-        """Extra validation, used to validate gene list."""
+        """Additional validation, used to validate gene list."""
 
         # Reset before validation
         self.transcripts = []
@@ -253,7 +261,6 @@ class PanelNewVersionForm(FlaskForm):
             errors, self.transcripts = parse_gene_list(self.gene_list.data, self.transcripts)
             if errors:
                 self.gene_list.errors.extend(errors)
-                return False
 
         if self.core_gene_list.data:
             # Parse gene_list
@@ -263,9 +270,8 @@ class PanelNewVersionForm(FlaskForm):
                     errors.append('Core gene {0} not found in gene list.'.format(gene.id))
             if errors:
                 self.core_gene_list.errors.extend(errors)
-                return False
 
-        if self.gene_list.errors:
+        if self.gene_list.errors or self.core_gene_list.errors:
             return False
 
         return True
