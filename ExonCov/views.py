@@ -17,7 +17,7 @@ from .models import (
 )
 from .forms import (
     MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm,
-    CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm
+    CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm, SampleSetPanelGeneForm
 )
 from .utils import weighted_average
 
@@ -599,14 +599,22 @@ def custom_panel_validated(id):
         return render_template('custom_panel_validate_confirm.html', form=custom_panel_validate_form, custom_panel=custom_panel)
 
 
-@app.route('/sample_set')
+@app.route('/sample_set', methods=['GET', 'POST'])
 @login_required
 @roles_required('panel_admin')
 def sample_sets():
     """Sample sets page."""
     sample_sets = SampleSet.query.options(joinedload('samples')).filter_by(active=True).all()
 
-    return render_template('sample_sets.html', sample_sets=sample_sets)
+    panel_gene_form = SampleSetPanelGeneForm()
+
+    if panel_gene_form.validate_on_submit():
+        if panel_gene_form.panel.data:
+            return redirect(url_for('sample_set_panel', sample_set_id=panel_gene_form.sample_set.data.id, panel_id=panel_gene_form.panel.data.id))
+        elif panel_gene_form.gene_id:
+            return redirect(url_for('sample_set_gene', sample_set_id=panel_gene_form.sample_set.data.id, gene_id=panel_gene_form.gene_id))
+
+    return render_template('sample_sets.html', sample_sets=sample_sets, form=panel_gene_form)
 
 
 @app.route('/sample_set/<int:id>', methods=['GET', 'POST'])

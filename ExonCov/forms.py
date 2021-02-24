@@ -319,3 +319,45 @@ class CustomPanelValidateForm(FlaskForm):
     """Custom Panel set validation status form."""
 
     confirm = BooleanField('Confirm', validators=[validators.InputRequired()])
+
+
+class SampleSetPanelGeneForm(FlaskForm):
+    """SampleSet Form to query a specific panel or gene."""
+    sample_set = QuerySelectField(
+        'Sample sets',
+        query_factory=active_sample_sets,
+        allow_blank=True,
+        blank_text='None',
+        validators=[validators.InputRequired()]
+    )
+    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
+    gene = StringField('Gene')
+
+    gene_id = ''
+
+    def validate(self):
+        """Extra validation to parse panel / gene selection"""
+        self.gene_id = ''
+        valid_form = True
+
+        if not FlaskForm.validate(self):
+            valid_form = False
+
+        if not self.sample_set.data:
+            message = 'Select a sample_set'
+            self.sample_set.errors.append(message)
+            valid_form = False
+
+        if (self.panel.data and self.gene.data) or (not self.panel.data and not self.gene.data):
+            message = 'Select a panel or gene.'
+            self.panel.errors.append(message)
+            self.gene.errors.append(message)
+            valid_form = False
+        elif self.gene.data:
+            gene, error = get_gene(self.gene.data)
+            if error:
+                self.gene.errors.append(error)
+            else:
+                self.gene_id = gene.id
+
+        return valid_form

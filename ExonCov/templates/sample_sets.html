@@ -1,4 +1,4 @@
-{% from "macros/forms.html" import render_sample_datatable_form %}
+{% from "macros/forms.html" import render_field, render_select2_field %}
 {% extends 'base.html' %}
 
 {% block header %}Sample sets{% endblock %}
@@ -24,4 +24,30 @@
         {% endfor %}
     </tbody>
 </table>
+
+<div class="page-header"><h2>Search Panel / Gene</h2></div>
+<div class="well">
+    <form method="POST" action="{{ url_for('sample_sets') }}" class="form-horizontal">
+        {{ form.csrf_token }}
+        {{ render_select2_field(form.sample_set) }}
+        {{ render_select2_field(form.panel) }}
+        {{ render_field(form.gene) }}
+
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-10">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block custom_javascript %}
+<script>
+    $(document).ready(function() {
+        $('.select2-form-field').select2({
+            minimumInputLength: 3 // only start searching when the user has input 4 or more characters
+        });
+    });
+</script>
 {% endblock %}
