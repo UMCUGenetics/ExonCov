@@ -324,7 +324,7 @@ class CustomPanelValidateForm(FlaskForm):
 class SampleSetPanelGeneForm(FlaskForm):
     """SampleSet Form to query a specific panel or gene."""
     sample_set = QuerySelectField(
-        'Sample sets',
+        'Sample set',
         query_factory=active_sample_sets,
         allow_blank=True,
         blank_text='None',
