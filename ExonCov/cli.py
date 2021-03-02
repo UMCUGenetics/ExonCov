@@ -401,8 +401,13 @@ class CreateSampleSet(Command):
         )
 
         for sample in samples:
-            # Do not use samples with 'special' project type (validation etc)
-            if sample.import_date > filter_date and not sample.project.type:
+            # Filter sampels: import date, 'special' project type (validation etc), Merge samples,
+            if (
+                sample.import_date > filter_date
+                and not sample.project.type
+                and len(sample.sequencing_runs) == 1
+                and sample.sequencing_runs[0].platform_unit in sample.project.name
+            ):
                 sample_set.samples.append(sample)
                 sample_count += 1
 
@@ -417,7 +422,13 @@ class CreateSampleSet(Command):
             print '\tDescription: {0}'.format(sample_set.description)
             print '\tSamples:'
             for sample in sample_set.samples:
-                print '\t\t{0}\t{1}\t{2}\t{3}'.format(sample.name, sample.project, sample.type, sample.import_date)
+                print '\t\t{0}\t{1}\t{2}\t{3}\t{4}'.format(
+                    sample.name,
+                    sample.type,
+                    sample.project,
+                    sample.sequencing_runs,
+                    sample.import_date
+                )
 
             confirmation = ''
             while confirmation not in ['y', 'n']:
