@@ -601,7 +601,6 @@ def custom_panel_validated(id):
 
 @app.route('/sample_set', methods=['GET', 'POST'])
 @login_required
-@roles_required('panel_admin')
 def sample_sets():
     """Sample sets page."""
     sample_sets = SampleSet.query.options(joinedload('samples')).filter_by(active=True).all()
@@ -619,7 +618,6 @@ def sample_sets():
 
 @app.route('/sample_set/<int:id>', methods=['GET', 'POST'])
 @login_required
-@roles_required('panel_admin')
 def sample_set(id):
     """Sample set page."""
     sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(id)
@@ -662,7 +660,6 @@ def sample_set(id):
 
 @app.route('/sample_set/<int:sample_set_id>/panel/<int:panel_id>', methods=['GET', 'POST'])
 @login_required
-@roles_required('panel_admin')
 def sample_set_panel(sample_set_id, panel_id):
     """Sample set panel page."""
     sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(sample_set_id)
@@ -697,7 +694,6 @@ def sample_set_panel(sample_set_id, panel_id):
 
 @app.route('/sample_set/<int:sample_set_id>/transcript/<string:transcript_name>', methods=['GET', 'POST'])
 @login_required
-@roles_required('panel_admin')
 def sample_set_transcript(sample_set_id, transcript_name):
     """Sample set transcript page."""
     sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(sample_set_id)
@@ -739,7 +735,6 @@ def sample_set_transcript(sample_set_id, transcript_name):
 
 @app.route('/sample_set/<int:sample_set_id>/gene/<string:gene_id>', methods=['GET', 'POST'])
 @login_required
-@roles_required('panel_admin')
 def sample_set_gene(sample_set_id, gene_id):
     """Sample set gene page."""
     sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(sample_set_id)
