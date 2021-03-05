@@ -10,8 +10,8 @@
     <dl class="dl-horizontal">
         <dt>ID</dt><dd>{{ custom_panel.id }}</dd>
         <dt>Date</dt><dd>{{ custom_panel.date }}</dd>
-        <dt>Test reference number</dt><dd>{{ custom_panel.research_number }}</dd>
-        <dt>Comments</dt><dd>{{ custom_panel.comments }}</dd>
+        <dt>Test reference number</dt><dd>{{ custom_panel.research_number|supress_none }}</dd>
+        <dt>Comments</dt><dd>{{ custom_panel.comments|supress_none }}</dd>
         <dt>Created by</dt><dd>{{ custom_panel.created_by }}</dd>
         <dt>Validated</dt><dd>{{ render_bool_glyph(custom_panel.validated) }} </dd>
         {% if custom_panel.validated %}

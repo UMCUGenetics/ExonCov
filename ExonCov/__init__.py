@@ -39,7 +39,7 @@ def security_context_processor():
         get_url=url_for
     )
 
-
+# DB event listeners
 @db.event.listens_for(models.Panel, "after_insert")
 @db.event.listens_for(models.PanelVersion, "after_insert")
 def after_update(mapper, connection, target):
@@ -52,3 +52,13 @@ def after_update(mapper, connection, target):
 def after_insert(mapper, connection, target):
     event_data = dict(target.__dict__)
     event_logger(connection, models.EventLog, target.__class__.__name__, 'update', event_data)
+
+
+# Custom filters
+@app.template_filter('supress_none')
+def supress_none_filter(value):
+    """Jinja2 filter to supress none/empty values."""
+    if not value:
+        return '-'
+    else:
+        return value

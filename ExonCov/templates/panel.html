@@ -12,12 +12,12 @@ Gene panel - {{ panel.name }}
 
 {% block body %}
 <dl class="dl-horizontal">
-    <dt>Disease description</dt><dd>{{ panel.disease_description_eng }}</dd>
-    <dt>Ziekteomschrijving</dt><dd>{{ panel.disease_description_nl }}</dd>
-    <dt>Alissa</dt><dd>{{ panel.patientfolder_alissa }}</dd>
-    <dt>Clinic contact(s)</dt><dd>{{ panel.clinic_contact }}</dd>
-    <dt>Staff member</dt><dd>{{ panel.staff_member }}</dd>
-    <dt>Comments</dt><dd>{{ panel.comments }}</dd>
+    <dt>Disease description</dt><dd>{{ panel.disease_description_eng|supress_none }}</dd>
+    <dt>Ziekteomschrijving</dt><dd>{{ panel.disease_description_nl|supress_none }}</dd>
+    <dt>Alissa</dt><dd>{{ panel.patientfolder_alissa|supress_none }}</dd>
+    <dt>Clinic contact(s)</dt><dd>{{ panel.clinic_contact|supress_none }}</dd>
+    <dt>Staff member</dt><dd>{{ panel.staff_member|supress_none }}</dd>
+    <dt>Comments</dt><dd>{{ panel.comments|supress_none }}</dd>
 </dl>
 
 {{ render_sample_datatable_form(filter=false) }}
