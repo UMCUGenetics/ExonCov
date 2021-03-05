@@ -373,7 +373,8 @@ def panel_version_edit(id):
 
     if form.validate_on_submit():
         panel.active = form.active.data
-        panel.validated = form.validated.data
+        if not panel.validated:  # only update if panel not yet validated.
+            panel.validated = form.validated.data
         panel.comments = form.comments.data
         panel.coverage_requirement_15 = form.coverage_requirement_15.data
         panel.core_genes = form.core_genes
