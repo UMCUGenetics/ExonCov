@@ -10,7 +10,11 @@ Gene panel - {{ panel.name_version }}
     <form method="POST" action="{{ url_for('panel_version_edit', id=panel.id) }}" class="form-horizontal">
         {{ form.csrf_token }}
         {{ render_checkbox(form.active) }}
+        {% if panel.validated %}
+        {{ render_checkbox(form.validated, disabled=True) }}
+        {% else %}
         {{ render_checkbox(form.validated) }}
+        {% endif %}
         {{ render_field(form.coverage_requirement_15) }}
         {{ render_field(form.core_gene_list, rows="12") }}
         {{ render_field(form.comments, rows="2") }}
