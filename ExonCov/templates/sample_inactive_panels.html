@@ -1,4 +1,4 @@
-{% from "macros/tables.html" import render_panel_measurment_td %}
+{% from "macros/tables.html" import render_panel_measurement_td %}
 {% from "macros/forms.html" import render_sample_datatable_form %}
 {% extends 'base.html' %}
 
@@ -36,7 +36,7 @@
             <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_id=panel) }}">{{ panels[panel]['name_version'] }}</a></td>
             <td>{{ panels[panel]['len'] }}</td>
             {% for type in measurement_types %}
-                {{ render_panel_measurment_td(panels[panel][type], type, panels[panel]) }}
+                {{ render_panel_measurement_td(panels[panel][type], type, panels[panel]) }}
             {% endfor %}
         </tr>
         {% endfor %}

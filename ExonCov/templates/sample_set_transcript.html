@@ -1,5 +1,5 @@
 {% from "macros/forms.html" import measurement_type_form, render_sample_datatable_form %}
-{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/tables.html" import render_measurement_td %}
 {% extends 'base.html' %}
 
 {% block header %}Sample set - {{ sample_set.name }}{% endblock %}
@@ -37,11 +37,11 @@
             <td>{{ exon.chr }}</td>
             <td>{{ exon.start }}</td>
             <td>{{ exon.end }}</td>
-            {{ render_measurment_td(exon_measurements[exon]['mean']) }}
-            {{ render_measurment_td(exon_measurements[exon]['min']) }}
-            {{ render_measurment_td(exon_measurements[exon]['max']) }}
+            {{ render_measurement_td(exon_measurements[exon]['mean']) }}
+            {{ render_measurement_td(exon_measurements[exon]['min']) }}
+            {{ render_measurement_td(exon_measurements[exon]['max']) }}
             {% for sample in sample_set.samples %}
-            {{ render_measurment_td(exon_measurements[exon][sample]) }}
+            {{ render_measurement_td(exon_measurements[exon][sample]) }}
             {% endfor %}
         </tr>
         {% endfor %}

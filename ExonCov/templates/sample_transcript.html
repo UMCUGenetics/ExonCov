@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/tables.html" import render_measurement_td %}
 {% from "macros/forms.html" import render_sample_datatable_form %}
 
 {% block header %}{{ transcript.name }} - {{ sample.name }}{% endblock %}
@@ -38,7 +38,7 @@
             <td>{{ exon_measurement.end }}</td>
             <td>{{ exon_measurement.len }}</td>
             {% for type in measurement_types %}
-                {{ render_measurment_td(exon_measurement[type]) }}
+                {{ render_measurement_td(exon_measurement[type]) }}
             {% endfor %}
         </tr>
         {% endfor %}

@@ -1,9 +1,9 @@
-{% macro render_measurment_td(measurement) %}
+{% macro render_measurement_td(measurement) %}
     <td class="">{{measurement|float|round(2)}}</td>
 {% endmacro %}
 
 
-{% macro render_panel_measurment_td(measurement, type, panel=None) %}
+{% macro render_panel_measurement_td(measurement, type, panel=None) %}
 {% if panel and type == 'measurement_percentage15' and measurement|float < panel.coverage_requirement_15 %}
     <td class="danger">{{measurement|float|round(2)}}</td>
 {% else %}
@@ -11,7 +11,7 @@
 {% endif %}
 {% endmacro %}
 
-{% macro render_gene_measurment_td(measurement, type, core_gene=False) %}
+{% macro render_gene_measurement_td(measurement, type, core_gene=False) %}
 {% if type == 'measurement_percentage15' and core_gene and measurement|float < 100 %}
     <td class="danger">{{measurement|float|round(2)}}</td>
 {% elif type == 'measurement_percentage15' and not core_gene and measurement|float < 95 %}
