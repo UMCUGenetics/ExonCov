@@ -93,7 +93,7 @@ class CustomPanelForm(FlaskForm):
 class CustomPanelNewForm(FlaskForm):
     """Custom Panel New form."""
 
-    sample_set = QuerySelectField('Sample sets', query_factory=active_sample_sets, allow_blank=True, blank_text='None')
+    sample_set = QuerySelectField('Sample set', query_factory=active_sample_sets, allow_blank=True, blank_text='None')
     samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
     panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, tab, ',' or ';'.", validators=[])
