@@ -231,18 +231,18 @@ def panel_new_version(name):
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
     core_genes = '\n'.join([gene.id for gene in panel_last_version.core_genes])
-    update_panel_form = PanelNewVersionForm(
+    panel_new_version_form = PanelNewVersionForm(
         gene_list=genes,
         core_gene_list=core_genes,
         coverage_requirement_15=panel_last_version.coverage_requirement_15
     )
 
-    if update_panel_form.validate_on_submit():
-        transcripts = update_panel_form.transcripts
+    if panel_new_version_form.validate_on_submit():
+        transcripts = panel_new_version_form.transcripts
 
         # Check for panel changes
         if sorted(transcripts) == sorted(panel_last_version.transcripts):
-            update_panel_form.gene_list.errors.append('No changes.')
+            panel_new_version_form.gene_list.errors.append('No changes.')
 
         else:
             # Create new panel if confirmed or show confirm page.
@@ -253,15 +253,15 @@ def panel_new_version(name):
             else:
                 revision = 1
 
-            if update_panel_form.confirm.data:
+            if panel_new_version_form.confirm.data:
                 panel_new_version = PanelVersion(
                     panel_name=panel.name,
                     version_year=year,
                     version_revision=revision,
                     transcripts=transcripts,
-                    core_genes=update_panel_form.core_genes,
-                    coverage_requirement_15=update_panel_form.coverage_requirement_15.data,
-                    comments=update_panel_form.data['comments'],
+                    core_genes=panel_new_version_form.core_genes,
+                    coverage_requirement_15=panel_new_version_form.coverage_requirement_15.data,
+                    comments=panel_new_version_form.data['comments'],
                     user=current_user
                 )
                 db.session.add(panel_new_version)
@@ -270,13 +270,13 @@ def panel_new_version(name):
             else:
                 return render_template(
                     'panel_new_version_confirm.html',
-                    form=update_panel_form,
+                    form=panel_new_version_form,
                     panel=panel_last_version,
                     year=year,
                     revision=revision
                 )
 
-    return render_template('panel_new_version.html', form=update_panel_form, panel=panel_last_version)
+    return render_template('panel_new_version.html', form=panel_new_version_form, panel=panel_last_version)
 
 
 @app.route('/panel/<string:name>/edit', methods=['GET', 'POST'])
