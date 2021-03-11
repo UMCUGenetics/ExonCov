@@ -47,7 +47,7 @@
             {{ render_gene_measurement_td(transcript_measurements[transcript]['min'], measurement_type[0], core_gene) }}
             {{ render_gene_measurement_td(transcript_measurements[transcript]['max'], measurement_type[0], core_gene) }}
             {% for sample in sample_set.samples %}
-            {{ render_gene_measurement_td(transcript_measurements[transcript][sample], measurement_type[0], core_gene) }}
+                {{ render_gene_measurement_td(transcript_measurements[transcript][sample], measurement_type[0], core_gene) }}
             {% endfor %}
         </tr>
         {% endfor %}

@@ -35,7 +35,7 @@
             {{ render_panel_measurement_td(panels_measurements[panel]['min'], measurement_type[0], panel) }}
             {{ render_panel_measurement_td(panels_measurements[panel]['max'], measurement_type[0], panel) }}
             {% for sample in sample_set.samples %}
-            {{ render_panel_measurement_td(panels_measurements[panel]['samples'][sample]['measurement'], measurement_type[0], panel) }}
+                {{ render_panel_measurement_td(panels_measurements[panel]['samples'][sample]['measurement'], measurement_type[0], panel) }}
             {% endfor %}
         </tr>
         {% endfor %}
