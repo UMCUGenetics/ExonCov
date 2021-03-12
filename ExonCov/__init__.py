@@ -39,6 +39,7 @@ def security_context_processor():
         get_url=url_for
     )
 
+
 # DB event listeners
 @db.event.listens_for(models.Panel, "after_insert")
 @db.event.listens_for(models.PanelVersion, "after_insert")
