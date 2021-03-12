@@ -160,7 +160,7 @@ class Panel(db.Model):
     disease_description_eng = db.Column(db.String(255))
     disease_description_nl = db.Column(db.String(255))
     patientfolder_alissa = db.Column(db.String(255))
-    clinic_contact  = db.Column(db.String(255))
+    clinic_contact = db.Column(db.String(255))
     staff_member = db.Column(db.String(255))
     comments = db.Column(db.Text())
 
