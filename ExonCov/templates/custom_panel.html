@@ -1,5 +1,5 @@
 {% from "macros/forms.html" import measurement_type_form %}
-{% from "macros/tables.html" import render_measurment_td %}
+{% from "macros/tables.html" import render_measurement_td, render_gene_measurement_td %}
 {% from "macros/typography.html" import render_bool_glyph %}
 {% extends 'base.html' %}
 
@@ -10,8 +10,8 @@
     <dl class="dl-horizontal">
         <dt>ID</dt><dd>{{ custom_panel.id }}</dd>
         <dt>Date</dt><dd>{{ custom_panel.date }}</dd>
-        <dt>Test reference number</dt><dd>{{ custom_panel.research_number }}</dd>
-        <dt>Comments</dt><dd>{{ custom_panel.comments }}</dd>
+        <dt>Test reference number</dt><dd>{{ custom_panel.research_number|supress_none }}</dd>
+        <dt>Comments</dt><dd>{{ custom_panel.comments|supress_none }}</dd>
         <dt>Created by</dt><dd>{{ custom_panel.created_by }}</dd>
         <dt>Validated</dt><dd>{{ render_bool_glyph(custom_panel.validated) }} </dd>
         {% if custom_panel.validated %}
@@ -47,11 +47,11 @@
         <tr>
             <td>{{ transcript_measurements|count }}</td>
             <td>{{ custom_panel.samples|count }}</td>
-            {{ render_measurment_td(panel_measurements['mean']) }}
-            {{ render_measurment_td(panel_measurements['min']) }}
-            {{ render_measurment_td(panel_measurements['max']) }}
+            {{ render_measurement_td(panel_measurements['mean']) }}
+            {{ render_measurement_td(panel_measurements['min']) }}
+            {{ render_measurement_td(panel_measurements['max']) }}
             {% for sample in custom_panel.samples %}
-            {{ render_measurment_td(panel_measurements[sample]['measurement']) }}
+            {{ render_measurement_td(panel_measurements[sample]['measurement']) }}
             {% endfor %}
         </tr>
     </tbody>
@@ -78,11 +78,11 @@
         <tr>
             <td><a href="{{ url_for('custom_panel_transcript', id=custom_panel.id, transcript_name=transcript.name) }}">{{ transcript.name }}</a></td>
             <td><a href="{{ url_for('custom_panel_gene', id=custom_panel.id, gene_id=transcript.gene_id) }}">{{ transcript.gene.id }}</td>
-            {{ render_measurment_td(transcript_measurements[transcript]['mean']) }}
-            {{ render_measurment_td(transcript_measurements[transcript]['min']) }}
-            {{ render_measurment_td(transcript_measurements[transcript]['max']) }}
+            {{ render_gene_measurement_td(transcript_measurements[transcript]['mean'], measurement_type[0]) }}
+            {{ render_gene_measurement_td(transcript_measurements[transcript]['min'], measurement_type[0]) }}
+            {{ render_gene_measurement_td(transcript_measurements[transcript]['max'], measurement_type[0]) }}
             {% for sample in custom_panel.samples %}
-            {{ render_measurment_td(transcript_measurements[transcript][sample]) }}
+            {{ render_gene_measurement_td(transcript_measurements[transcript][sample], measurement_type[0]) }}
             {% endfor %}
         </tr>
         {% endfor %}

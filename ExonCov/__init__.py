@@ -6,7 +6,8 @@ import flask_admin
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_debugtoolbar import DebugToolbarExtension
 
-from utils import url_for_other_page
+
+from utils import url_for_other_page, event_logger
 
 # Setup APP
 app = Flask(__name__)
@@ -37,3 +38,28 @@ def security_context_processor():
         h=flask_admin.helpers,
         get_url=url_for
     )
+
+
+# DB event listeners
+@db.event.listens_for(models.Panel, "after_insert")
+@db.event.listens_for(models.PanelVersion, "after_insert")
+def after_update(mapper, connection, target):
+    event_data = dict(target.__dict__)
+    event_logger(connection, models.EventLog, target.__class__.__name__, 'insert', event_data)
+
+
+@db.event.listens_for(models.Panel, "after_update")
+@db.event.listens_for(models.PanelVersion, "after_update")
+def after_insert(mapper, connection, target):
+    event_data = dict(target.__dict__)
+    event_logger(connection, models.EventLog, target.__class__.__name__, 'update', event_data)
+
+
+# Custom filters
+@app.template_filter('supress_none')
+def supress_none_filter(value):
+    """Jinja2 filter to supress none/empty values."""
+    if not value:
+        return '-'
+    else:
+        return value

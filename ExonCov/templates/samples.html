@@ -24,6 +24,7 @@
             <th>Sample</th>
             <th>Project</th>
             <th>Sequencing runs</th>
+            <th>Type</th>
             <th>Date</th>
         </tr>
     </thead>
@@ -31,8 +32,9 @@
         {% for sample in samples.items %}
         <tr>
             <td><a href="{{ url_for('sample', id=sample.id) }}">{{ sample.name }}</a></td>
-            <td>{{ sample.project.name }}</td>
+            <td>{{ sample.project }}</td>
             <td><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></td>
+            <td>{{ sample.type }}</td>
             <td>{{ sample.import_date }}</td>
         </tr>
         {% endfor %}

@@ -1,7 +1,22 @@
-{% macro render_measurment_td(measurement, type) %}
-{% if measurement|float > 98 or type == 'measurement_mean_coverage' %}
+{% macro render_measurement_td(measurement) %}
     <td class="">{{measurement|float|round(2)}}</td>
-{% else %}
+{% endmacro %}
+
+
+{% macro render_panel_measurement_td(measurement, type, panel=None) %}
+{% if panel and type == 'measurement_percentage15' and measurement|float < panel.coverage_requirement_15 %}
     <td class="danger">{{measurement|float|round(2)}}</td>
+{% else %}
+    <td class="">{{measurement|float|round(2)}}</td>
+{% endif %}
+{% endmacro %}
+
+{% macro render_gene_measurement_td(measurement, type, core_gene=False) %}
+{% if type == 'measurement_percentage15' and core_gene and measurement|float < 100 %}
+    <td class="danger">{{measurement|float|round(2)}}</td>
+{% elif type == 'measurement_percentage15' and not core_gene and measurement|float < 95 %}
+    <td class="danger">{{measurement|float|round(2)}}</td>
+{% else %}
+    <td class="">{{measurement|float|round(2)}}</td>
 {% endif %}
 {% endmacro %}

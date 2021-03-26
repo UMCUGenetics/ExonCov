@@ -31,8 +31,8 @@
         <tr>
             <td><a href="{{ url_for('custom_panel', id=panel.id) }}">{{ panel.id }}</a></td>
             <td>{{ panel.date }}</td>
-            <td>{{ panel.research_number }}</td>
-            <td>{{ panel.comments }}</td>
+            <td>{{ panel.research_number|supress_none }}</td>
+            <td>{{ panel.comments|supress_none }}</td>
             <td>{{ panel.created_by }}</td>
         </tr>
         {% endfor %}

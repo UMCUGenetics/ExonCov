@@ -54,3 +54,41 @@ python ExonCov.py import_bam <project_name> <bam_file>
 ```bash
 python ExonCov.py runserver -r -d
 ```
+
+### Export and Import existing ExonCov db
+Ignore large tables, samples should be imported using cli.
+```bash
+mysqldump --user=<user> --password --no-data --tab=<dir_name> exoncov
+
+mysqldump --user=<user> --password --no-data --tab=<dir_name> exoncov \
+--ignore-table=exoncov.custom_panels \
+--ignore-table=exoncov.custom_panels_samples \
+--ignore-table=exoncov.custom_panels_transcripts \
+--ignore-table=exoncov.sample_projects \
+--ignore-table=exoncov.sample_sets \
+--ignore-table=exoncov.sample_sets_samples \
+--ignore-table=exoncov.samples \
+--ignore-table=exoncov.samples_sequencingRun \
+--ignore-table=exoncov.sequencing_runs \
+--ignore-table=exoncov.transcript_measurements
+
+cat <dir_name>/*.sql > tables.sql
+mysql --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" --user=exoncov --password exoncov < tables.sql
+mysql --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" --user=exoncov --password exoncov
+```
+
+Execute following mysql statements to import data from txt files.
+```mysql
+LOAD DATA LOCAL INFILE 'alembic_version.txt' INTO TABLE alembic_version;
+LOAD DATA LOCAL INFILE 'exons.txt' INTO TABLE exons;
+LOAD DATA LOCAL INFILE 'exons_transcripts.txt' INTO TABLE exons_transcripts;
+LOAD DATA LOCAL INFILE 'gene_aliases.txt' INTO TABLE gene_aliases;
+LOAD DATA LOCAL INFILE 'genes.txt' INTO TABLE genes;
+LOAD DATA LOCAL INFILE 'panel_versions.txt' INTO TABLE panel_versions;
+LOAD DATA LOCAL INFILE 'panels.txt' INTO TABLE panels;
+LOAD DATA LOCAL INFILE 'panels_transcripts.txt' INTO TABLE panels_transcripts;
+LOAD DATA LOCAL INFILE 'role.txt' INTO TABLE role;
+LOAD DATA LOCAL INFILE 'roles_users.txt' INTO TABLE roles_users;
+LOAD DATA LOCAL INFILE 'transcripts.txt' INTO TABLE transcripts;
+LOAD DATA LOCAL INFILE 'user.txt' INTO TABLE user;
+```
