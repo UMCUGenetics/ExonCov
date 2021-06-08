@@ -4,7 +4,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
 
 from . import db, admin
-import models
+from ExonCov import models
 
 
 class CustomModelView(ModelView):

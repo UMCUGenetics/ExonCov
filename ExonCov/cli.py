@@ -415,20 +415,20 @@ class CreateSampleSet(Command):
                 break
 
         if len(sample_set.samples) != sample_number:
-            print 'Not enough samples found to create sample set, found {0} samples.'.format(len(sample_set.samples))
+            print("Not enough samples found to create sample set, found {0} samples.".format(len(sample_set.samples)))
         else:
-            print 'Creating new random sample set:'
-            print '\tName: {0}'.format(sample_set.name)
-            print '\tDescription: {0}'.format(sample_set.description)
-            print '\tSamples:'
+            print("Creating new random sample set:")
+            print("\tName: {0}".format(sample_set.name))
+            print("\tDescription: {0}".format(sample_set.description))
+            print("\tSamples:")
             for sample in sample_set.samples:
-                print '\t\t{0}\t{1}\t{2}\t{3}\t{4}'.format(
+                print("\t\t{0}\t{1}\t{2}\t{3}\t{4}".format(
                     sample.name,
                     sample.type,
                     sample.project,
                     sample.sequencing_runs,
                     sample.import_date
-                )
+                ))
 
             confirmation = ''
             while confirmation not in ['y', 'n']:
@@ -437,7 +437,7 @@ class CreateSampleSet(Command):
             if confirmation == 'y':
                 db.session.add(sample_set)
                 db.session.commit()
-                print 'Sample set created, make sure to activate it via the admin page.'
+                print("Sample set created, make sure to activate it via the admin page.")
 
 
 class ImportAliasTable(Command):
