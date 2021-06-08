@@ -62,6 +62,25 @@
 {% if panel.core_genes %}
     * Core gene
 {% endif %}
+
+<div class="row page-header">
+    <div class="col-md-3"><h3>Panel summary</h3></div>
+</div>
+<div class="well">
+    <p>Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}%.</p>
+    {% if panel.core_genes %}
+        {% if panel_summary['core_genes'] %}
+            <p>Core genen met 15x dekking < 100%: {{panel_summary['core_genes']}}.</p>
+        {% else %}
+            <p>Core genen met 15x dekking < 100%: geen.</p>
+        {% endif %}
+    {% endif %}
+    {% if panel_summary['genes_15'] %}
+        <p>Genen met 15x dekking < 95%: {{panel_summary['genes_15']}}.</p>
+    {% else %}
+        <p>Genen met 15x dekking < 95%: geen.</p>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block custom_javascript %}
