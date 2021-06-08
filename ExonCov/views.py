@@ -142,6 +142,7 @@ def sample_panel(sample_id, panel_id):
         .filter_by(sample_id=sample.id)
         .options(joinedload(Transcript.exons, innerjoin=True))
         .options(joinedload(Transcript.gene))
+        .order_by(TranscriptMeasurement.measurement_percentage15.asc())
         .all()
     )
 
@@ -152,10 +153,10 @@ def sample_panel(sample_id, panel_id):
             [tm[1].len for tm in transcript_measurements]
         ),
         'core_genes': ', '.join(
-            [tm[0].gene_id for tm in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100]
+            ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100]
         ),
         'genes_15': ', '.join(
-            [tm[0].gene_id for tm in transcript_measurements if tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95]
+            ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95]
         )
     }
 
