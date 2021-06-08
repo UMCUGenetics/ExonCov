@@ -43,7 +43,7 @@ def get_gene(gene_id):
             try:
                 error = 'Unknown gene: {0}.'.format(gene_id)
             except UnicodeEncodeError:
-                error = 'Unparsable gene in list, please remove pecial characters (for example alpha or beta)'
+                error = 'Unparsable gene in list, please remove special characters (e.g. alpha or beta).'
 
     return gene, error
 
