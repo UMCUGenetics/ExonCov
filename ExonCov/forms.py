@@ -40,7 +40,10 @@ def get_gene(gene_id):
                 ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
             )
         else:
-            error = 'Unknown gene: {0}.'.format(gene_id)
+            try:
+                error = 'Unknown gene: {0}.'.format(gene_id)
+            except UnicodeEncodeError:
+                error = 'Unparsable gene in list, please remove pecial characters (for example alpha or beta)'
 
     return gene, error
 
