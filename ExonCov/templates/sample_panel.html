@@ -15,7 +15,7 @@
         <dt>Minimal % 15x</dt><dd><p>{{ panel.coverage_requirement_15 }}</p></dd>
         <dt>Summary</dt><dd>
             {% if panel_summary['measurement_percentage15'] < panel.coverage_requirement_15 %}
-                <p>Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}% ; QC failed.</p>
+                <p>Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}% ; <code>QC failed</code>.</p>
             {% else %}
                 <p>Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}%.</p>
             {% endif %}
