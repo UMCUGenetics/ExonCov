@@ -178,7 +178,11 @@ class ExtendedRegisterForm(RegisterForm):
 class CreatePanelForm(FlaskForm):
     """Create Panel form."""
 
-    name = StringField('Name', validators=[validators.InputRequired()])
+    name = StringField(
+        'Name',
+        validators=[validators.InputRequired(), validators.Regexp(r'^\w*$(?<!v\d{2}\.\d)')],
+        description="Without version number."
+    )
     gene_list = TextAreaField(
         'Gene list',
         description="List of genes seperated by newline, space, tab, ',' or ';'.",
