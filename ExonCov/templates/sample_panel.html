@@ -12,7 +12,26 @@
         <dt>Type</dt><dd>{{ sample.type }}</dd>
         <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
         <dt>Panel</dt><dd>{{ panel.name_version }} </dd>
-        <dt>Minimal % 15x</dt><dd>{{ panel.coverage_requirement_15 }}</dd>
+        <dt>Minimal % 15x</dt><dd><p>{{ panel.coverage_requirement_15 }}</p></dd>
+        <dt>Summary</dt><dd>
+            {% if panel_summary['measurement_percentage15'] < panel.coverage_requirement_15 %}
+                <p>Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}% ; <code>QC failed</code>.</p>
+            {% else %}
+                <p>Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}%.</p>
+            {% endif %}
+            {% if panel.core_genes %}
+                {% if panel_summary['core_genes'] %}
+                    Core genen met 15x dekking < 100%: {{panel_summary['core_genes']}}.<br>
+                {% else %}
+                    Core genen met 15x dekking < 100%: geen.<br>
+                {% endif %}
+            {% endif %}
+            {% if panel_summary['genes_15'] %}
+                Genen met 15x dekking < 95%: {{panel_summary['genes_15']}}.<br>
+            {% else %}
+                Genen met 15x dekking < 95%: geen.<br>
+            {% endif %}
+        </dd>
     </dl>
 </div>
 

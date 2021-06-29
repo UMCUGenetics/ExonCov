@@ -50,6 +50,7 @@
     <thead>
         <tr>
             <th>Gene Panel</th>
+            <th>Summary</th>
             <th>Size (bp)</th>
             {% for type in measurement_types %}
                 <th>{{ measurement_types[type] }}</th>
@@ -60,6 +61,11 @@
         {% for panel in panels %}
         <tr>
             <td><a href="{{ url_for('sample_panel', sample_id=sample.id, panel_id=panel) }}">{{ panels[panel]['name_version'] }}</a></td>
+            {% if panels[panel]['measurement_percentage15'] < panels[panel]['coverage_requirement_15'] %}
+                <td class="danger">Dekking {{ panels[panel]['name_version'] }} >15X = {{ panels[panel]['measurement_percentage15']|float|round(2) }}% ; QC failed.</td>
+            {% else %}
+                <td>Dekking {{ panels[panel]['name_version'] }} >15X = {{ panels[panel]['measurement_percentage15']|float|round(2) }}%.</td>
+            {% endif %}
             <td>{{ panels[panel]['len'] }}</td>
             {% for type in measurement_types %}
                 {{ render_panel_measurement_td(panels[panel][type], type, panels[panel]) }}
