@@ -1,5 +1,6 @@
 """CLI functions."""
 
+from ExonCov.views import panel_version
 import sys
 import re
 import time
@@ -10,7 +11,6 @@ import urllib
 import datetime
 
 from flask_script import Command, Option
-from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.expression import func
@@ -21,7 +21,7 @@ import pysam
 from . import app, db, utils
 from .models import (
     Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel,
-    PanelVersion, CustomPanel, SampleSet
+    PanelVersion, panels_transcripts, CustomPanel, SampleSet
 )
 from .utils import weighted_average
 
@@ -331,6 +331,48 @@ class SearchSample(Command):
                 runs=sample.sequencing_runs,
                 custom_panels=sample.custom_panels,
             ))
+
+
+class SampleQC(Command):
+    """Perform sample QC for a given panel (15X)"""
+
+    option_list = (
+        Option('sample_id'),
+        Option('panel_id'),
+    )
+
+    def run(self, sample_id, panel_id):
+        sample = Sample.query.get(sample_id)  # change to name?
+        panel = PanelVersion.query.options(joinedload('core_genes')).get(panel_id)  # change to name?
+
+        print(sample, panel)
+
+        transcript_measurements = (
+            db.session.query(Transcript, TranscriptMeasurement)
+            .join(panels_transcripts)
+            .filter(panels_transcripts.columns.panel_id == panel.id)
+            .join(TranscriptMeasurement)
+            .filter_by(sample_id=sample.id)
+            .options(joinedload(Transcript.exons, innerjoin=True))
+            .options(joinedload(Transcript.gene))
+            .order_by(TranscriptMeasurement.measurement_percentage15.asc())
+            .all()
+        )
+
+        # Calculate average panel 15X coverage and compare with coverage_requirement_15
+        panel_measurement_percentage15_avg = weighted_average(
+            [tm[1].measurement_percentage15 for tm in transcript_measurements],
+            [tm[1].len for tm in transcript_measurements]
+        )
+        if panel_measurement_percentage15_avg < panel.coverage_requirement_15:
+            print(panel, panel_measurement_percentage15_avg, "Panel QC fail")
+
+        # Check gene 15X coverage
+        for transcript, transcript_measurement in transcript_measurements:
+            if transcript.gene in panel.core_genes and transcript_measurement.measurement_percentage15 != 100:
+                print(transcript.gene, transcript_measurement.measurement_percentage15, "Core gene QC fail")
+            elif transcript_measurement.measurement_percentage15 < 95:
+                print(transcript.gene, transcript_measurement.measurement_percentage15, "Gene QC fail")
 
 
 class RemoveSample(Command):
