@@ -1,6 +1,4 @@
 """CLI functions."""
-
-from ExonCov.views import panel_version
 import sys
 import re
 import time
@@ -337,42 +335,57 @@ class SampleQC(Command):
     """Perform sample QC for a given panel (15X)"""
 
     option_list = (
-        Option('sample_id'),
-        Option('panel_id'),
+        Option('-s', '--samples', nargs='+'),
+        Option('-p', '--panels', nargs='+'),
     )
 
-    def run(self, sample_id, panel_id):
-        sample = Sample.query.get(sample_id)  # change to name?
-        panel = PanelVersion.query.options(joinedload('core_genes')).get(panel_id)  # change to name?
+    def run(self, samples, panels):
 
-        print(sample, panel)
+        if len(samples) != len(panels):
+            sys.exit('Number of samples and number of panels must be exactly the same.')
 
-        transcript_measurements = (
-            db.session.query(Transcript, TranscriptMeasurement)
-            .join(panels_transcripts)
-            .filter(panels_transcripts.columns.panel_id == panel.id)
-            .join(TranscriptMeasurement)
-            .filter_by(sample_id=sample.id)
-            .options(joinedload(Transcript.exons, innerjoin=True))
-            .options(joinedload(Transcript.gene))
-            .order_by(TranscriptMeasurement.measurement_percentage15.asc())
-            .all()
-        )
+        # Header
+        print("Sample\tPanel\tPanel min. 15x\tPanel 15x\tPanel QC passed\tCore Gene QC passed")
 
-        # Calculate average panel 15X coverage and compare with coverage_requirement_15
-        panel_measurement_percentage15_avg = weighted_average(
-            [tm[1].measurement_percentage15 for tm in transcript_measurements],
-            [tm[1].len for tm in transcript_measurements]
-        )
-        if panel_measurement_percentage15_avg < panel.coverage_requirement_15:
-            print(panel, panel_measurement_percentage15_avg, "Panel QC fail")
+        for index, sample_id in enumerate(samples):
+            # Query database
+            sample = Sample.query.get(sample_id)  # change to name?
+            panel = PanelVersion.query.filter_by(panel_name=panels[index]).filter_by(active=True).filter_by(validated=True).order_by(PanelVersion.id.desc()).first()
+            transcript_measurements = (
+                db.session.query(Transcript, TranscriptMeasurement)
+                .join(panels_transcripts)
+                .filter(panels_transcripts.columns.panel_id == panel.id)
+                .join(TranscriptMeasurement)
+                .filter_by(sample_id=sample.id)
+                .options(joinedload(Transcript.exons, innerjoin=True))
+                .options(joinedload(Transcript.gene))
+                .order_by(TranscriptMeasurement.measurement_percentage15.asc())
+                .all()
+            )
 
-        # Check gene 15X coverage
-        for transcript, transcript_measurement in transcript_measurements:
-            if transcript.gene in panel.core_genes and transcript_measurement.measurement_percentage15 != 100:
-                print(transcript.gene, transcript_measurement.measurement_percentage15, "Core gene QC fail")
-            elif transcript_measurement.measurement_percentage15 < 95:
-                print(transcript.gene, transcript_measurement.measurement_percentage15, "Gene QC fail")
+            # Calculate average panel 15X coverage and compare with coverage_requirement_15
+            panel_qc = True
+            panel_measurement_percentage15_avg = weighted_average(
+                [tm[1].measurement_percentage15 for tm in transcript_measurements],
+                [tm[1].len for tm in transcript_measurements]
+            )
+            if panel_measurement_percentage15_avg < panel.coverage_requirement_15:
+                panel_qc = False
+
+            # Check gene 15X coverage for core genes
+            core_gene_qc = True
+            for transcript, transcript_measurement in transcript_measurements:
+                if transcript.gene in panel.core_genes and transcript_measurement.measurement_percentage15 != 100:
+                    core_gene_qc = False
+
+            print("{sample}\t{panel}\t{panel_min_15x}\t{panel_15x}\t{panel_qc}\t{core_gene_qc}".format(
+                sample=sample.name,
+                panel=panel,
+                panel_min_15x=panel.coverage_requirement_15,
+                panel_15x=panel_measurement_percentage15_avg,
+                panel_qc=panel_qc,
+                core_gene_qc=core_gene_qc
+            ))
 
 
 class RemoveSample(Command):
