@@ -97,11 +97,12 @@ class ImportBam(Command):
         Option('-b', '--exon_bed', dest='exon_bed_file', default=app.config['EXON_BED_FILE']),
         Option('-t', '--threads', dest='threads', default=1),
         Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
-        Option('-o', '--print_output', dest='print_output', default=False, action='store_true'),
+        Option('--print_output', dest='print_output', default=False, action='store_true'),
+        Option('--print_sample_id', dest='print_sample_id', default=False, action='store_true'),
         Option('--temp', dest='temp_path', default=None),
     )
 
-    def run(self, project_name, sample_type, bam, exon_bed_file, threads, overwrite, print_output, temp_path):
+    def run(self, project_name, sample_type, bam, exon_bed_file, threads, overwrite, print_output, print_sample_id, temp_path):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -308,6 +309,10 @@ class ImportBam(Command):
         # Remove temp_dir
         if not temp_path:
             shutil.rmtree(temp_dir)
+
+        # Return sample id
+        if print_sample_id:
+            print(sample.id)
 
 
 class SearchSample(Command):
