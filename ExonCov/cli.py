@@ -354,7 +354,7 @@ class SampleQC(Command):
 
         for index, sample_id in enumerate(samples):
             # Query database
-            sample = Sample.query.get(sample_id)  # change to name?
+            sample = Sample.query.get(sample_id)
             panel = PanelVersion.query.filter_by(panel_name=panels[index]).filter_by(active=True).filter_by(validated=True).order_by(PanelVersion.id.desc()).first()
             transcript_measurements = (
                 db.session.query(Transcript, TranscriptMeasurement)
@@ -369,13 +369,13 @@ class SampleQC(Command):
             )
 
             # Calculate average panel 15X coverage and compare with coverage_requirement_15
-            panel_qc = True
+            panel_qc = False
             panel_measurement_percentage15_avg = weighted_average(
                 [tm[1].measurement_percentage15 for tm in transcript_measurements],
                 [tm[1].len for tm in transcript_measurements]
             )
-            if panel_measurement_percentage15_avg < panel.coverage_requirement_15:
-                panel_qc = False
+            if panel_measurement_percentage15_avg >= panel.coverage_requirement_15:
+                panel_qc = True
 
             # Check gene 15X coverage for core genes
             core_gene_qc = True
@@ -383,7 +383,7 @@ class SampleQC(Command):
                 if transcript.gene in panel.core_genes and transcript_measurement.measurement_percentage15 != 100:
                     core_gene_qc = False
 
-            print("{sample}\t{panel}\t{panel_min_15x}\t{panel_15x:.2f}\t{panel_qc}\t{core_gene_qc}".format(
+            print("{sample}\t{panel}\t{panel_min_15x:.2f}\t{panel_15x:.2f}\t{panel_qc}\t{core_gene_qc}".format(
                 sample=sample.name,
                 panel=panel,
                 panel_min_15x=panel.coverage_requirement_15,
