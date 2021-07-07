@@ -345,7 +345,7 @@ class SampleQC(Command):
     )
 
     def run(self, samples, panels):
-
+        # Check equal number of samples and panels
         if len(samples) != len(panels):
             sys.exit('Number of samples and number of panels must be exactly the same.')
 
@@ -383,7 +383,7 @@ class SampleQC(Command):
                 if transcript.gene in panel.core_genes and transcript_measurement.measurement_percentage15 != 100:
                     core_gene_qc = False
 
-            print("{sample}\t{panel}\t{panel_min_15x}\t{panel_15x}\t{panel_qc}\t{core_gene_qc}".format(
+            print("{sample}\t{panel}\t{panel_min_15x}\t{panel_15x:.2f}\t{panel_qc}\t{core_gene_qc}".format(
                 sample=sample.name,
                 panel=panel,
                 panel_min_15x=panel.coverage_requirement_15,
