@@ -1,5 +1,4 @@
 """CLI functions."""
-
 import sys
 import re
 import time
@@ -10,7 +9,6 @@ import urllib
 import datetime
 
 from flask_script import Command, Option
-from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.expression import func
@@ -21,7 +19,7 @@ import pysam
 from . import app, db, utils
 from .models import (
     Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel,
-    PanelVersion, CustomPanel, SampleSet
+    PanelVersion, panels_transcripts, CustomPanel, SampleSet
 )
 from .utils import weighted_average
 
@@ -99,11 +97,12 @@ class ImportBam(Command):
         Option('-b', '--exon_bed', dest='exon_bed_file', default=app.config['EXON_BED_FILE']),
         Option('-t', '--threads', dest='threads', default=1),
         Option('-f', '--overwrite', dest='overwrite', default=False, action='store_true'),
-        Option('-o', '--print_output', dest='print_output', default=False, action='store_true'),
+        Option('--print_output', dest='print_output', default=False, action='store_true'),
+        Option('--print_sample_id', dest='print_sample_id', default=False, action='store_true'),
         Option('--temp', dest='temp_path', default=None),
     )
 
-    def run(self, project_name, sample_type, bam, exon_bed_file, threads, overwrite, print_output, temp_path):
+    def run(self, project_name, sample_type, bam, exon_bed_file, threads, overwrite, print_output, print_sample_id, temp_path):
         try:
             bam_file = pysam.AlignmentFile(bam, "rb")
         except IOError as e:
@@ -311,6 +310,10 @@ class ImportBam(Command):
         if not temp_path:
             shutil.rmtree(temp_dir)
 
+        # Return sample id
+        if print_sample_id:
+            print(sample.id)
+
 
 class SearchSample(Command):
     """Search sample in database."""
@@ -330,6 +333,63 @@ class SearchSample(Command):
                 project=sample.project,
                 runs=sample.sequencing_runs,
                 custom_panels=sample.custom_panels,
+            ))
+
+
+class SampleQC(Command):
+    """Perform sample QC for a given panel (15X)"""
+
+    option_list = (
+        Option('-s', '--samples', nargs='+'),
+        Option('-p', '--panels', nargs='+'),
+    )
+
+    def run(self, samples, panels):
+        # Check equal number of samples and panels
+        if len(samples) != len(panels):
+            sys.exit('Number of samples and number of panels must be exactly the same.')
+
+        # Header
+        print("Sample\tPanel\tPanel min. 15x\tPanel 15x\tPanel QC passed\tCore Gene QC passed")
+
+        for index, sample_id in enumerate(samples):
+            # Query database
+            sample = Sample.query.get(sample_id)
+            panel = PanelVersion.query.filter_by(panel_name=panels[index]).filter_by(active=True).filter_by(validated=True).order_by(PanelVersion.id.desc()).first()
+            transcript_measurements = (
+                db.session.query(Transcript, TranscriptMeasurement)
+                .join(panels_transcripts)
+                .filter(panels_transcripts.columns.panel_id == panel.id)
+                .join(TranscriptMeasurement)
+                .filter_by(sample_id=sample.id)
+                .options(joinedload(Transcript.exons, innerjoin=True))
+                .options(joinedload(Transcript.gene))
+                .order_by(TranscriptMeasurement.measurement_percentage15.asc())
+                .all()
+            )
+
+            # Calculate average panel 15X coverage and compare with coverage_requirement_15
+            panel_qc = False
+            panel_measurement_percentage15_avg = weighted_average(
+                [tm[1].measurement_percentage15 for tm in transcript_measurements],
+                [tm[1].len for tm in transcript_measurements]
+            )
+            if panel_measurement_percentage15_avg >= panel.coverage_requirement_15:
+                panel_qc = True
+
+            # Check gene 15X coverage for core genes
+            core_gene_qc = True
+            for transcript, transcript_measurement in transcript_measurements:
+                if transcript.gene in panel.core_genes and transcript_measurement.measurement_percentage15 != 100:
+                    core_gene_qc = False
+
+            print("{sample}\t{panel}\t{panel_min_15x:.2f}\t{panel_15x:.2f}\t{panel_qc}\t{core_gene_qc}".format(
+                sample=sample.name,
+                panel=panel,
+                panel_min_15x=panel.coverage_requirement_15,
+                panel_15x=panel_measurement_percentage15_avg,
+                panel_qc=panel_qc,
+                core_gene_qc=core_gene_qc
             ))
 
 
