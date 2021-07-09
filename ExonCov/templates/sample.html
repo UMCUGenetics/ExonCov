@@ -1,5 +1,5 @@
 {% from "macros/tables.html" import render_panel_measurement_td %}
-{% from "macros/forms.html" import render_sample_datatable_form %}
+{% from "macros/forms.html" import render_sample_datatable_form, render_inline_field %}
 {% extends 'base.html' %}
 
 {% block header %}{{ sample.name }}{% endblock %}
@@ -12,6 +12,19 @@
         <dt>Type</dt><dd>{{ sample.type }}</dd>
         <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
     </dl>
+</div>
+
+<div class="page-header"><h1>Search gene</h1></div>
+<div class="well">
+    <form method="POST" action="{{ url_for('sample', id=sample.id) }}" class="form-inline">
+        {{ form.csrf_token }}
+        {{ render_inline_field(form.gene) }}
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-10">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
 </div>
 
 {% if sample.custom_panels %}

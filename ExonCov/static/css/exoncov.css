@@ -11,3 +11,7 @@ body {
     float: left;
     text-align: left;
 }
+
+.help-block-inline {
+    display: inline;
+}
