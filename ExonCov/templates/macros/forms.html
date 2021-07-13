@@ -61,7 +61,7 @@
     {{ field.label(class_='control-label') }}
     {{ field(class_='form-control', size=40, **kwargs) }}
     {% for error in field.errors %}
-    <span class="help-block">{{error}}</span>
+    <span class="help-block help-block-inline">{{error}}</span>
     {% endfor %}
 </div>
 {% else %}

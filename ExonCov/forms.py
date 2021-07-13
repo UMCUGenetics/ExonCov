@@ -368,3 +368,26 @@ class SampleSetPanelGeneForm(FlaskForm):
                 self.gene_id = gene.id
 
         return valid_form
+
+
+class SampleGeneForm(FlaskForm):
+    """Sample Form to query a specific gene."""
+    gene = StringField('Gene', validators=[validators.InputRequired()])
+    gene_id = ''
+
+    def validate(self):
+        """Extra validation to parse panel / gene selection"""
+        self.gene_id = ''
+        valid_form = True
+
+        if not FlaskForm.validate(self):
+            valid_form = False
+
+        if self.gene.data:
+            gene, error = get_gene(self.gene.data)
+            if error:
+                self.gene.errors.append(error)
+            else:
+                self.gene_id = gene.id
+
+        return valid_form

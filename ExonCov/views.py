@@ -17,7 +17,7 @@ from .models import (
 )
 from .forms import (
     MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm,
-    CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm, SampleSetPanelGeneForm
+    CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm, SampleSetPanelGeneForm, SampleGeneForm
 )
 from .utils import weighted_average
 
@@ -54,18 +54,42 @@ def samples():
     return render_template('samples.html', form=sample_form, samples=samples)
 
 
-@app.route('/sample/<int:id>')
+@app.route('/sample/<int:id>', methods=['GET', 'POST'])
 @login_required
 def sample(id):
     """Sample page."""
-    sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).options(joinedload('custom_panels')).get_or_404(id)
+
+    # Setup gene form and validate
+    gene_form = SampleGeneForm()
+
+    if gene_form.validate_on_submit():
+        if gene_form.gene_id:
+            return redirect(url_for('sample_gene', sample_id=id, gene_id=gene_form.gene_id))
+
+    # Query Sample and panels
+    sample = (
+        Sample.query
+        .options(joinedload('sequencing_runs'))
+        .options(joinedload('project'))
+        .options(joinedload('custom_panels'))
+        .get_or_404(id)
+    )
+    query = (
+        db.session.query(PanelVersion, TranscriptMeasurement)
+        .filter_by(active=True)
+        .filter_by(validated=True)
+        .join(Transcript, PanelVersion.transcripts)
+        .join(TranscriptMeasurement)
+        .filter_by(sample_id=sample.id)
+        .order_by(PanelVersion.panel_name)
+        .all()
+    )
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
         'measurement_percentage15': '>15',
         'measurement_percentage30': '>30'
     }
-    query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
     panels = {}
 
     for panel, transcript_measurement in query:
@@ -84,7 +108,7 @@ def sample(id):
                     [panels[panel.id]['len'], transcript_measurement.len]
                 )
             panels[panel.id]['len'] += transcript_measurement.len
-    return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types)
+    return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types, form=gene_form)
 
 
 @app.route('/sample/<int:id>/inactive_panels')
