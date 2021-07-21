@@ -7,7 +7,7 @@
 <div class="well">
     <form method="POST" action="{{ url_for('panel_new') }}" class="form-horizontal">
         {{ form.csrf_token }}
-        {{ render_select2_field(form.name) }}
+        {{ render_field(form.name) }}
         {{ render_field(form.disease_description_eng) }}
         {{ render_field(form.disease_description_nl) }}
         {{ render_field(form.patientfolder_alissa) }}
