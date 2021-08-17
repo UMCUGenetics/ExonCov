@@ -40,7 +40,10 @@ def get_gene(gene_id):
                 ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
             )
         else:
-            error = 'Unknown gene: {0}.'.format(gene_id)
+            try:
+                error = 'Unknown gene: {0}.'.format(gene_id)
+            except UnicodeEncodeError:
+                error = 'Unparsable gene in list, please remove special characters (e.g. alpha or beta).'
 
     return gene, error
 
@@ -175,7 +178,11 @@ class ExtendedRegisterForm(RegisterForm):
 class CreatePanelForm(FlaskForm):
     """Create Panel form."""
 
-    name = StringField('Name', validators=[validators.InputRequired()])
+    name = StringField(
+        'Name',
+        validators=[validators.InputRequired(), validators.Regexp(r'^\w*$(?<!v\d{2}\.\d)')],
+        description="Without version number."
+    )
     gene_list = TextAreaField(
         'Gene list',
         description="List of genes seperated by newline, space, tab, ',' or ';'.",
@@ -354,6 +361,29 @@ class SampleSetPanelGeneForm(FlaskForm):
             self.gene.errors.append(message)
             valid_form = False
         elif self.gene.data:
+            gene, error = get_gene(self.gene.data)
+            if error:
+                self.gene.errors.append(error)
+            else:
+                self.gene_id = gene.id
+
+        return valid_form
+
+
+class SampleGeneForm(FlaskForm):
+    """Sample Form to query a specific gene."""
+    gene = StringField('Gene', validators=[validators.InputRequired()])
+    gene_id = ''
+
+    def validate(self):
+        """Extra validation to parse panel / gene selection"""
+        self.gene_id = ''
+        valid_form = True
+
+        if not FlaskForm.validate(self):
+            valid_form = False
+
+        if self.gene.data:
             gene, error = get_gene(self.gene.data)
             if error:
                 self.gene.errors.append(error)

@@ -1,4 +1,4 @@
-{% from "macros/forms.html" import render_field, render_select2_field %}
+{% from "macros/forms.html" import render_field %}
 {% extends 'base.html' %}
 
 {% block header %}Create new panel{% endblock %}
@@ -7,7 +7,7 @@
 <div class="well">
     <form method="POST" action="{{ url_for('panel_new') }}" class="form-horizontal">
         {{ form.csrf_token }}
-        {{ render_select2_field(form.name) }}
+        {{ render_field(form.name) }}
         {{ render_field(form.disease_description_eng) }}
         {{ render_field(form.disease_description_nl) }}
         {{ render_field(form.patientfolder_alissa) }}
