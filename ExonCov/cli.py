@@ -442,17 +442,19 @@ class CreateSampleSet(Command):
 
     option_list = (
         Option('name'),
+        Option('--min_days', dest='min_days', type=int, default=0),
         Option('-d', '--max_days', dest='max_days', type=int, default=180),
         Option('-s', '--sample_filter', dest='sample_filter', default=''),
         Option('-t', '--sample_type', dest='sample_type', default='WES'),
         Option('-n', '--sample_number', dest='sample_number', type=int, default=100),
     )
 
-    def run(self, name, max_days, sample_filter, sample_type, sample_number):
-        description = '{0} random {1} samples. Maximum age: {2} days. Sample name filter: {3}'.format(
+    def run(self, name, min_days, max_days, sample_filter, sample_type, sample_number):
+        description = '{0} random {1} samples. Minimum age: {2} days. Maximum age: {3} days. Sample name filter: {4}'.format(
             sample_number, sample_type, max_days, sample_filter
         )
-        filter_date = datetime.date.today() - datetime.timedelta(days=max_days)
+        min_date = datetime.date.today() - datetime.timedelta(days=min_days)
+        max_date = datetime.date.today() - datetime.timedelta(days=max_days)
 
         samples = (
             Sample.query
@@ -470,7 +472,8 @@ class CreateSampleSet(Command):
         for sample in samples:
             # Filter sampels: import date, 'special' project type (validation etc), Merge samples,
             if (
-                sample.import_date > filter_date
+                sample.import_date > max_date and 
+                sample.import_date <= min_date
                 and not sample.project.type
                 and len(sample.sequencing_runs) == 1
                 and sample.sequencing_runs[0].platform_unit in sample.project.name
