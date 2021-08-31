@@ -21,7 +21,7 @@ from .models import (
     Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel,
     PanelVersion, panels_transcripts, CustomPanel, SampleSet
 )
-from .utils import weighted_average
+from .utils import retrieve_coverage, weighted_average
 
 
 class PrintStats(Command):
@@ -746,3 +746,18 @@ class LoadDesign(Command):
                         print("WARNING: Unkown gene: {0}".format(gene))
                 db.session.add(panel_version)
             db.session.commit()
+
+class PrintCovStatsSampleSetPanel(Command):
+    """Print tab delimited panel / genes table."""
+
+    def run(self):
+        sample_set, measurement_type_form, measurement_type, panels_measurements = retrieve_coverage(sample_set_id=id)
+        for panel in panels_measurements:
+            print("{panel}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                panel=panel, 
+                measurement_type=measurement_type,
+                mean=panels_measurements[panel]['mean'],
+                min=panels_measurements[panel]['min'],
+                max=panels_measurements[panel]['max'])
+            )
+
