@@ -558,6 +558,16 @@ class ImportAliasTable(Command):
                                 print("ERROR: Can not import alias: {0} for gene: {1}".format(hgnc_gene_id, db_gene_id))
 
 
+class PrintAliasTable(Command):
+    """Print tab delimited HGNC alias / gene ID table"""
+
+    def run(self):
+        print('hgnc_gene_id_alias\tgene_id')
+        gene_aliases = GeneAlias.query.order_by(GeneAlias.id).all()
+        for gene in gene_aliases:
+            print('{alias}\t{gene}'.format(alias=gene.id, gene=gene.gene_id))
+
+
 class PrintPanelBed(Command):
     """Print bed file containing regions in active and validated panels. FULL_autosomal and FULL_TARGET are filtered from the list."""
 

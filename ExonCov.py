@@ -23,6 +23,7 @@ db_manager.add_command('panel_genes', cli.PrintPanelGenesTable())
 db_manager.add_command('sampleset_panel_cov', cli.PrintCovStatsSampleSetPanel())
 db_manager.add_command('gene_transcripts', cli.PrintTranscripts())
 db_manager.add_command('import_alias_table', cli.ImportAliasTable())
+db_manager.add_command('export_alias_table', cli.PrintAliasTable())
 db_manager.add_command('export_panel_bed', cli.PrintPanelBed())
 # db_manager.add_command('load_design', cli.LoadDesign())  # Disabled, can be used to setup a new database from scratch
 
