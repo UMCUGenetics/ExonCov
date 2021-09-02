@@ -850,7 +850,7 @@ class PrintCovStatsSampleSet(Command):
         # per panel, transcript and sample, ordered by panel - transcript - sample.
         for panel, transcript_measurement in query:
             str_panel = str(panel)
-            sample = str(transcript_measurement.sample)
+            sample = transcript_measurement.sample
 
             if str_panel not in panels_measurements.keys():
                 if len(panels_measurements.keys()) >= 1:
