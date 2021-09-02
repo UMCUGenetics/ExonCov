@@ -791,7 +791,7 @@ class PrintCovStatsSampleSet(Command):
         
         # retrieve ordered panels, transcripts measurements
         query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(
-            TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id).all()
+            TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name, PanelVersion.id, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id).all()
 
         if data_type == "panel":
             self.retrieve_and_print_panel_measurements(
