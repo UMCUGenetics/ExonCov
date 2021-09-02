@@ -604,8 +604,8 @@ def custom_panel_gene(id, gene_id):
                 transcript_measurements[transcript] = {}
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-            transcript_measurements = retrieve_coverage(
-                measurements=transcript_measurements)
+        transcript_measurements = retrieve_coverage(
+            measurements=transcript_measurements)
 
     return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
 
