@@ -765,7 +765,7 @@ class PrintCovStatsSampleSet(Command):
 
     option_list = (
         Option('-s', '--sample_set_name', required=True, dest="sample_set_name"),
-        Option('-d', 'data_type', choices=["panel", "transcript"], required=True, dest="data_type"),
+        Option('-d', '--data_type', choices=["panel", "transcript"], required=True, dest="data_type"),
         Option(
             '-m', '--measurement_type', 
             choices=[
