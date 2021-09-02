@@ -764,8 +764,8 @@ class PrintCovStatsSampleSet(Command):
     """Print tab delimited coverage statistics of panel or transcript as table."""
 
     option_list = (
-        Option('sample_set_name'),
-        Option('cov_scope', choices=["panel", "transcript"]),
+        Option('-s', '--sample_set_name', required=True, dest="sample_set_name"),
+        Option('-d', 'data_type', choices=["panel", "transcript"], required=True, dest="data_type"),
         Option(
             '-m', '--measurement_type', 
             choices=[
@@ -783,7 +783,7 @@ class PrintCovStatsSampleSet(Command):
     )
 
 
-    def run(self, sample_set_name, cov_scope, measurement_type):
+    def run(self, sample_set_name, data_type, measurement_type):
         # retrieve samples from sampleset
         sample_set = SampleSet.query.options(joinedload(
             'samples')).filter_by(name=sample_set_name).first()
@@ -793,10 +793,10 @@ class PrintCovStatsSampleSet(Command):
         query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(
             TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id).all()
 
-        if cov_scope == "panel":
+        if data_type == "panel":
             self.retrieve_and_print_panel_measurements(
                 sampleset_samples=sample_set.samples, query=query, measurement_type=measurement_type),
-        elif cov_scope == "transcript":
+        elif data_type == "transcript":
             self.retrieve_and_print_transcript_measurements(
                 query=query, measurement_type=measurement_type)
 
