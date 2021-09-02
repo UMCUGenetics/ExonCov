@@ -835,7 +835,7 @@ class PrintCovStatsSampleSet(Command):
                 if str_panel not in panels_measurements.keys():
                     panels_measurements = OrderedDict()
                     panels_measurements[str_panel] = OrderedDict()
-                    panels_measurements[str_panel]['transcripts'] = {}
+                    panels_measurements[str_panel]['transcripts'] = OrderedDict()
                 if transcript not in panels_measurements[str_panel]['transcripts'].keys():
                     panels_measurements[str_panel]['transcripts'][transcript] = {}
                     panels_measurements[str_panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
