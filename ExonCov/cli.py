@@ -7,6 +7,7 @@ import os
 import shlex
 import urllib
 import datetime
+from collections import OrderedDict
 
 from flask_script import Command, Option
 from sqlalchemy.orm import joinedload
@@ -21,8 +22,6 @@ from .models import (
     Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel,
     PanelVersion, panels_transcripts, CustomPanel, SampleSet
 )
-from .utils import retrieve_coverage, weighted_average
-
 
 class PrintStats(Command):
     """Print database stats."""
@@ -293,7 +292,7 @@ class ImportBam(Command):
                 else:
                     measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
                     for measurement_type in measurement_types:
-                        transcripts_measurements[transcript.id][measurement_type] = weighted_average(
+                        transcripts_measurements[transcript.id][measurement_type] = utils.weighted_average(
                             [transcripts_measurements[transcript.id][measurement_type], exon_measurement[measurement_type]],
                             [transcripts_measurements[transcript.id]['len'], exon.len]
                         )
@@ -372,7 +371,7 @@ class SampleQC(Command):
 
                 # Calculate average panel 15X coverage and compare with coverage_requirement_15
                 panel_qc = False
-                panel_measurement_percentage15_avg = weighted_average(
+                panel_measurement_percentage15_avg = utils.weighted_average(
                     [tm[1].measurement_percentage15 for tm in transcript_measurements],
                     [tm[1].len for tm in transcript_measurements]
                 )
@@ -451,7 +450,7 @@ class CreateSampleSet(Command):
 
     def run(self, name, min_days, max_days, sample_filter, sample_type, sample_number):
         description = '{0} random {1} samples. Minimum age: {2} days. Maximum age: {3} days. Sample name filter: {4}'.format(
-            sample_number, sample_type, max_days, sample_filter
+            sample_number, sample_type, min_days, max_days, sample_filter
         )
         min_date = datetime.date.today() - datetime.timedelta(days=min_days)
         max_date = datetime.date.today() - datetime.timedelta(days=max_days)
@@ -760,17 +759,127 @@ class LoadDesign(Command):
                 db.session.add(panel_version)
             db.session.commit()
 
-class PrintCovStatsSampleSetPanel(Command):
-    """Print tab delimited panel / genes table."""
 
-    def run(self):
-        sample_set, measurement_type_form, measurement_type, panels_measurements = retrieve_coverage(sample_set_id=id)
-        for panel in panels_measurements:
-            print("{panel}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                panel=panel, 
-                measurement_type=measurement_type,
-                mean=panels_measurements[panel]['mean'],
-                min=panels_measurements[panel]['min'],
-                max=panels_measurements[panel]['max'])
-            )
+class PrintCovStatsSampleSet(Command):
+    """Print tab delimited coverage statistics of panel or transcript as table."""
 
+    option_list = (
+        Option('sample_set_name'),
+        Option('cov_scope', choices=["panel", "transcript"]),
+        Option(
+            '-m', '--measurement_type', 
+            choices=[
+                'measurement_mean_coverage', 
+                'measurement_percentage10', 
+                'measurement_percentage15', 
+                'measurement_percentage20', 
+                'measurement_percentage30', 
+                'measurement_percentage50', 
+                'measurement_percentage100'
+            ],
+            dest='measurement_type',
+            default='measurement_percentage15'
+        ),
+    )
+
+
+    def run(self, sample_set_name, cov_scope, measurement_type):
+        # retrieve samples from sampleset
+        sample_set = SampleSet.query.options(joinedload(
+            'samples')).filter_by(name=sample_set_name).first()
+        sample_ids = [sample.id for sample in sample_set.samples]
+        
+        # retrieve ordered panels, transcripts measurements
+        query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(
+            TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id).all()
+
+        if cov_scope == "panel":
+            self.retrieve_and_print_panel_measurements(
+                sampleset_samples=sample_set.samples, query=query, measurement_type=measurement_type),
+        elif cov_scope == "transcript":
+            self.retrieve_and_print_transcript_measurements(
+                query=query, measurement_type=measurement_type)
+
+
+    def retrieve_and_print_transcript_measurements(self, query, measurement_type):
+        # print header
+        print("panel\ttranscript\tmeasurement_type\tmean\tmin\tmax")
+
+        # retrieve transcript measurements
+        panels_measurements = OrderedDict()
+        for panel, transcript_measurement in query: # per panel, transcript and sample, ordered by panel - transcript - sample.
+            str_panel = str(panel)
+            sample = str(transcript_measurement.sample)
+            transcript = str(transcript_measurement.transcript_id)
+
+            # summarise previous transcript in case new panel or new transcript same panel
+            if str_panel not in panels_measurements.keys() or transcript not in panels_measurements[str_panel]['transcripts'].keys():
+                if len(panels_measurements.keys()) >= 1:
+                    prev_panel = panels_measurements.keys()[-1] # last key of ordered dict.
+
+                    # summarize previous transcript measurements
+                    prev_transcript = panels_measurements[prev_panel]['transcripts'].keys()[-1]
+                    prev_transcript_measurements = utils.retrieve_coverage(
+                        measurements=panels_measurements[prev_panel]['transcripts'], keys = prev_transcript)
+                    
+                    # print summary
+                    print("{panel}\t{transcript}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                        panel=prev_panel,
+                        transcript=prev_transcript,
+                        measurement_type=measurement_type,
+                        mean=prev_transcript_measurements[prev_transcript]['mean'],
+                        min=prev_transcript_measurements[prev_transcript]['min'],
+                        max=prev_transcript_measurements[prev_transcript]['max']))
+
+                # add new panel and/or transcript
+                if str_panel not in panels_measurements.keys():
+                    panels_measurements = OrderedDict()
+                    panels_measurements[str_panel] = OrderedDict()
+                    panels_measurements[str_panel]['transcripts'] = {}
+                if transcript not in panels_measurements[str_panel]['transcripts'].keys():
+                    panels_measurements[str_panel]['transcripts'][transcript] = {}
+                    panels_measurements[str_panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
+
+    
+    def retrieve_and_print_panel_measurements(self, sampleset_samples, query, measurement_type):
+        # print header
+        print("panel\tmeasurement_type\tmean\tmin\tmax")
+
+        # retrieve panel measurements
+        panels_measurements = OrderedDict()
+        # per panel, transcript and sample, ordered by panel - transcript - sample.
+        for panel, transcript_measurement in query:
+            str_panel = str(panel)
+            sample = str(transcript_measurement.sample)
+
+            if str_panel not in panels_measurements.keys():
+                if len(panels_measurements.keys()) >= 1:
+                    # summarize previous panel measurements
+                    prev_panel = panels_measurements.keys()[-1]
+                    prev_panel_measurements = utils.retrieve_coverage(
+                        measurements=panels_measurements, keys=prev_panel, samples=sampleset_samples)
+                    # print summary
+                    print("{panel}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                        panel=prev_panel,
+                        measurement_type=measurement_type,
+                        mean=prev_panel_measurements[prev_panel]['mean'],
+                        min=prev_panel_measurements[prev_panel]['min'],
+                        max=prev_panel_measurements[prev_panel]['max'])
+                    )
+                # add new panel
+                panels_measurements[str_panel] = OrderedDict()
+                panels_measurements[str_panel]['samples'] = {}
+
+            if sample not in panels_measurements[str_panel]['samples']:
+                panels_measurements[str_panel]['samples'][sample] = {
+                    'len': transcript_measurement.len,
+                    'measurement': transcript_measurement[measurement_type]
+                }
+            else:
+                panels_measurements[str_panel]['samples'][sample]['measurement'] = utils.weighted_average(
+                    [panels_measurements[str_panel]['samples'][sample]['measurement'],
+                        transcript_measurement[measurement_type]],
+                    [panels_measurements[str_panel]['samples'][sample]
+                        ['len'], transcript_measurement.len]
+                )
+                panels_measurements[str_panel]['samples'][sample]['len'] += transcript_measurement.len

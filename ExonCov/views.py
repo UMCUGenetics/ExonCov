@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import or_
 import pysam
 
-from ExonCov import app, db
+from . import app, db
 from .models import (
     Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript,
     TranscriptMeasurement, panels_transcripts
@@ -518,11 +518,8 @@ def custom_panel(id):
             panel_measurements[sample]['len'] += transcript_measurement.len
 
     # Calculate min, mean, max
-    for transcript in transcript_measurements:
-        values = transcript_measurements[transcript].values()
-        transcript_measurements[transcript]['min'] = min(values)
-        transcript_measurements[transcript]['max'] = max(values)
-        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+    transcript_measurements = retrieve_coverage(
+        measurements=transcript_measurements)
 
     values = [panel_measurements[sample]['measurement'] for sample in panel_measurements]
     panel_measurements['min'] = min(values)
@@ -578,11 +575,8 @@ def custom_panel_transcript(id, transcript_name):
         transcript_measurements['max'] = max(values)
         transcript_measurements['mean'] = float(sum(values)) / len(values)
 
-        for exon in exon_measurements:
-            values = exon_measurements[exon].values()
-            exon_measurements[exon]['min'] = min(values)
-            exon_measurements[exon]['max'] = max(values)
-            exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
+        exon_measurements = retrieve_coverage(
+            measurements=exon_measurements)
 
     return render_template('custom_panel_transcript.html', form=measurement_type_form, transcript=transcript, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
 
@@ -610,11 +604,8 @@ def custom_panel_gene(id, gene_id):
                 transcript_measurements[transcript] = {}
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-        for transcript in transcript_measurements:
-            values = transcript_measurements[transcript].values()
-            transcript_measurements[transcript]['min'] = min(values)
-            transcript_measurements[transcript]['max'] = max(values)
-            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+            transcript_measurements = retrieve_coverage(
+                measurements=transcript_measurements)
 
     return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
 
@@ -661,7 +652,42 @@ def sample_sets():
 @login_required
 def sample_set(id):
     """Sample set page."""
-    sample_set, measurement_type_form, measurement_type, panels_measurements = retrieve_coverage(sample_set_id=id)
+    sample_set = SampleSet.query.options(
+        joinedload('samples')).get_or_404(sample_set_id)
+    measurement_type_form = MeasurementTypeForm()
+
+    sample_ids = [sample.id for sample in sample_set.samples]
+    measurement_type = [measurement_type_form.data['measurement_type'], dict(
+        measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    panels_measurements = {}
+
+    query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(
+        TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name).all()
+
+    for panel, transcript_measurement in query:
+        sample = transcript_measurement.sample
+        if panel not in panels_measurements:
+            panels_measurements[panel] = {
+                'panel': panel,
+                'samples': {},
+            }
+
+        if sample not in panels_measurements[panel]['samples']:
+            panels_measurements[panel]['samples'][sample] = {
+                'len': transcript_measurement.len,
+                'measurement': transcript_measurement[measurement_type[0]]
+            }
+        else:
+            panels_measurements[panel]['samples'][sample]['measurement'] = weighted_average(
+                [panels_measurements[panel]['samples'][sample]['measurement'],
+                    transcript_measurement[measurement_type[0]]],
+                [panels_measurements[panel]['samples'][sample]
+                    ['len'], transcript_measurement.len]
+            )
+            panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
+
+    panels_measurements = retrieve_coverage(
+        measurements=panels_measurements, samples=sample_set.samples)
 
     return render_template('sample_set.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panels_measurements=panels_measurements)
 
@@ -691,11 +717,7 @@ def sample_set_panel(sample_set_id, panel_id):
         transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
     # Calculate min, mean, max
-    for transcript in transcript_measurements:
-        values = transcript_measurements[transcript].values()
-        transcript_measurements[transcript]['min'] = min(values)
-        transcript_measurements[transcript]['max'] = max(values)
-        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+    transcript_measurements = retrieve_coverage(measurements=transcript_measurements)
 
     return render_template('sample_set_panel.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panel=panel, transcript_measurements=transcript_measurements)
 
@@ -732,11 +754,8 @@ def sample_set_transcript(sample_set_id, transcript_name):
                             exon_measurements[exon][sample] = float(row[measurement_type[0]])
                             break
 
-        for exon in exon_measurements:
-            values = exon_measurements[exon].values()
-            exon_measurements[exon]['min'] = min(values)
-            exon_measurements[exon]['max'] = max(values)
-            exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
+        exon_measurements = retrieve_coverage(
+            measurements=exon_measurements)
 
     return render_template('sample_set_transcript.html', form=measurement_type_form, transcript=transcript, sample_set=sample_set, measurement_type=measurement_type, exon_measurements=exon_measurements)
 
@@ -763,10 +782,7 @@ def sample_set_gene(sample_set_id, gene_id):
                 transcript_measurements[transcript] = {}
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-        for transcript in transcript_measurements:
-            values = transcript_measurements[transcript].values()
-            transcript_measurements[transcript]['min'] = min(values)
-            transcript_measurements[transcript]['max'] = max(values)
-            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+        transcript_measurements = retrieve_coverage(
+            measurements=transcript_measurements)
 
     return render_template('sample_set_gene.html', form=measurement_type_form, gene=gene, sample_set=sample_set, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
