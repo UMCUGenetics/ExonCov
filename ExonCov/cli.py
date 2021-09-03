@@ -808,7 +808,6 @@ class PrintCovStatsSampleSet(Command):
         # retrieve transcript measurements
         panels_measurements = OrderedDict()
         for panel, transcript_measurement in query: # per panel, transcript and sample, ordered by panel - transcript - sample.
-            str_panel = panel
             sample = transcript_measurement.sample
             transcript = transcript_measurement.transcript
 
@@ -833,13 +832,13 @@ class PrintCovStatsSampleSet(Command):
                         max=prev_transcript_measurements[prev_transcript]['max']))
 
                 # add new panel and/or transcript
-                if str_panel not in panels_measurements.keys():
+                if panel not in panels_measurements.keys():
                     panels_measurements = OrderedDict()
-                    panels_measurements[str_panel] = OrderedDict()
-                    panels_measurements[str_panel]['transcripts'] = OrderedDict()
-                if transcript not in panels_measurements[str_panel]['transcripts'].keys():
-                    panels_measurements[str_panel]['transcripts'][transcript] = {}
-                    panels_measurements[str_panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
+                    panels_measurements[panel] = OrderedDict()
+                    panels_measurements[panel]['transcripts'] = OrderedDict()
+                if transcript not in panels_measurements[panel]['transcripts'].keys():
+                    panels_measurements[panel]['transcripts'][transcript] = {}
+                    panels_measurements[panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
 
     
     def retrieve_and_print_panel_measurements(self, sampleset_samples, query, measurement_type):
