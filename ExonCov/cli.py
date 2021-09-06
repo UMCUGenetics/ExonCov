@@ -764,7 +764,7 @@ class ExportCovStatsSampleSet(Command):
     """Print tab delimited coverage statistics of panel or transcript as table."""
 
     option_list = (
-        Option('-s', '--sample_set_name', required=True, dest="sample_set_name"),
+        Option('-s', '--sample_set_id', required=True, dest="sample_set_id"),
         Option('-d', '--data_type', choices=["panel", "transcript"], required=True, dest="data_type"),
         Option(
             '-m', '--measurement_type', 
@@ -783,10 +783,10 @@ class ExportCovStatsSampleSet(Command):
     )
 
 
-    def run(self, sample_set_name, data_type, measurement_type):
+    def run(self, sample_set_id, data_type, measurement_type):
         # retrieve samples from sampleset
         sample_set = SampleSet.query.options(joinedload(
-            'samples')).filter_by(name=sample_set_name).first()
+            'samples')).filter_by(id=sample_set_id).first()
         sample_ids = [sample.id for sample in sample_set.samples]
         
         # retrieve ordered panels, transcripts measurements
