@@ -786,17 +786,17 @@ class ExportCovStatsSampleSet(Command):
     def run(self, sample_set_id, data_type, measurement_type):
         # retrieve samples from sampleset
         sample_set = SampleSet.query.options(joinedload(
-            'samples')).filter_by(id=sample_set_id)
+            'samples')).get(sample_set_id)
         sample_ids = [sample.id for sample in sample_set.samples]
         
         # retrieve ordered panels, transcripts measurements
-        query = db.session.query(PanelVersion, TranscriptMeasurement)
-        .filter_by(active=True, validated=True)
-        .filter(PanelVersion.panel_name.like("%FULL%"))
-        .join(Transcript, PanelVersion.transcripts)
-        .join(TranscriptMeasurement)
-        .filter(TranscriptMeasurement.sample_id.in_(sample_ids))
-        .order_by(PanelVersion.panel_name, PanelVersion.id, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id)
+        query = db.session.query(PanelVersion, TranscriptMeasurement)\
+        .filter_by(active=True, validated=True)\
+        .filter(PanelVersion.panel_name.notlike("%FULL%"))\
+        .join(Transcript, PanelVersion.transcripts)\
+        .join(TranscriptMeasurement)\
+        .filter(TranscriptMeasurement.sample_id.in_(sample_ids))\
+        .order_by(PanelVersion.panel_name, PanelVersion.id, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id)\
         .all()
 
         if data_type == "panel":
@@ -816,14 +816,14 @@ class ExportCovStatsSampleSet(Command):
         query_length = len(query)
         # per panel, transcript and sample, ordered by panel - transcript - sample.
         for index in range(0, query_length + 1, 1):
-            if index <= query_length:
+            if index < query_length:
                 panel, transcript_measurement = query[index]
             else:
                 panel, transcript_measurement = query[index-1]
             sample = transcript_measurement.sample
 
             # summarise previous panel in case last or new panel
-            if index > query_length or panel not in panels_measurements.keys() :
+            if index == query_length or panel not in panels_measurements.keys() :
                 if len(panels_measurements.keys()) >= 1:
                     # summarize previous panel measurements
                     prev_panel = panels_measurements.keys()[-1]
@@ -860,11 +860,12 @@ class ExportCovStatsSampleSet(Command):
     def retrieve_and_print_transcript_measurements(self, query, measurement_type):
         # print header
         print("panel\ttranscript\tgene\tmeasurement_type\tmean\tmin\tmax")
-        
+        # retrieve panel measurements
+        panels_measurements = OrderedDict()
         query_length = len(query)
         # per panel, transcript and sample, ordered by panel - transcript - sample.
         for index in range(0, query_length + 1, 1):
-            if index <= query_length: 
+            if index < query_length: 
                 panel, transcript_measurement = query[index]
             else:
                 panel, transcript_measurement = query[index-1]
@@ -872,7 +873,7 @@ class ExportCovStatsSampleSet(Command):
             transcript = transcript_measurement.transcript
 
             # summarise previous transcript in case last panel, new panel or new transcript same panel
-            if index > query_length or \
+            if index == query_length or \
                 panel not in panels_measurements.keys() or \
                 transcript not in panels_measurements[panel]['transcripts'].keys():
                 if len(panels_measurements.keys()) >= 1:
