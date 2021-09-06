@@ -795,52 +795,12 @@ class ExportCovStatsSampleSet(Command):
 
         if data_type == "panel":
             self.retrieve_and_print_panel_measurements(
-                sampleset_samples=sample_set.samples, query=query, measurement_type=measurement_type),
+                sampleset_samples=sample_set.samples, query=query, measurement_type=measurement_type)
         elif data_type == "transcript":
             self.retrieve_and_print_transcript_measurements(
                 query=query, measurement_type=measurement_type)
 
 
-    def retrieve_and_print_transcript_measurements(self, query, measurement_type):
-        # print header
-        print("panel\ttranscript\tgene\tmeasurement_type\tmean\tmin\tmax")
-
-        # retrieve transcript measurements
-        panels_measurements = OrderedDict()
-        for panel, transcript_measurement in query: # per panel, transcript and sample, ordered by panel - transcript - sample.
-            sample = transcript_measurement.sample
-            transcript = transcript_measurement.transcript
-
-            # summarise previous transcript in case new panel or new transcript same panel
-            if panel not in panels_measurements.keys() or transcript not in panels_measurements[panel]['transcripts'].keys():
-                if len(panels_measurements.keys()) >= 1:
-                    prev_panel = panels_measurements.keys()[-1] # last key of ordered dict.
-
-                    # summarize previous transcript measurements
-                    prev_transcript = panels_measurements[prev_panel]['transcripts'].keys()[-1]
-                    prev_transcript_measurements = utils.retrieve_coverage(
-                        measurements=panels_measurements[prev_panel]['transcripts'])
-                    
-                    # print summary
-                    print("{panel}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                        panel=prev_panel,
-                        transcript=prev_transcript,
-                        gene=prev_transcript.gene_id,
-                        measurement_type=measurement_type,
-                        mean=prev_transcript_measurements[prev_transcript]['mean'],
-                        min=prev_transcript_measurements[prev_transcript]['min'],
-                        max=prev_transcript_measurements[prev_transcript]['max']))
-
-                # add new panel and/or transcript
-                if panel not in panels_measurements.keys():
-                    panels_measurements = OrderedDict()
-                    panels_measurements[panel] = OrderedDict()
-                    panels_measurements[panel]['transcripts'] = OrderedDict()
-                if transcript not in panels_measurements[panel]['transcripts'].keys():
-                    panels_measurements[panel]['transcripts'][transcript] = {}
-                    panels_measurements[panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
-
-    
     def retrieve_and_print_panel_measurements(self, sampleset_samples, query, measurement_type):
         # print header
         print("panel\tmeasurement_type\tmean\tmin\tmax")
@@ -883,3 +843,43 @@ class ExportCovStatsSampleSet(Command):
                         ['len'], transcript_measurement.len]
                 )
                 panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
+
+
+    def retrieve_and_print_transcript_measurements(self, query, measurement_type):
+        # print header
+        print("panel\ttranscript\tgene\tmeasurement_type\tmean\tmin\tmax")
+
+        # retrieve transcript measurements
+        panels_measurements = OrderedDict()
+        for panel, transcript_measurement in query: # per panel, transcript and sample, ordered by panel - transcript - sample.
+            sample = transcript_measurement.sample
+            transcript = transcript_measurement.transcript
+
+            # summarise previous transcript in case new panel or new transcript same panel
+            if panel not in panels_measurements.keys() or transcript not in panels_measurements[panel]['transcripts'].keys():
+                if len(panels_measurements.keys()) >= 1:
+                    prev_panel = panels_measurements.keys()[-1] # last key of ordered dict.
+
+                    # summarize previous transcript measurements
+                    prev_transcript = panels_measurements[prev_panel]['transcripts'].keys()[-1]
+                    prev_transcript_measurements = utils.retrieve_coverage(
+                        measurements=panels_measurements[prev_panel]['transcripts'])
+                    
+                    # print summary
+                    print("{panel}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                        panel=prev_panel,
+                        transcript=prev_transcript,
+                        gene=prev_transcript.gene_id,
+                        measurement_type=measurement_type,
+                        mean=prev_transcript_measurements[prev_transcript]['mean'],
+                        min=prev_transcript_measurements[prev_transcript]['min'],
+                        max=prev_transcript_measurements[prev_transcript]['max']))
+
+                # add new panel and/or transcript
+                if panel not in panels_measurements.keys():
+                    panels_measurements = OrderedDict()
+                    panels_measurements[panel] = OrderedDict()
+                    panels_measurements[panel]['transcripts'] = OrderedDict()
+                if transcript not in panels_measurements[panel]['transcripts'].keys():
+                    panels_measurements[panel]['transcripts'][transcript] = {}
+                    panels_measurements[panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
