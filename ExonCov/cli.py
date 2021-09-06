@@ -560,7 +560,7 @@ class ImportAliasTable(Command):
                                 print("ERROR: Can not import alias: {0} for gene: {1}".format(hgnc_gene_id, db_gene_id))
 
 
-class PrintAliasTable(Command):
+class ExportAliasTable(Command):
     """Print tab delimited HGNC alias / gene ID table"""
 
     def run(self):
@@ -760,7 +760,7 @@ class LoadDesign(Command):
             db.session.commit()
 
 
-class PrintCovStatsSampleSet(Command):
+class ExportCovStatsSampleSet(Command):
     """Print tab delimited coverage statistics of panel or transcript as table."""
 
     option_list = (
