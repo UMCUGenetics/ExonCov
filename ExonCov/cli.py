@@ -786,7 +786,7 @@ class ExportCovStatsSampleSet(Command):
     def run(self, sample_set_id, data_type, measurement_type):
         # retrieve samples from sampleset
         sample_set = SampleSet.query.options(joinedload(
-            'samples')).filter_by(id=sample_set_id).first()
+            'samples')).filter_by(id=sample_set_id)
         sample_ids = [sample.id for sample in sample_set.samples]
         
         # retrieve ordered panels, transcripts measurements
