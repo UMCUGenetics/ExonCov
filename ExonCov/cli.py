@@ -790,8 +790,14 @@ class ExportCovStatsSampleSet(Command):
         sample_ids = [sample.id for sample in sample_set.samples]
         
         # retrieve ordered panels, transcripts measurements
-        query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True, validated=True).join(Transcript, PanelVersion.transcripts).join(
-            TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name, PanelVersion.id, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id).all()
+        query = db.session.query(PanelVersion, TranscriptMeasurement)
+        .filter_by(active=True, validated=True)
+        .filter(PanelVersion.panel_name.like("%FULL%"))
+        .join(Transcript, PanelVersion.transcripts)
+        .join(TranscriptMeasurement)
+        .filter(TranscriptMeasurement.sample_id.in_(sample_ids))
+        .order_by(PanelVersion.panel_name, PanelVersion.id, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id)
+        .all()
 
         if data_type == "panel":
             self.retrieve_and_print_panel_measurements(
