@@ -441,7 +441,7 @@ class CreateSampleSet(Command):
 
     option_list = (
         Option('name'),
-        Option('--min_days', dest='min_days', type=int, default=0),
+        Option('-m', '--min_days', dest='min_days', type=int, default=0),
         Option('-d', '--max_days', dest='max_days', type=int, default=180),
         Option('-s', '--sample_filter', dest='sample_filter', default=''),
         Option('-t', '--sample_type', dest='sample_type', default='WES'),
