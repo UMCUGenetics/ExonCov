@@ -4,7 +4,6 @@ import json
 from flask import request, url_for
 from flask_login import current_user
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 
 def get_one_or_create(session, model, create_method='', create_method_kwargs=None, **kwargs):

@@ -842,6 +842,7 @@ class ExportCovStatsSampleSet(Command):
                 panels_measurements[panel] = OrderedDict()
                 panels_measurements[panel]['samples'] = {}
 
+
             if sample not in panels_measurements[panel]['samples']:
                 panels_measurements[panel]['samples'][sample] = {
                     'len': transcript_measurement.len,
@@ -849,10 +850,14 @@ class ExportCovStatsSampleSet(Command):
                 }
             else:
                 panels_measurements[panel]['samples'][sample]['measurement'] = utils.weighted_average(
-                    [panels_measurements[panel]['samples'][sample]['measurement'],
-                        transcript_measurement[measurement_type]],
-                    [panels_measurements[panel]['samples'][sample]
-                        ['len'], transcript_measurement.len]
+                    [
+                        panels_measurements[panel]['samples'][sample]['measurement'],
+                        transcript_measurement[measurement_type]
+                    ],
+                    [
+                        panels_measurements[panel]['samples'][sample]['len'], 
+                        transcript_measurement.len
+                    ]
                 )
                 panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
