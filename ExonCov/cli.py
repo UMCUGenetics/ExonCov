@@ -455,6 +455,12 @@ class CreateSampleSet(Command):
         min_date = datetime.date.today() - datetime.timedelta(days=min_days)
         max_date = datetime.date.today() - datetime.timedelta(days=max_days)
 
+        if max_date < min_date:
+            raise ValueError(
+                "Incorect use of max_days ({max_days}) and/or min_days ({min_days}): " \
+                    "maximum date {max_date} is smaller than min date {min_date}".format(
+                    max_days=max_days, min_days=min_days, max_date=max_date, min_date=min_date)
+                )
         samples = (
             Sample.query
             .filter(Sample.name.like('%{0}%'.format(sample_filter)))
@@ -787,6 +793,8 @@ class ExportCovStatsSampleSet(Command):
         # retrieve samples from sampleset
         sample_set = SampleSet.query.options(joinedload(
             'samples')).get(sample_set_id)
+        if sample_set == None:
+            raise ValueError("Sample set ID {id} does not exist in database.".format(id=sample_set_id))
         sample_ids = [sample.id for sample in sample_set.samples]
         
         # retrieve ordered panels, transcripts measurements
