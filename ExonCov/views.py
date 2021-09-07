@@ -679,10 +679,14 @@ def sample_set(id):
             }
         else:
             panels_measurements[panel]['samples'][sample]['measurement'] = weighted_average(
-                [panels_measurements[panel]['samples'][sample]['measurement'],
-                    transcript_measurement[measurement_type[0]]],
-                [panels_measurements[panel]['samples'][sample]
-                    ['len'], transcript_measurement.len]
+                [
+                    panels_measurements[panel]['samples'][sample]['measurement'], 
+                    transcript_measurement[measurement_type[0]]
+                ],
+                [
+                    panels_measurements[panel]['samples'][sample]['len'], 
+                    transcript_measurement.len
+                ]
             )
             panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
