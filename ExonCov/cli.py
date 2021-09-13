@@ -872,7 +872,7 @@ class ExportCovStatsSampleSet(Command):
 
     def retrieve_and_print_transcript_measurements(self, query, measurement_type):
         # print header
-        print("panel_version\ttranscript\tgene\tmeasurement_type\tmean\tmin\tmax")
+        print("panel_version\ttranscript_id\tgene_id\tmeasurement_type\tmean\tmin\tmax")
         # retrieve panel measurements
         panels_measurements = OrderedDict()
         query_length = len(query)
