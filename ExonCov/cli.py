@@ -817,7 +817,7 @@ class ExportCovStatsSampleSet(Command):
 
     def retrieve_and_print_panel_measurements(self, sampleset_samples, query, measurement_type):
         # print header
-        print("panel\tmeasurement_type\tmean\tmin\tmax")
+        print("panel_version\tmeasurement_type\tmean\tmin\tmax")
 
         # retrieve panel measurements
         panels_measurements = OrderedDict()
@@ -838,8 +838,8 @@ class ExportCovStatsSampleSet(Command):
                     prev_panel_measurements = utils.retrieve_coverage(
                         measurements=panels_measurements, samples=sampleset_samples)
                     # print summary
-                    print("{panel}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                        panel=prev_panel,
+                    print("{panel_version}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                        panel_version=prev_panel,
                         measurement_type=measurement_type,
                         mean=prev_panel_measurements[prev_panel]['mean'],
                         min=prev_panel_measurements[prev_panel]['min'],
@@ -872,7 +872,7 @@ class ExportCovStatsSampleSet(Command):
 
     def retrieve_and_print_transcript_measurements(self, query, measurement_type):
         # print header
-        print("panel\ttranscript\tgene\tmeasurement_type\tmean\tmin\tmax")
+        print("panel_version\ttranscript\tgene\tmeasurement_type\tmean\tmin\tmax")
         # retrieve panel measurements
         panels_measurements = OrderedDict()
         query_length = len(query)
@@ -898,8 +898,8 @@ class ExportCovStatsSampleSet(Command):
                         measurements=panels_measurements[prev_panel]['transcripts'])
                     
                     # print summary
-                    print("{panel}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                        panel=prev_panel,
+                    print("{panel_version}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                        panel_version=prev_panel,
                         transcript=prev_transcript,
                         gene=prev_transcript.gene_id,
                         measurement_type=measurement_type,
