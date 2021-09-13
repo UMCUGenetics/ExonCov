@@ -914,5 +914,5 @@ class ExportCovStatsSampleSet(Command):
                     panels_measurements[panel]['transcripts'] = OrderedDict()
                 if transcript not in panels_measurements[panel]['transcripts'].keys():
                     panels_measurements[panel]['transcripts'][transcript] = {}
-                if sample not in panels_measurements[panel]['transcripts'][transcript]:
-                    panels_measurements[panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
+            if sample not in panels_measurements[panel]['transcripts'][transcript]:
+                panels_measurements[panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
