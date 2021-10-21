@@ -6,6 +6,7 @@ from flask_security.forms import RegisterForm
 from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
 from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField, FloatField
 from wtforms import validators
+import datetime
 
 from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
 
@@ -13,7 +14,8 @@ from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
 # Query factories
 def all_samples():
     """Query factory for all samples."""
-    return Sample.query.all()
+    #return Sample.query.all()
+    return Sample.query.filter(Sample.name.like('%C%')).filter(Sample.import_date >= datetime.date.today() - datetime.timedelta(days=365*2)).all()
 
 
 def active_sample_sets():
