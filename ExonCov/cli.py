@@ -1,4 +1,5 @@
 """CLI functions."""
+from collections import OrderedDict
 import datetime
 import os
 import re
@@ -808,6 +809,11 @@ class ExportCovStatsSampleSet(Command):
             .join(Transcript, PanelVersion.transcripts)
             .join(TranscriptMeasurement)
             .filter(TranscriptMeasurement.sample_id.in_(sample_ids))
+            .order_by(
+                PanelVersion.panel_name,
+                PanelVersion.id,
+                TranscriptMeasurement.transcript_id,
+                TranscriptMeasurement.sample_id)
             .all()
         )
 
@@ -819,14 +825,14 @@ class ExportCovStatsSampleSet(Command):
 
 
     def retrieve_and_print_panel_measurements(self, ss_samples, query, measurement_type):
-        panels_measurements = {}
+        panels_measurements = OrderedDict()
         # retrieve panel measurements
         for index, (panel, transcript_measurement) in enumerate(query):
             sample = transcript_measurement.sample
             # add new panel
             if panel not in panels_measurements:
-                panels_measurements[panel] ={}
-                panels_measurements[panel]['samples'] = {}
+                panels_measurements[panel] = OrderedDict()
+                panels_measurements[panel]['samples'] = OrderedDict()
             # add new sample or calculate weighted avg
             if sample not in panels_measurements[panel]['samples']:
                 panels_measurements[panel]['samples'][sample] = {
@@ -856,7 +862,7 @@ class ExportCovStatsSampleSet(Command):
 
 
     def retrieve_and_print_transcript_measurements(self, query, measurement_type):
-        panels_measurements = {}
+        panels_measurements = OrderedDict()
 
         # retrieve transcript measurements
         for index, (panel, transcript_measurement) in enumerate(query):
@@ -865,8 +871,8 @@ class ExportCovStatsSampleSet(Command):
 
             # add new panel
             if panel not in panels_measurements:
-                panels_measurements[panel] = {}
-                panels_measurements[panel]['transcripts'] = {}
+                panels_measurements[panel] = OrderedDict()
+                panels_measurements[panel]['transcripts'] = OrderedDict()
             # add new transcript
             if transcript not in panels_measurements[panel]['transcripts']:
                 panels_measurements[panel]['transcripts'][transcript] = {}
@@ -877,8 +883,9 @@ class ExportCovStatsSampleSet(Command):
         # print header
         print("panel_version\ttranscript_id\tgene_id\tmeasurement_type\tmean\tmin\tmax")
         for panel in panels_measurements:
-            for transcript in panel['transcripts']:
-                transcript_cov_stats = utils.retrieve_coverage(measurements=panel['transcripts'], keys=[transcript])
+            for transcript in panels_measurements[panel]['transcripts']:
+                transcript_cov_stats = utils.retrieve_coverage(
+                    measurements=panels_measurements[panel]['transcripts'], keys=[transcript])
                 # print summary
                 print("{panel_version}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
                     panel_version=panel,
