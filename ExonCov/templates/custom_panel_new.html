@@ -4,6 +4,11 @@
 {% block header %}Custom gene panel{% endblock %}
 
 {% block body %}
+<div class="alert alert-warning" role="alert">
+    Because of performance issues we have temporay disabled custom panel creation for 'parent samples' and samples older than 2 years.<br>
+    Please contact <b>bioinformatica-genetica@umcutrecht.nl</b> if you would like to create a custom panel containing a 'parent sample' or sample older than 2 years.
+</div>
+
 <div class="well">
     <form method="POST" action="{{ url_for('custom_panel_new') }}" class="form-horizontal">
         {{ form.csrf_token }}
