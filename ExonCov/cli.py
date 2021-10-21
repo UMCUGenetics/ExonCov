@@ -294,8 +294,8 @@ class ImportBam(Command):
                     measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
                     for measurement_type in measurement_types:
                         transcripts_measurements[transcript.id][measurement_type] = utils.weighted_average(
-                            [transcripts_measurements[transcript.id][measurement_type], exon_measurement[measurement_type]],
-                            [transcripts_measurements[transcript.id]['len'], exon.len]
+                            values=[transcripts_measurements[transcript.id][measurement_type], exon_measurement[measurement_type]],
+                            weights=[transcripts_measurements[transcript.id]['len'], exon.len]
                         )
                     transcripts_measurements[transcript.id]['len'] += exon.len
 
@@ -373,8 +373,8 @@ class SampleQC(Command):
                 # Calculate average panel 15X coverage and compare with coverage_requirement_15
                 panel_qc = False
                 panel_measurement_percentage15_avg = utils.weighted_average(
-                    [tm[1].measurement_percentage15 for tm in transcript_measurements],
-                    [tm[1].len for tm in transcript_measurements]
+                    values=[tm[1].measurement_percentage15 for tm in transcript_measurements],
+                    weights=[tm[1].len for tm in transcript_measurements]
                 )
                 if panel_measurement_percentage15_avg >= panel.coverage_requirement_15:
                     panel_qc = True
@@ -478,8 +478,8 @@ class CreateSampleSet(Command):
         for sample in samples:
             # Filter sampels: import date, 'special' project type (validation etc), Merge samples,
             if (
-                sample.import_date > max_date and 
-                sample.import_date <= min_date
+                sample.import_date > max_date
+                and sample.import_date <= min_date
                 and not sample.project.type
                 and len(sample.sequencing_runs) == 1
                 and sample.sequencing_runs[0].platform_unit in sample.project.name
