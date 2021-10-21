@@ -68,14 +68,14 @@ def event_logger(connection, log_model, model_name, action, event_data):
     )
 
 
-def retrieve_coverage(measurements, keys = "", samples = ""):
-    if keys == "" :
+def retrieve_coverage(measurements, keys = None, samples = None):
+    if not keys :
         keys = measurements.keys()
     elif isinstance(keys, str):
         keys = [keys]
 
     for key in keys:
-        if samples != "":
+        if samples:
             # when measurements scope is panel
             values = [measurements[key]['samples'][sample]['measurement'] for sample in samples] 
         else:
