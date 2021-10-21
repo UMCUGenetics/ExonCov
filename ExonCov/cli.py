@@ -1,21 +1,22 @@
 """CLI functions."""
-import sys
-import re
-import time
-import subprocess
-import os
-import shlex
-import urllib
-import datetime
 from collections import OrderedDict
+import datetime
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+import urllib
 
 from flask_script import Command, Option
-from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func
-import tempfile
-import shutil
 import pysam
+import shutil
+import tempfile
 
 from . import app, db, utils
 from .models import (
