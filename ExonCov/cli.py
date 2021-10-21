@@ -792,66 +792,64 @@ class ExportCovStatsSampleSet(Command):
 
     def run(self, sample_set_id, data_type, measurement_type):
         # retrieve samples from sampleset
-        sample_set = SampleSet.query.options(joinedload(
-            'samples')).get(sample_set_id)
-        if sample_set == None:
-            raise ValueError("Sample set ID {id} does not exist in database.".format(id=sample_set_id))
+        try:
+            sample_set = SampleSet.query.options(joinedload('samples')).get(sample_set_id)
+            if sample_set is None:
+                raise NoResultFound
+        except NoResultFound as e:
+            print("Sample set ID {id} does not exist in database.".format(id=sample_set_id))
+            sys.exit(e)
         sample_ids = [sample.id for sample in sample_set.samples]
         
         # retrieve ordered panels, transcripts measurements
-        query = db.session.query(PanelVersion, TranscriptMeasurement)\
-        .filter_by(active=True, validated=True)\
-        .filter(PanelVersion.panel_name.notlike("%FULL%"))\
-        .join(Transcript, PanelVersion.transcripts)\
-        .join(TranscriptMeasurement)\
-        .filter(TranscriptMeasurement.sample_id.in_(sample_ids))\
-        .order_by(PanelVersion.panel_name, PanelVersion.id, TranscriptMeasurement.transcript_id, TranscriptMeasurement.sample_id)\
-        .all()
+        query = (
+            db.session.query(PanelVersion, TranscriptMeasurement)
+            .filter_by(active=True, validated=True)
+            .filter(PanelVersion.panel_name.notlike("%FULL%"))
+            .join(Transcript, PanelVersion.transcripts)
+            .join(TranscriptMeasurement)
+            .filter(TranscriptMeasurement.sample_id.in_(sample_ids))
+            .order_by(
+                PanelVersion.panel_name, 
+                PanelVersion.id, 
+                TranscriptMeasurement.transcript_id, 
+                TranscriptMeasurement.sample_id)
+            .all()
+        )
 
         if data_type == "panel":
             self.retrieve_and_print_panel_measurements(
-                sampleset_samples=sample_set.samples, query=query, measurement_type=measurement_type)
+                ss_samples=sample_set.samples, query=query, measurement_type=measurement_type)
         elif data_type == "transcript":
-            self.retrieve_and_print_transcript_measurements(
-                query=query, measurement_type=measurement_type)
+            self.retrieve_and_print_transcript_measurements(query=query, measurement_type=measurement_type)
 
 
-    def retrieve_and_print_panel_measurements(self, sampleset_samples, query, measurement_type):
+    def retrieve_and_print_panel_measurements(self, ss_samples, query, measurement_type):
         # print header
         print("panel_version\tmeasurement_type\tmean\tmin\tmax")
 
-        # retrieve panel measurements
         panels_measurements = OrderedDict()
-        query_length = len(query)
+        # retrieve panel measurements
         # per panel, transcript and sample, ordered by panel - transcript - sample.
-        for index in range(0, query_length + 1, 1):
-            if index < query_length:
-                panel, transcript_measurement = query[index]
-            else:
-                panel, transcript_measurement = query[index-1]
+        for index, (panel, transcript_measurement) in enumerate(query):
             sample = transcript_measurement.sample
-
-            # summarise previous panel in case last or new panel
-            if index == query_length or panel not in panels_measurements.keys() :
-                if len(panels_measurements.keys()) >= 1:
-                    # summarize previous panel measurements
-                    prev_panel = panels_measurements.keys()[-1]
-                    prev_panel_measurements = utils.retrieve_coverage(
-                        measurements=panels_measurements, samples=sampleset_samples)
-                    # print summary
-                    print("{panel_version}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                        panel_version=prev_panel,
-                        measurement_type=measurement_type,
-                        mean=prev_panel_measurements[prev_panel]['mean'],
-                        min=prev_panel_measurements[prev_panel]['min'],
-                        max=prev_panel_measurements[prev_panel]['max'])
-                    )
-                # add new panel
-                panels_measurements = OrderedDict()
+            # print summary last and previous panel when last panel is new.
+            if index == len(query)-1 and panel not in panels_measurements:
+                summarise_index = [-2, -1]
+            # print summary last panel.
+            elif index == len(query)-1:
+                summarise_index = [-1]
+            # print summary previous panel when new panel.
+            elif panel not in panels_measurements and index:
+                summarise_index = [-2]
+            # do not print summary
+            else:
+                summarise_index = []
+            # add new panel
+            if panel not in panels_measurements:
                 panels_measurements[panel] = OrderedDict()
-                panels_measurements[panel]['samples'] = {}
-
-
+                panels_measurements[panel]['samples'] = OrderedDict()
+            # add new sample or calculate weighted avg
             if sample not in panels_measurements[panel]['samples']:
                 panels_measurements[panel]['samples'][sample] = {
                     'len': transcript_measurement.len,
@@ -859,61 +857,86 @@ class ExportCovStatsSampleSet(Command):
                 }
             else:
                 panels_measurements[panel]['samples'][sample]['measurement'] = utils.weighted_average(
-                    [
-                        panels_measurements[panel]['samples'][sample]['measurement'],
-                        transcript_measurement[measurement_type]
-                    ],
-                    [
-                        panels_measurements[panel]['samples'][sample]['len'], 
-                        transcript_measurement.len
-                    ]
+                    values=[panels_measurements[panel]['samples'][sample]['measurement'], 
+                        transcript_measurement[measurement_type]],
+                    weights=[panels_measurements[panel]['samples'][sample]['len'], 
+                        transcript_measurement.len]
                 )
                 panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
+
+            # summarise previous panel in case last or new panel
+            for idx in summarise_index:  
+                # summarize previous panel measurements
+                prev_panel = panels_measurements.keys()[idx]
+                prev_panel_measurements = utils.retrieve_coverage(measurements=panels_measurements, keys=[prev_panel], samples=ss_samples)
+                # print summary
+                print("{panel_version}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                    panel_version=prev_panel,
+                    measurement_type=measurement_type,
+                    mean=prev_panel_measurements[prev_panel]['mean'],
+                    min=prev_panel_measurements[prev_panel]['min'],
+                    max=prev_panel_measurements[prev_panel]['max'])
+                )
+                # remove previous completed panel
+                panels_measurements.pop(prev_panel)
 
 
     def retrieve_and_print_transcript_measurements(self, query, measurement_type):
         # print header
         print("panel_version\ttranscript_id\tgene_id\tmeasurement_type\tmean\tmin\tmax")
-        # retrieve panel measurements
         panels_measurements = OrderedDict()
-        query_length = len(query)
+        # retrieve transcript measurements
         # per panel, transcript and sample, ordered by panel - transcript - sample.
-        for index in range(0, query_length + 1, 1):
-            if index < query_length: 
-                panel, transcript_measurement = query[index]
-            else:
-                panel, transcript_measurement = query[index-1]
+        for index, (panel, transcript_measurement) in enumerate(query):
             sample = transcript_measurement.sample
             transcript = transcript_measurement.transcript
+            # print summary last transcript of last and previous panel
+            if index == len(query)-1 and panel not in panels_measurements:
+                summarise_panel_transcript_idx = [(-2,-1), (-1, -1)]
+            # print summary last and previous transcript when last transcript is new.
+            elif index == len(query)-1 and transcript not in panels_measurements[panel]['transcripts']:
+                summarise_panel_transcript_idx = [(-1, -2), (-1, -1)]
+            # print summary last transcript of last panel
+            elif index == len(query)-1:
+                summarise_panel_transcript_idx = [(-1, -1)]
+            # print summary last transcript of previous panel
+            elif index and panel not in panels_measurements and index:
+                summarise_panel_transcript_idx = [(-2, -1)]
+            # print summary previous transcript of current panel
+            elif index and transcript not in panels_measurements[panel]['transcripts']:
+                summarise_panel_transcript_idx = [(-1, -2)]
+            # do not print summary
+            else:
+                summarise_panel_transcript_idx = []
 
-            # summarise previous transcript in case last panel, new panel or new transcript same panel
-            if index == query_length or \
-                panel not in panels_measurements.keys() or \
-                transcript not in panels_measurements[panel]['transcripts'].keys():
-                if len(panels_measurements.keys()) >= 1:
-                    prev_panel = panels_measurements.keys()[-1] # last key of ordered dict.
-
-                    # summarize previous transcript measurements
-                    prev_transcript = panels_measurements[prev_panel]['transcripts'].keys()[-1]
-                    prev_transcript_measurements = utils.retrieve_coverage(
-                        measurements=panels_measurements[prev_panel]['transcripts'])
-                    
-                    # print summary
-                    print("{panel_version}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                        panel_version=prev_panel,
-                        transcript=prev_transcript,
-                        gene=prev_transcript.gene_id,
-                        measurement_type=measurement_type,
-                        mean=prev_transcript_measurements[prev_transcript]['mean'],
-                        min=prev_transcript_measurements[prev_transcript]['min'],
-                        max=prev_transcript_measurements[prev_transcript]['max']))
-
-                # add new panel and/or transcript
-                if panel not in panels_measurements.keys():
-                    panels_measurements = OrderedDict()
-                    panels_measurements[panel] = OrderedDict()
-                    panels_measurements[panel]['transcripts'] = OrderedDict()
-                if transcript not in panels_measurements[panel]['transcripts'].keys():
-                    panels_measurements[panel]['transcripts'][transcript] = {}
+            # add new panel
+            if panel not in panels_measurements:
+                panels_measurements[panel] = OrderedDict()
+                panels_measurements[panel]['transcripts'] = OrderedDict()
+            # add new transcript
+            if transcript not in panels_measurements[panel]['transcripts']:
+                panels_measurements[panel]['transcripts'][transcript] = {}
+            # add new sample
             if sample not in panels_measurements[panel]['transcripts'][transcript]:
                 panels_measurements[panel]['transcripts'][transcript][sample] = transcript_measurement[measurement_type]
+
+            # summarise previous transcript in case last panel, new panel or new transcript same panel
+            for (panel_idx, transcript_idx) in summarise_panel_transcript_idx:
+                # summarize previous or last panel/transcript of ordered dict.
+                prev_panel = panels_measurements.keys()[panel_idx]
+                prev_transcript = panels_measurements[prev_panel]['transcripts'].keys()[transcript_idx]
+                prev_transcript_measurements = utils.retrieve_coverage(
+                    measurements=panels_measurements[prev_panel]['transcripts'], keys=[prev_transcript])
+                # print summary
+                print("{panel_version}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                    panel_version=prev_panel,
+                    transcript=prev_transcript,
+                    gene=prev_transcript.gene_id,
+                    measurement_type=measurement_type,
+                    mean=prev_transcript_measurements[prev_transcript]['mean'],
+                    min=prev_transcript_measurements[prev_transcript]['min'],
+                    max=prev_transcript_measurements[prev_transcript]['max']))
+                # remove previous completed panel
+                if panel != prev_panel:
+                    panels_measurements.pop(prev_panel)
+
