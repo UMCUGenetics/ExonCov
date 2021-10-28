@@ -40,7 +40,14 @@ def samples():
     run = request.args.get('run')
     samples_per_page = 10
 
-    samples = Sample.query.order_by(Sample.import_date.desc()).order_by(Sample.name.asc()).options(joinedload('sequencing_runs')).options(joinedload('project'))
+    samples = (
+        Sample.query
+        .order_by(Sample.import_date.desc())
+        .order_by(Sample.name.asc())
+        .options(joinedload('sequencing_runs'))
+        .options(joinedload('project'))
+    )
+
     if (sample or project or run or sample_type) and sample_form.validate():
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
