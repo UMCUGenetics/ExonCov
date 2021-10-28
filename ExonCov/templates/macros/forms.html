@@ -80,6 +80,13 @@
 </div>
 {% endmacro %}
 
+{% macro render_inline_dropdown(field) %}
+<div class="form-group">
+    {{ field.label(class_='control-label') }}
+    {{ field(class_='form-control', **kwargs) }}
+</div>
+{% endmacro %}
+
 {% macro render_sample_datatable_form(search=true, filter=true) %}
 <form class="form-inline" onsubmit="return false;">
     <div class="form-group col-lg-3">

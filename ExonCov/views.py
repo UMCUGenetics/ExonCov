@@ -35,14 +35,17 @@ def samples():
     sample_form = SampleForm(request.args, meta={'csrf': False})
     page = request.args.get('page', default=1, type=int)
     sample = request.args.get('sample')
+    sample_type = request.args.get('sample_type')
     project = request.args.get('project')
     run = request.args.get('run')
     samples_per_page = 10
 
     samples = Sample.query.order_by(Sample.import_date.desc()).order_by(Sample.name.asc()).options(joinedload('sequencing_runs')).options(joinedload('project'))
-    if (sample or project or run) and sample_form.validate():
+    if (sample or project or run or sample_type) and sample_form.validate():
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
+        if sample_type:
+            samples = samples.filter(Sample.type == sample_type)
         if project:
             samples = samples.join(SampleProject).filter(SampleProject.name.like('%{0}%'.format(project)))
         if run:
