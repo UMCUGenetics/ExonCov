@@ -825,7 +825,7 @@ class ExportCovStatsSampleSet(Command):
     def retrieve_and_print_panel_measurements(self, ss_samples, query, measurement_type):
         panels_measurements = OrderedDict()
         # retrieve panel measurements
-        for index, (panel, transcript_measurement) in enumerate(query):
+        for panel, transcript_measurement in query:
             sample = transcript_measurement.sample
             # add new panel
             if panel not in panels_measurements:
@@ -863,7 +863,7 @@ class ExportCovStatsSampleSet(Command):
         panels_measurements = OrderedDict()
 
         # retrieve transcript measurements
-        for index, (panel, transcript_measurement) in enumerate(query):
+        for panel, transcript_measurement in query:
             sample = transcript_measurement.sample
             transcript = transcript_measurement.transcript
 
