@@ -69,8 +69,8 @@ def event_logger(connection, log_model, model_name, action, event_data):
     )
 
 
-def get_summary_stats_multi_sample(measurements, keys = "", samples = ""):
-    if keys == "" :
+def get_summary_stats_multi_sample(measurements, keys = None, samples = None):
+    if not keys:
         keys = measurements.keys()
     elif isinstance(keys, str):
         keys = [keys]
