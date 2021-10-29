@@ -836,7 +836,7 @@ class ExportCovStatsSampleSet(Command):
                 if len(panels_measurements.keys()) >= 1:
                     # summarize previous panel measurements
                     prev_panel = panels_measurements.keys()[-1]
-                    prev_panel_measurements = utils.retrieve_coverage(
+                    prev_panel_measurements = utils.get_summary_stats_multi_sample(
                         measurements=panels_measurements, samples=sampleset_samples)
                     # print summary
                     print("{panel_version}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
@@ -895,7 +895,7 @@ class ExportCovStatsSampleSet(Command):
 
                     # summarize previous transcript measurements
                     prev_transcript = panels_measurements[prev_panel]['transcripts'].keys()[-1]
-                    prev_transcript_measurements = utils.retrieve_coverage(
+                    prev_transcript_measurements = utils.get_summary_stats_multi_sample(
                         measurements=panels_measurements[prev_panel]['transcripts'])
                     
                     # print summary

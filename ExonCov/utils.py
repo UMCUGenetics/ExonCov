@@ -68,7 +68,7 @@ def event_logger(connection, log_model, model_name, action, event_data):
     )
 
 
-def retrieve_coverage(measurements, keys = "", samples = ""):
+def get_summary_stats_multi_sample(measurements, keys = "", samples = ""):
     if keys == "" :
         keys = measurements.keys()
     elif isinstance(keys, str):
@@ -81,7 +81,9 @@ def retrieve_coverage(measurements, keys = "", samples = ""):
         else:
             # when measurements scope is transcript or exon
             values = measurements[key].values()
-        measurements[key]['min'] = min(values)
-        measurements[key]['max'] = max(values)
-        measurements[key]['mean'] = float(sum(values)) / len(values)
+        measurements[key]['min'], measurements[key]['max'], measurements[key]['mean'] = get_summary_stats(values)
     return measurements
+
+
+def get_summary_stats(values):
+    return(min(values), max(values), float(sum(values)) / len(values))
