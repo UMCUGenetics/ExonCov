@@ -104,8 +104,8 @@ def sample(id):
         else:
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = weighted_average(
-                    [panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
-                    [panels[panel.id]['len'], transcript_measurement.len]
+                    values=[panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
+                    weights=[panels[panel.id]['len'], transcript_measurement.len]
                 )
             panels[panel.id]['len'] += transcript_measurement.len
     return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types, form=gene_form)
@@ -137,8 +137,8 @@ def sample_inactive_panels(id):
         else:
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = weighted_average(
-                    [panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
-                    [panels[panel.id]['len'], transcript_measurement.len]
+                    values=[panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
+                    weights=[panels[panel.id]['len'], transcript_measurement.len]
                 )
             panels[panel.id]['len'] += transcript_measurement.len
     return render_template('sample_inactive_panels.html', sample=sample, panels=panels, measurement_types=measurement_types)
@@ -173,8 +173,8 @@ def sample_panel(sample_id, panel_id):
     # Setup panel summary
     panel_summary = {
         'measurement_percentage15': weighted_average(
-            [tm[1].measurement_percentage15 for tm in transcript_measurements],
-            [tm[1].len for tm in transcript_measurements]
+            values=[tm[1].measurement_percentage15 for tm in transcript_measurements],
+            weights=[tm[1].len for tm in transcript_measurements]
         ),
         'core_genes': ', '.join(
             ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100]
@@ -512,8 +512,8 @@ def custom_panel(id):
             }
         else:
             panel_measurements[sample]['measurement'] = weighted_average(
-                [panel_measurements[sample]['measurement'], transcript_measurement[measurement_type[0]]],
-                [panel_measurements[sample]['len'], transcript_measurement.len]
+                values=[panel_measurements[sample]['measurement'], transcript_measurement[measurement_type[0]]],
+                weights=[panel_measurements[sample]['len'], transcript_measurement.len]
             )
             panel_measurements[sample]['len'] += transcript_measurement.len
 
@@ -681,14 +681,8 @@ def sample_set(id):
             }
         else:
             panels_measurements[panel]['samples'][sample]['measurement'] = weighted_average(
-                [
-                    panels_measurements[panel]['samples'][sample]['measurement'], 
-                    transcript_measurement[measurement_type[0]]
-                ],
-                [
-                    panels_measurements[panel]['samples'][sample]['len'], 
-                    transcript_measurement.len
-                ]
+                values=[panels_measurements[panel]['samples'][sample]['measurement'], transcript_measurement[measurement_type[0]]],
+                weights=[panels_measurements[panel]['samples'][sample]['len'], transcript_measurement.len]
             )
             panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
