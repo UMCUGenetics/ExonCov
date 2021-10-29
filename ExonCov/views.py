@@ -649,12 +649,22 @@ def sample_set(id):
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in sample_set.samples]
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(
-        measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'], 
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+        ]
     panels_measurements = {}
 
-    query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(
-        TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name).all()
+    query = (
+        db.session.query(PanelVersion, TranscriptMeasurement)
+        .filter_by(active=True)
+        .filter_by(validated=True)
+        .join(Transcript, PanelVersion.transcripts)
+        .join(TranscriptMeasurement)
+        .filter(TranscriptMeasurement.sample_id.in_(sample_ids))
+        .order_by(PanelVersion.panel_name)
+        .all()
+    )
 
     for panel, transcript_measurement in query:
         sample = transcript_measurement.sample

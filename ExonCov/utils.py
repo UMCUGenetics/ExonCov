@@ -75,7 +75,7 @@ def get_summary_stats_multi_sample(measurements, keys = "", samples = ""):
         keys = [keys]
 
     for key in keys:
-        if samples != "":
+        if samples:
             # when measurements scope is panel
             values = [measurements[key]['samples'][sample]['measurement'] for sample in samples] 
         else:
