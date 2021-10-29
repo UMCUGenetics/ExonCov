@@ -69,6 +69,10 @@ def event_logger(connection, log_model, model_name, action, event_data):
     )
 
 
+def get_summary_stats(values):
+    return(min(values), max(values), float(sum(values)) / len(values))
+
+
 def get_summary_stats_multi_sample(measurements, keys = None, samples = None):
     if not keys:
         keys = measurements.keys()
@@ -84,7 +88,3 @@ def get_summary_stats_multi_sample(measurements, keys = None, samples = None):
             values = measurements[key].values()
         measurements[key]['min'], measurements[key]['max'], measurements[key]['mean'] = get_summary_stats(values)
     return measurements
-
-
-def get_summary_stats(values):
-    return(min(values), max(values), float(sum(values)) / len(values))
