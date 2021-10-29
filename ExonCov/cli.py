@@ -6,8 +6,8 @@ import time
 import subprocess
 import os
 import shlex
-import datetime
 import urllib
+import datetime
 
 from flask_script import Command, Option
 from sqlalchemy.orm import joinedload
