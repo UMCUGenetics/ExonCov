@@ -1,28 +1,30 @@
 """CLI functions."""
 from collections import OrderedDict
-import datetime
-import os
-import re
-import shlex
-import subprocess
 import sys
+import re
 import time
+import subprocess
+import os
+import shlex
+import datetime
 import urllib
 
 from flask_script import Command, Option
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func
-import pysam
-import shutil
 import tempfile
+import shutil
+import pysam
 
 from . import app, db, utils
 from .models import (
     Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel,
     PanelVersion, panels_transcripts, CustomPanel, SampleSet
 )
+from .utils import weighted_average
+
 
 class PrintStats(Command):
     """Print database stats."""
@@ -839,10 +841,8 @@ class ExportCovStatsSampleSet(Command):
                 }
             else:
                 panels_measurements[panel]['samples'][sample]['measurement'] = utils.weighted_average(
-                    values=[panels_measurements[panel]['samples'][sample]['measurement'], 
-                        transcript_measurement[measurement_type]],
-                    weights=[panels_measurements[panel]['samples'][sample]['len'], 
-                        transcript_measurement.len]
+                    values=[panels_measurements[panel]['samples'][sample]['measurement'], transcript_measurement[measurement_type]],
+                    weights=[panels_measurements[panel]['samples'][sample]['len'], transcript_measurement.len]
                 )
                 panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
