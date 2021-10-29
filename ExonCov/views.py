@@ -19,7 +19,7 @@ from .forms import (
     MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm,
     CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm, SampleSetPanelGeneForm, SampleGeneForm
 )
-from .utils import retrieve_coverage, weighted_average
+from .utils import get_summary_stats, get_summary_stats_multi_sample, weighted_average
 
 
 @app.errorhandler(404)
@@ -518,12 +518,10 @@ def custom_panel(id):
             panel_measurements[sample]['len'] += transcript_measurement.len
 
     # Calculate min, mean, max
-    transcript_measurements = retrieve_coverage(measurements=transcript_measurements)
+    transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     values = [panel_measurements[sample]['measurement'] for sample in panel_measurements]
-    panel_measurements['min'] = min(values)
-    panel_measurements['max'] = max(values)
-    panel_measurements['mean'] = float(sum(values)) / len(values)
+    panel_measurements['min'], panel_measurements['max'], panel_measurements['mean'] = get_summary_stats(values)
     return render_template('custom_panel.html', form=measurement_type_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements, sample_stats=sample_stats)
 
 
@@ -569,12 +567,10 @@ def custom_panel_transcript(id, transcript_name):
                                 break
 
         # Calculate min, mean, max
-        values = transcript_measurements.values()
-        transcript_measurements['min'] = min(values)
-        transcript_measurements['max'] = max(values)
-        transcript_measurements['mean'] = float(sum(values)) / len(values)
+        transcript_measurements['min'], transcript_measurements['max'], transcript_measurements['mean'] = get_summary_stats(
+            transcript_measurements.values())
 
-        exon_measurements = retrieve_coverage(measurements=exon_measurements)
+        exon_measurements = get_summary_stats_multi_sample(measurements=exon_measurements)
 
     return render_template('custom_panel_transcript.html', form=measurement_type_form, transcript=transcript, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
 
@@ -602,7 +598,7 @@ def custom_panel_gene(id, gene_id):
                 transcript_measurements[transcript] = {}
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-        transcript_measurements = retrieve_coverage(measurements=transcript_measurements)
+        transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
 
@@ -696,7 +692,7 @@ def sample_set(id):
             )
             panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
-    panels_measurements = retrieve_coverage(measurements=panels_measurements, samples=sample_set.samples)
+    panels_measurements = get_summary_stats_multi_sample(measurements=panels_measurements, samples=sample_set.samples)
 
     return render_template('sample_set.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panels_measurements=panels_measurements)
 
@@ -726,7 +722,7 @@ def sample_set_panel(sample_set_id, panel_id):
         transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
     # Calculate min, mean, max
-    transcript_measurements = retrieve_coverage(measurements=transcript_measurements)
+    transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     return render_template('sample_set_panel.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panel=panel, transcript_measurements=transcript_measurements)
 
@@ -763,7 +759,7 @@ def sample_set_transcript(sample_set_id, transcript_name):
                             exon_measurements[exon][sample] = float(row[measurement_type[0]])
                             break
 
-        exon_measurements = retrieve_coverage(measurements=exon_measurements)
+        exon_measurements = get_summary_stats_multi_sample(measurements=exon_measurements)
 
     return render_template('sample_set_transcript.html', form=measurement_type_form, transcript=transcript, sample_set=sample_set, measurement_type=measurement_type, exon_measurements=exon_measurements)
 
@@ -790,6 +786,6 @@ def sample_set_gene(sample_set_id, gene_id):
                 transcript_measurements[transcript] = {}
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-        transcript_measurements = retrieve_coverage(measurements=transcript_measurements)
+        transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     return render_template('sample_set_gene.html', form=measurement_type_form, gene=gene, sample_set=sample_set, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
