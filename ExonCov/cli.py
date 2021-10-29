@@ -23,7 +23,6 @@ from .models import (
     Gene, GeneAlias, Transcript, Exon, SequencingRun, Sample, SampleProject, TranscriptMeasurement, Panel,
     PanelVersion, panels_transcripts, CustomPanel, SampleSet
 )
-from .utils import weighted_average
 
 
 class PrintStats(Command):
