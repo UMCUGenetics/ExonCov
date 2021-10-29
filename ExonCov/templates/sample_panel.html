@@ -33,7 +33,33 @@
             {% endif %}
         </dd>
     </dl>
+    <button type="button" class="btn btn-default" onclick="copy_panel_summary_text()">
+        <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> Copy Panel Summary
+    </button>
 </div>
+
+<!-- Repeat content of above div in textarea to allow copy to clipboard -->
+<textarea id="panel_summary_text" style="display:none;">
+    Sample: {{ sample.name }}
+    Project: {{ sample.project }}
+    Type: {{ sample.type }}
+    Sequencing runs: {% for run in sample.sequencing_runs %}{{ run }} {% endfor %}
+    Panel: {{ panel.name_version }}
+    Minimal % 15x: {{ panel.coverage_requirement_15 }}
+    Summary: Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}%.
+    {% if panel.core_genes %}
+        {% if panel_summary['core_genes'] %}
+            Core genen met 15x dekking < 100%: {{panel_summary['core_genes']}}.
+        {% else %}
+            Core genen met 15x dekking < 100%: geen.
+        {% endif %}
+    {% endif %}
+    {% if panel_summary['genes_15'] %}
+        Genen met 15x dekking < 95%: {{panel_summary['genes_15']}}.
+    {% else %}
+        Genen met 15x dekking < 95%: geen.
+    {% endif %}
+</textarea>
 
 {{ render_sample_datatable_form() }}
 
@@ -81,6 +107,7 @@
 {% if panel.core_genes %}
     * Core gene
 {% endif %}
+
 {% endblock %}
 
 {% block custom_javascript %}
@@ -99,23 +126,38 @@ $.fn.dataTable.ext.search.push(
     }
 );
 
-    $(document).ready(function() {
-        var dataTable = $('#data_table').DataTable( {
-            "paging": false,
-            "info": false,
-            "order": [[ 1, 'asc' ]],
-            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
-        });
-
-        $(".dataTables_filter").hide();
-
-        $("#search_box").bind("change keyup", function() {
-            dataTable.search(this.value).draw();
-        });
-
-        $('#cutoff, #measurementType').bind("change keyup", function() {
-            dataTable.draw();
-        });
+$(document).ready(function() {
+    var dataTable = $('#data_table').DataTable( {
+        "paging": false,
+        "info": false,
+        "order": [[ 1, 'asc' ]],
+        "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
     });
+
+    $(".dataTables_filter").hide();
+
+    $("#search_box").bind("change keyup", function() {
+        dataTable.search(this.value).draw();
+    });
+
+    $('#cutoff, #measurementType').bind("change keyup", function() {
+        dataTable.draw();
+    });
+});
+
+function copy_panel_summary_text() {
+     /* Get the text field and select */
+    var panelSummaryText = document.getElementById("panel_summary_text");
+    panelSummaryText.select();
+
+    /* Cleanup lines from textfield */
+    var panelSummaryArray = panelSummaryText.value.trim().split('\n').filter(line => /\S/.test(line));
+    panelSummaryText = panelSummaryArray.map(line => line.trim()).join('\n');
+
+     /* Copy the text inside the text field */
+    navigator.clipboard.writeText(panelSummaryText);
+}
+
 </script>
+
 {% endblock %}
