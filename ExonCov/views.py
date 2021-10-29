@@ -645,7 +645,7 @@ def sample_sets():
 @login_required
 def sample_set(id):
     """Sample set page."""
-    sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(sample_set_id)
+    sample_set = SampleSet.query.options(joinedload('samples')).get_or_404(id)
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in sample_set.samples]
