@@ -46,7 +46,11 @@
     Sequencing runs: {% for run in sample.sequencing_runs %}{{ run }} {% endfor %}
     Panel: {{ panel.name_version }}
     Minimal % 15x: {{ panel.coverage_requirement_15 }}
-    Summary: Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}%.
+    {% if panel_summary['measurement_percentage15'] < panel.coverage_requirement_15 %}
+        Summary: Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}% ; QC failed.
+    {% else %}
+        Summary: Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}%.
+    {% endif %}
     {% if panel.core_genes %}
         {% if panel_summary['core_genes'] %}
             Core genen met 15x dekking < 100%: {{panel_summary['core_genes']}}.
@@ -157,7 +161,6 @@ function copy_panel_summary_text() {
      /* Copy the text inside the text field */
     navigator.clipboard.writeText(panelSummaryText);
 }
-
 </script>
 
 {% endblock %}
