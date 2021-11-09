@@ -111,56 +111,55 @@
 {% if panel.core_genes %}
     * Core gene
 {% endif %}
-
 {% endblock %}
 
 {% block custom_javascript %}
 <script>
-$.fn.dataTable.ext.search.push(
-    function( settings, data, dataIndex ) {
-        var cutoff = parseFloat( $('#cutoff').val());
-        var measurementType = parseInt( $('#measurementType').val());
-        var measurement = parseFloat( data[measurementType + 6]); // correct for other columns
+    $.fn.dataTable.ext.search.push(
+        function( settings, data, dataIndex ) {
+            var cutoff = parseFloat( $('#cutoff').val());
+            var measurementType = parseInt( $('#measurementType').val());
+            var measurement = parseFloat( data[measurementType + 6]); // correct for other columns
 
-        if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
-        {
-            return true;
+            if ( isNaN(cutoff) || ( isNaN( measurement ) || measurement <= cutoff ) )
+            {
+                return true;
+            }
+            return false;
         }
-        return false;
+    );
+
+    $(document).ready(function() {
+        var dataTable = $('#data_table').DataTable( {
+            "paging": false,
+            "info": false,
+            "order": [[ 1, 'asc' ]],
+            "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        });
+
+        $(".dataTables_filter").hide();
+
+        $("#search_box").bind("change keyup", function() {
+            dataTable.search(this.value).draw();
+        });
+
+        $('#cutoff, #measurementType').bind("change keyup", function() {
+            dataTable.draw();
+        });
+    });
+
+    function copy_panel_summary_text() {
+        /* Get the text field and select */
+        var panelSummaryText = document.getElementById("panel_summary_text");
+        panelSummaryText.select();
+
+        /* Cleanup lines from textfield */
+        var panelSummaryArray = panelSummaryText.value.trim().split('\n').filter(line => /\S/.test(line));
+        panelSummaryText = panelSummaryArray.map(line => line.trim()).join('\n');
+
+        /* Copy the text inside the text field */
+        navigator.clipboard.writeText(panelSummaryText);
     }
-);
-
-$(document).ready(function() {
-    var dataTable = $('#data_table').DataTable( {
-        "paging": false,
-        "info": false,
-        "order": [[ 1, 'asc' ]],
-        "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
-    });
-
-    $(".dataTables_filter").hide();
-
-    $("#search_box").bind("change keyup", function() {
-        dataTable.search(this.value).draw();
-    });
-
-    $('#cutoff, #measurementType').bind("change keyup", function() {
-        dataTable.draw();
-    });
-});
-
-function copy_panel_summary_text() {
-     /* Get the text field and select */
-    var panelSummaryText = document.getElementById("panel_summary_text");
-    panelSummaryText.select();
-
-    /* Cleanup lines from textfield */
-    var panelSummaryArray = panelSummaryText.value.trim().split('\n').filter(line => /\S/.test(line));
-    panelSummaryText = panelSummaryArray.map(line => line.trim()).join('\n');
-
-     /* Copy the text inside the text field */
-    navigator.clipboard.writeText(panelSummaryText);
-}
 </script>
 
 {% endblock %}
