@@ -568,7 +568,8 @@ def custom_panel_transcript(id, transcript_name):
 
         # Calculate min, mean, max
         transcript_measurements['min'], transcript_measurements['max'], transcript_measurements['mean'] = get_summary_stats(
-            transcript_measurements.values())
+            transcript_measurements.values()
+        )
 
         exon_measurements = get_summary_stats_multi_sample(measurements=exon_measurements)
 
@@ -652,7 +653,7 @@ def sample_set(id):
     measurement_type = [
         measurement_type_form.data['measurement_type'], 
         dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
-        ]
+    ]
     panels_measurements = {}
 
     query = (
