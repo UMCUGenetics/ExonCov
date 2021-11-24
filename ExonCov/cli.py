@@ -458,11 +458,12 @@ class CreateSampleSet(Command):
         max_date = datetime.date.today() - datetime.timedelta(days=max_days)
 
         if max_date < min_date:
-            raise ValueError((
-                "Incorect use of max_days ({max_days}) and/or min_days ({min_days}): " 
-                    "maximum date {max_date} is smaller than min date {min_date}").format(
-                    max_days=max_days, min_days=min_days, max_date=max_date, min_date=min_date)
-                )
+            raise ValueError(
+                (
+                    "Incorect use of max_days ({max_days}) and/or min_days ({min_days}): " 
+                    "maximum date {max_date} is smaller than min date {min_date}"
+                ).format(max_days=max_days, min_days=min_days, max_date=max_date, min_date=min_date)
+            )
         samples = (
             Sample.query
             .filter(Sample.name.like('%{0}%'.format(sample_filter)))
@@ -851,12 +852,14 @@ class ExportCovStatsSampleSet(Command):
             panel_cov_stats = utils.get_summary_stats_multi_sample(
                 measurements=panels_measurements, keys=[panel], samples=ss_samples
             )
-            print("{panel_version}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                panel_version=panel,
-                measurement_type=measurement_type,
-                mean=panel_cov_stats[panel]['mean'],
-                min=panel_cov_stats[panel]['min'],
-                max=panel_cov_stats[panel]['max'])
+            print(
+                "{panel_version}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                    panel_version=panel,
+                    measurement_type=measurement_type,
+                    mean=panel_cov_stats[panel]['mean'],
+                    min=panel_cov_stats[panel]['min'],
+                    max=panel_cov_stats[panel]['max']
+                )
             )
 
 
@@ -886,11 +889,14 @@ class ExportCovStatsSampleSet(Command):
                     measurements=panels_measurements[panel], keys=[transcript]
                 )
                 # print summary
-                print("{panel_version}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
-                    panel_version=panel,
-                    transcript=transcript,
-                    gene=transcript.gene_id,
-                    measurement_type=measurement_type,
-                    mean=transcript_cov_stats[transcript]['mean'],
-                    min=transcript_cov_stats[transcript]['min'],
-                    max=transcript_cov_stats[transcript]['max']))
+                print(
+                    "{panel_version}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
+                        panel_version=panel,
+                        transcript=transcript,
+                        gene=transcript.gene_id,
+                        measurement_type=measurement_type,
+                        mean=transcript_cov_stats[transcript]['mean'],
+                        min=transcript_cov_stats[transcript]['min'],
+                        max=transcript_cov_stats[transcript]['max']
+                    )
+                )
