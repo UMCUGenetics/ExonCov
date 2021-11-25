@@ -773,8 +773,8 @@ class ExportCovStatsSampleSet(Command):
     """Print tab delimited coverage statistics of panel or transcript as table."""
 
     option_list = (
-        Option('sample_set_id', type=str, dest="sample_set_id"),
-        Option('data_type', type=str, choices=["panel", "transcript"], dest="data_type"),
+        Option('sample_set_id', type=str),
+        Option('data_type', type=str, choices=["panel", "transcript"]),
         Option(
             '-m', '--measurement_type', 
             choices=[
