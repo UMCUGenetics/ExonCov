@@ -80,9 +80,11 @@ def get_summary_stats_multi_sample(measurements, keys = None, samples = None):
         keys = [keys]
 
     for key in keys:
-        if samples:
+        if samples and 'samples' in measurements[key]:
             # when measurements scope is panel
             values = [measurements[key]['samples'][sample]['measurement'] for sample in samples] 
+        elif samples:
+            values = [measurements[key][sample]['measurement'] for sample in samples]
         else:
             # when measurements scope is transcript or exon
             values = measurements[key].values()
