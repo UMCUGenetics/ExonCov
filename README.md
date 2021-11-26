@@ -15,7 +15,11 @@ git clone git@github.com:UMCUGenetics/ExonCov.git
 cd ExonCov
 
 # Setup python virtual environment and install python dependencies
-virtualenv venv
+    # Note: Use the python interpreter that is available and 
+    # make sure this overlaps with the one used to install the virtualenv. 
+    # You could use `which <tool>` and/or `virtualenv -h` to check this.
+
+virtualenv venv # add full path if needed, for example: /usr/bin/virtualenv
 . venv/bin/activate
 pip install -r requirements.txt
 ```
