@@ -6,7 +6,6 @@ import flask_admin
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_debugtoolbar import DebugToolbarExtension
 
-
 from ExonCov.utils import url_for_other_page, event_logger
 
 # Setup APP
