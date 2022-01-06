@@ -386,19 +386,37 @@ class SampleQC(Command):
                     if transcript.gene in panel.core_genes and transcript_measurement.measurement_percentage15 != 100:
                         core_gene_qc = False
 
-                print("{sample}\t{panel}\t{panel_min_15x}\t{panel_15x}\t{panel_qc}\t{core_gene_qc}".format(
+                self.print_result(
                     sample=sample.name,
                     panel=panel,
                     panel_min_15x=panel.coverage_requirement_15,
                     panel_15x=panel_measurement_percentage15_avg,
                     panel_qc=panel_qc,
                     core_gene_qc=core_gene_qc
-                ))
-            else:
-                print("# Unknown sample or panel\tsample={sample}\tpanel={panel}".format(
-                    sample=sample_id,
-                    panel=panels[index],
-                ))
+                )
+            else:  # sample and/or panel not found
+                sample_msg = 'unknown_sample={0}'.format(sample_id)
+                panel_msg = 'unknown_panel={0}'.format(panels[index])
+
+                if sample:
+                    sample_msg = sample.name
+                if panel:
+                    panel_msg = panel
+
+                self.print_result(
+                    sample=sample_msg,
+                    panel=panel_msg,
+                )
+
+    def print_result(self, sample, panel, panel_min_15x='', panel_15x='', panel_qc='', core_gene_qc=''):
+        print("{sample}\t{panel}\t{panel_min_15x}\t{panel_15x}\t{panel_qc}\t{core_gene_qc}".format(
+            sample=sample,
+            panel=panel,
+            panel_min_15x=panel_min_15x,
+            panel_15x=panel_15x,
+            panel_qc=panel_qc,
+            core_gene_qc=core_gene_qc
+        ))
 
 
 class RemoveSample(Command):
@@ -460,7 +478,7 @@ class CreateSampleSet(Command):
         if max_date < min_date:
             raise ValueError(
                 (
-                    "Incorect use of max_days ({max_days}) and/or min_days ({min_days}): " 
+                    "Incorect use of max_days ({max_days}) and/or min_days ({min_days}): "
                     "maximum date {max_date} is smaller than min date {min_date}"
                 ).format(max_days=max_days, min_days=min_days, max_date=max_date, min_date=min_date)
             )
@@ -776,14 +794,14 @@ class ExportCovStatsSampleSet(Command):
         Option('sample_set_id', type=str),
         Option('data_type', type=str, choices=["panel", "transcript"]),
         Option(
-            '-m', '--measurement_type', 
+            '-m', '--measurement_type',
             choices=[
-                'measurement_mean_coverage', 
-                'measurement_percentage10', 
-                'measurement_percentage15', 
-                'measurement_percentage20', 
-                'measurement_percentage30', 
-                'measurement_percentage50', 
+                'measurement_mean_coverage',
+                'measurement_percentage10',
+                'measurement_percentage15',
+                'measurement_percentage20',
+                'measurement_percentage30',
+                'measurement_percentage50',
                 'measurement_percentage100'
             ],
             dest='measurement_type',
@@ -800,7 +818,7 @@ class ExportCovStatsSampleSet(Command):
             print("Sample set ID {id} does not exist in database.".format(id=sample_set_id))
             sys.exit(e)
         sample_ids = [sample.id for sample in sample_set.samples]
-        
+
         # retrieve panels, transcripts measurements per sample
         query = (
             db.session.query(PanelVersion, TranscriptMeasurement)
