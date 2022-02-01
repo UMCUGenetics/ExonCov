@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import or_
 import pysam
 
-from ExonCov import app, db
+from . import app, db
 from .models import (
     Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript,
     TranscriptMeasurement, panels_transcripts
@@ -19,7 +19,7 @@ from .forms import (
     MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm,
     CreatePanelForm, PanelNewVersionForm, PanelEditForm, PanelVersionEditForm, SampleSetPanelGeneForm, SampleGeneForm
 )
-from .utils import weighted_average
+from .utils import get_summary_stats, get_summary_stats_multi_sample, weighted_average
 
 
 @app.errorhandler(404)
@@ -35,14 +35,24 @@ def samples():
     sample_form = SampleForm(request.args, meta={'csrf': False})
     page = request.args.get('page', default=1, type=int)
     sample = request.args.get('sample')
+    sample_type = request.args.get('sample_type')
     project = request.args.get('project')
     run = request.args.get('run')
     samples_per_page = 10
 
-    samples = Sample.query.order_by(Sample.import_date.desc()).order_by(Sample.name.asc()).options(joinedload('sequencing_runs')).options(joinedload('project'))
-    if (sample or project or run) and sample_form.validate():
+    samples = (
+        Sample.query
+        .order_by(Sample.import_date.desc())
+        .order_by(Sample.name.asc())
+        .options(joinedload('sequencing_runs'))
+        .options(joinedload('project'))
+    )
+
+    if (sample or project or run or sample_type) and sample_form.validate():
         if sample:
             samples = samples.filter(Sample.name.like('%{0}%'.format(sample)))
+        if sample_type:
+            samples = samples.filter(Sample.type == sample_type)
         if project:
             samples = samples.join(SampleProject).filter(SampleProject.name.like('%{0}%'.format(project)))
         if run:
@@ -104,8 +114,8 @@ def sample(id):
         else:
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = weighted_average(
-                    [panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
-                    [panels[panel.id]['len'], transcript_measurement.len]
+                    values=[panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
+                    weights=[panels[panel.id]['len'], transcript_measurement.len]
                 )
             panels[panel.id]['len'] += transcript_measurement.len
     return render_template('sample.html', sample=sample, panels=panels, measurement_types=measurement_types, form=gene_form)
@@ -137,8 +147,8 @@ def sample_inactive_panels(id):
         else:
             for measurement_type in measurement_types:
                 panels[panel.id][measurement_type] = weighted_average(
-                    [panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
-                    [panels[panel.id]['len'], transcript_measurement.len]
+                    values=[panels[panel.id][measurement_type], transcript_measurement[measurement_type]],
+                    weights=[panels[panel.id]['len'], transcript_measurement.len]
                 )
             panels[panel.id]['len'] += transcript_measurement.len
     return render_template('sample_inactive_panels.html', sample=sample, panels=panels, measurement_types=measurement_types)
@@ -173,8 +183,8 @@ def sample_panel(sample_id, panel_id):
     # Setup panel summary
     panel_summary = {
         'measurement_percentage15': weighted_average(
-            [tm[1].measurement_percentage15 for tm in transcript_measurements],
-            [tm[1].len for tm in transcript_measurements]
+            values=[tm[1].measurement_percentage15 for tm in transcript_measurements],
+            weights=[tm[1].len for tm in transcript_measurements]
         ),
         'core_genes': ', '.join(
             ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100]
@@ -512,22 +522,16 @@ def custom_panel(id):
             }
         else:
             panel_measurements[sample]['measurement'] = weighted_average(
-                [panel_measurements[sample]['measurement'], transcript_measurement[measurement_type[0]]],
-                [panel_measurements[sample]['len'], transcript_measurement.len]
+                values=[panel_measurements[sample]['measurement'], transcript_measurement[measurement_type[0]]],
+                weights=[panel_measurements[sample]['len'], transcript_measurement.len]
             )
             panel_measurements[sample]['len'] += transcript_measurement.len
 
     # Calculate min, mean, max
-    for transcript in transcript_measurements:
-        values = transcript_measurements[transcript].values()
-        transcript_measurements[transcript]['min'] = min(values)
-        transcript_measurements[transcript]['max'] = max(values)
-        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+    transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     values = [panel_measurements[sample]['measurement'] for sample in panel_measurements]
-    panel_measurements['min'] = min(values)
-    panel_measurements['max'] = max(values)
-    panel_measurements['mean'] = float(sum(values)) / len(values)
+    panel_measurements['min'], panel_measurements['max'], panel_measurements['mean'] = get_summary_stats(values)
     return render_template('custom_panel.html', form=measurement_type_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements, sample_stats=sample_stats)
 
 
@@ -573,16 +577,11 @@ def custom_panel_transcript(id, transcript_name):
                                 break
 
         # Calculate min, mean, max
-        values = transcript_measurements.values()
-        transcript_measurements['min'] = min(values)
-        transcript_measurements['max'] = max(values)
-        transcript_measurements['mean'] = float(sum(values)) / len(values)
+        transcript_measurements['min'], transcript_measurements['max'], transcript_measurements['mean'] = get_summary_stats(
+            transcript_measurements.values()
+        )
 
-        for exon in exon_measurements:
-            values = exon_measurements[exon].values()
-            exon_measurements[exon]['min'] = min(values)
-            exon_measurements[exon]['max'] = max(values)
-            exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
+        exon_measurements = get_summary_stats_multi_sample(measurements=exon_measurements)
 
     return render_template('custom_panel_transcript.html', form=measurement_type_form, transcript=transcript, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
 
@@ -610,11 +609,7 @@ def custom_panel_gene(id, gene_id):
                 transcript_measurements[transcript] = {}
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-        for transcript in transcript_measurements:
-            values = transcript_measurements[transcript].values()
-            transcript_measurements[transcript]['min'] = min(values)
-            transcript_measurements[transcript]['max'] = max(values)
-            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+        transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
 
@@ -665,10 +660,22 @@ def sample_set(id):
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in sample_set.samples]
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'], 
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+    ]
     panels_measurements = {}
 
-    query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=True).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter(TranscriptMeasurement.sample_id.in_(sample_ids)).order_by(PanelVersion.panel_name).all()
+    query = (
+        db.session.query(PanelVersion, TranscriptMeasurement)
+        .filter_by(active=True)
+        .filter_by(validated=True)
+        .join(Transcript, PanelVersion.transcripts)
+        .join(TranscriptMeasurement)
+        .filter(TranscriptMeasurement.sample_id.in_(sample_ids))
+        .order_by(PanelVersion.panel_name)
+        .all()
+    )
 
     for panel, transcript_measurement in query:
         sample = transcript_measurement.sample
@@ -685,16 +692,12 @@ def sample_set(id):
             }
         else:
             panels_measurements[panel]['samples'][sample]['measurement'] = weighted_average(
-                [panels_measurements[panel]['samples'][sample]['measurement'], transcript_measurement[measurement_type[0]]],
-                [panels_measurements[panel]['samples'][sample]['len'], transcript_measurement.len]
+                values=[panels_measurements[panel]['samples'][sample]['measurement'], transcript_measurement[measurement_type[0]]],
+                weights=[panels_measurements[panel]['samples'][sample]['len'], transcript_measurement.len]
             )
             panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
-    for panel in panels_measurements:
-        values = [panels_measurements[panel]['samples'][sample]['measurement'] for sample in sample_set.samples]
-        panels_measurements[panel]['min'] = min(values)
-        panels_measurements[panel]['max'] = max(values)
-        panels_measurements[panel]['mean'] = float(sum(values)) / len(values)
+    panels_measurements = get_summary_stats_multi_sample(measurements=panels_measurements, samples=sample_set.samples)
 
     return render_template('sample_set.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panels_measurements=panels_measurements)
 
@@ -724,11 +727,7 @@ def sample_set_panel(sample_set_id, panel_id):
         transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
     # Calculate min, mean, max
-    for transcript in transcript_measurements:
-        values = transcript_measurements[transcript].values()
-        transcript_measurements[transcript]['min'] = min(values)
-        transcript_measurements[transcript]['max'] = max(values)
-        transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+    transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     return render_template('sample_set_panel.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panel=panel, transcript_measurements=transcript_measurements)
 
@@ -765,11 +764,7 @@ def sample_set_transcript(sample_set_id, transcript_name):
                             exon_measurements[exon][sample] = float(row[measurement_type[0]])
                             break
 
-        for exon in exon_measurements:
-            values = exon_measurements[exon].values()
-            exon_measurements[exon]['min'] = min(values)
-            exon_measurements[exon]['max'] = max(values)
-            exon_measurements[exon]['mean'] = float(sum(values)) / len(values)
+        exon_measurements = get_summary_stats_multi_sample(measurements=exon_measurements)
 
     return render_template('sample_set_transcript.html', form=measurement_type_form, transcript=transcript, sample_set=sample_set, measurement_type=measurement_type, exon_measurements=exon_measurements)
 
@@ -796,10 +791,6 @@ def sample_set_gene(sample_set_id, gene_id):
                 transcript_measurements[transcript] = {}
             transcript_measurements[transcript][sample] = transcript_measurement[measurement_type[0]]
 
-        for transcript in transcript_measurements:
-            values = transcript_measurements[transcript].values()
-            transcript_measurements[transcript]['min'] = min(values)
-            transcript_measurements[transcript]['max'] = max(values)
-            transcript_measurements[transcript]['mean'] = float(sum(values)) / len(values)
+        transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
     return render_template('sample_set_gene.html', form=measurement_type_form, gene=gene, sample_set=sample_set, measurement_type=measurement_type, transcript_measurements=transcript_measurements)

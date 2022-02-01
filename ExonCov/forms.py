@@ -86,6 +86,11 @@ def parse_core_gene_list(gene_list, genes=[]):
 class SampleForm(FlaskForm):
     """Query samples by run or samplename field"""
     sample = StringField('Sample')
+    sample_type = SelectField('Type', default=None, choices=[
+        ('', ''),
+        ('WES', 'WES'),
+        ('WGS', 'WGS'),
+    ])
     project = StringField('Project')
     run = StringField('Sequencing run')
 
