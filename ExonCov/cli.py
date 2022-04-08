@@ -178,6 +178,9 @@ class ImportBam(Command):
         sample.exon_measurement_file = '{0}_{1}.txt'.format(sample.id, sample.exon_measurement_file)
         db.session.add(sample)
         db.session.commit()
+        # Store sample_id and close session before starting Sambamba
+        sample_id = sample.id
+        db.session.close()
 
         # Create temp_dir
         if not temp_path:
@@ -264,6 +267,7 @@ class ImportBam(Command):
         os.system('rsync {0}* {1}'.format(exon_measurement_file_path_gz, app.config['EXON_MEASUREMENTS_RSYNC_PATH']))
 
         # Change exon_measurement_file to path on server.
+        sample = Sample.query.get(sample_id)
         sample.exon_measurement_file = '{0}/{1}.gz'.format(
             app.config['EXON_MEASUREMENTS_RSYNC_PATH'].split(':')[-1],
             sample.exon_measurement_file
