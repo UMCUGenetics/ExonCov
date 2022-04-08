@@ -5,6 +5,13 @@ SQLALCHEMY_DATABASE_URI = 'mysql://exoncov3:exoncov3@localhost/exoncov3'
 SQLALCHEMY_ECHO = False
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+# SQLAlchemy CLI settings, enable when using CLI
+# SQLALCHEMY_ENGINE_OPTIONS = {
+#    'pool_size' : 1,
+#    'pool_recycle': 120,
+#    'pool_pre_ping': True
+# }
+
 # FlaskForm
 SECRET_KEY = 'change_this'
 
