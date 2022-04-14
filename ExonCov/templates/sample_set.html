@@ -19,6 +19,7 @@
     <thead>
         <tr>
             <th>Gene Panel</th>
+            <th>Description</th>
             <th>Mean</th>
             <th>Min.</th>
             <th>Max.</th>
@@ -30,7 +31,8 @@
     <tbody>
         {% for panel in panels_measurements %}
         <tr>
-            <td><a href="{{ url_for('sample_set_panel', sample_set_id=sample_set.id, panel_id=panel.id) }}">{{ panel }}</td>
+            <td><a href="{{ url_for('sample_set_panel', sample_set_id=sample_set.id, panel_id=panel.id) }}">{{ panel }}</a></td>
+            <td>{{ panel.panel.disease_description_nl }}</td>
             {{ render_panel_measurement_td(panels_measurements[panel]['mean'], measurement_type[0], panel) }}
             {{ render_panel_measurement_td(panels_measurements[panel]['min'], measurement_type[0], panel) }}
             {{ render_panel_measurement_td(panels_measurements[panel]['max'], measurement_type[0], panel) }}

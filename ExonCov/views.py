@@ -98,13 +98,15 @@ def sample(id):
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
         'measurement_percentage15': '>15',
-        'measurement_percentage30': '>30'
+        'measurement_percentage30': '>30',
+        'measurement_percentage100': '>100',
     }
     panels = {}
 
     for panel, transcript_measurement in query:
         if panel.id not in panels:
             panels[panel.id] = {
+                'description': panel.panel.disease_description_nl,
                 'len': transcript_measurement.len,
                 'name_version': panel.name_version,
                 'coverage_requirement_15': panel.coverage_requirement_15
@@ -130,7 +132,8 @@ def sample_inactive_panels(id):
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
         'measurement_percentage15': '>15',
-        'measurement_percentage30': '>30'
+        'measurement_percentage30': '>30',
+        'measurement_percentage100': '>100',
     }
     query = db.session.query(PanelVersion, TranscriptMeasurement).filter_by(active=False).filter_by(validated=True).join(Transcript, PanelVersion.transcripts).join(TranscriptMeasurement).filter_by(sample_id=sample.id).order_by(PanelVersion.panel_name).all()
     panels = {}
@@ -138,6 +141,7 @@ def sample_inactive_panels(id):
     for panel, transcript_measurement in query:
         if panel.id not in panels:
             panels[panel.id] = {
+                'description': panel.panel.disease_description_nl,
                 'len': transcript_measurement.len,
                 'name_version': panel.name_version,
                 'coverage_requirement_15': panel.coverage_requirement_15
@@ -165,7 +169,8 @@ def sample_panel(sample_id, panel_id):
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
         'measurement_percentage15': '>15',
-        'measurement_percentage30': '>30'
+        'measurement_percentage30': '>30',
+        'measurement_percentage100': '>100',
     }
 
     transcript_measurements = (
@@ -232,7 +237,8 @@ def sample_transcript(sample_id, transcript_name):
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
         'measurement_percentage15': '>15',
-        'measurement_percentage30': '>30'
+        'measurement_percentage30': '>30',
+        'measurement_percentage100': '>100',
     }
     return render_template('sample_transcript.html', sample=sample, transcript=transcript, exon_measurements=exon_measurements, measurement_types=measurement_types)
 
@@ -248,7 +254,8 @@ def sample_gene(sample_id, gene_id):
         'measurement_mean_coverage': 'Mean coverage',
         'measurement_percentage10': '>10',
         'measurement_percentage15': '>15',
-        'measurement_percentage30': '>30'
+        'measurement_percentage30': '>30',
+        'measurement_percentage100': '>100',
     }
     transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
 
@@ -661,7 +668,7 @@ def sample_set(id):
 
     sample_ids = [sample.id for sample in sample_set.samples]
     measurement_type = [
-        measurement_type_form.data['measurement_type'], 
+        measurement_type_form.data['measurement_type'],
         dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
     ]
     panels_measurements = {}
