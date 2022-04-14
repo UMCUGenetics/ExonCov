@@ -40,10 +40,16 @@ def get_gene(gene_id):
     # Find possible gene alias if gene not found
     if not gene:
         gene_aliases = GeneAlias.query.filter_by(id=gene_id).all()
+        gene_case_differences = Gene.query.filter(Gene.id.ilike(gene_id)).all()
         if gene_aliases:
             error = 'Unkown gene: {0}. Possible aliases: {1}. Please check before using alias.'.format(
                 gene_id,
                 ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
+            )
+        elif gene_case_differences:
+            error = 'Unkown gene: {0}. Possible case difference: {1}. Please check before using suggestion.'.format(
+                gene_id,
+                ', '.join([gene.id for gene in gene_case_differences])
             )
         else:
             try:
