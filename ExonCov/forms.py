@@ -28,6 +28,10 @@ def all_panels():
     return PanelVersion.query.filter_by(active=True).filter_by(validated=True).all()
 
 
+def get_id(object):
+    return object.id
+
+
 def get_gene(gene_id):
     """Find gene or gene aliases."""
     error = ''
@@ -36,10 +40,16 @@ def get_gene(gene_id):
     # Find possible gene alias if gene not found
     if not gene:
         gene_aliases = GeneAlias.query.filter_by(id=gene_id).all()
+        gene_case_differences = Gene.query.filter(Gene.id.ilike(gene_id)).all()
         if gene_aliases:
             error = 'Unkown gene: {0}. Possible aliases: {1}. Please check before using alias.'.format(
                 gene_id,
                 ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
+            )
+        elif gene_case_differences:
+            error = 'Unkown gene: {0}. Possible case difference: {1}. Please check before using suggestion.'.format(
+                gene_id,
+                ', '.join([gene.id for gene in gene_case_differences])
             )
         else:
             try:
@@ -103,9 +113,9 @@ class CustomPanelForm(FlaskForm):
 class CustomPanelNewForm(FlaskForm):
     """Custom Panel New form."""
 
-    sample_set = QuerySelectField('Sample set', query_factory=active_sample_sets, allow_blank=True, blank_text='None')
-    samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
-    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
+    sample_set = QuerySelectField('Sample set', query_factory=active_sample_sets, allow_blank=True, blank_text='None', get_pk=get_id)
+    samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None', get_pk=get_id)
+    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None', get_pk=get_id)
     gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, tab, ',' or ';'.", validators=[])
     research_number = StringField('Test reference number', description="Provide a test reference number (onderzoeksnummer) for INC99 tests.")
     comments = TextAreaField('Comments', description="Provide a short description.")
@@ -342,9 +352,10 @@ class SampleSetPanelGeneForm(FlaskForm):
         query_factory=active_sample_sets,
         allow_blank=True,
         blank_text='None',
-        validators=[validators.InputRequired()]
+        validators=[validators.InputRequired()],
+        get_pk=get_id
     )
-    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
+    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None', get_pk=get_id)
     gene = StringField('Gene')
 
     gene_id = ''

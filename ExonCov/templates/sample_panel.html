@@ -12,6 +12,7 @@
         <dt>Type</dt><dd>{{ sample.type }}</dd>
         <dt>Sequencing runs</dt><dd><ul class="list-inline">{% for run in sample.sequencing_runs %}<li>{{ run }}</li>{% endfor %}</ul></dd>
         <dt>Panel</dt><dd>{{ panel.name_version }} </dd>
+        <dt>Description</dt><dd>{{ panel.panel.disease_description_nl }} </dd>
         <dt>Minimal % 15x</dt><dd><p>{{ panel.coverage_requirement_15 }}</p></dd>
         <dt>Summary</dt><dd>
             {% if panel_summary['measurement_percentage15'] < panel.coverage_requirement_15 %}
@@ -45,6 +46,7 @@
     Type: {{ sample.type }}
     Sequencing runs: {% for run in sample.sequencing_runs %}{{ run }} {% endfor %}
     Panel: {{ panel.name_version }}
+    Description: {{ panel.panel.disease_description_nl }}
     Minimal % 15x: {{ panel.coverage_requirement_15 }}
     {% if panel_summary['measurement_percentage15'] < panel.coverage_requirement_15 %}
         Summary: Dekking {{ panel.name_version }} >15X = {{ panel_summary['measurement_percentage15']|float|round(2) }}% ; QC failed.
@@ -135,6 +137,7 @@
             "info": false,
             "order": [[ 1, 'asc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+            "fixedHeader": true,
         });
 
         $(".dataTables_filter").hide();

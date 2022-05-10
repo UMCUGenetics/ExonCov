@@ -12,6 +12,7 @@
         <tr>
             <th>Gene panel</th>
             <th>Last version</th>
+            <th>Description</th>
         </tr>
     </thead>
     <tbody>
@@ -19,6 +20,7 @@
         <tr>
             <td><a href="{{ url_for('panel', name=panel.name) }}">{{ panel.name }}</a></td>
             <td><a href="{{ url_for('panel_version', id=panel.last_version.id) }}">{{ panel.last_version }}</a></td>
+            <td>{{ panel.disease_description_nl }}</td>
         </tr>
         {% endfor %}
     </tbody>
@@ -33,6 +35,7 @@
             "info": false,
             "order": [[ 0, 'asc' ]],
             "dom": "<'row'<'col-sm-6'f><'col-sm-6'l>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+            "fixedHeader": true,
         });
 
         $(".dataTables_filter").hide();
