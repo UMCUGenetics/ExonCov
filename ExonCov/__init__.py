@@ -1,4 +1,6 @@
 """ExonCov flask app."""
+import subprocess
+
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -18,7 +20,10 @@ admin = flask_admin.Admin(app, name='ExonCov Admin', template_mode='bootstrap3')
 # Debug
 toolbar = DebugToolbarExtension(app)
 
+# Jinja globals
 app.jinja_env.globals['url_for_other_page'] = url_for_other_page
+app.jinja_env.globals['git_version'] = subprocess.check_output(['git', 'describe', '--tags']).decode('ascii').strip()
+app.jinja_env.globals['git_commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
 from . import views, admin_views, models, forms
 

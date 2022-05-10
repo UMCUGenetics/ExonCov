@@ -22,6 +22,11 @@
                 <div class="page-header"><h1>{% block header %}{% endblock %}</h1></div>
                 {% block body %}{% endblock %}
             </div>
+            <p class="text-center">
+                <span data-toggle="popover_git_commit" data-placement="bottom" title="Git commit" data-content="{{ git_commit }}">
+                    <small>ExonCov {{ git_version }}</small>
+                </span>
+            </p>
         </div>
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
         <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
@@ -31,5 +36,8 @@
         <script src="{{ url_for('static', filename='js/datatables.min.js') }}"></script>
 
         {% block custom_javascript %}{% endblock %}
+        <script>
+            $(function () {$('[data-toggle="popover_git_commit"]').popover()})
+        </script>
     </body>
 </html>
