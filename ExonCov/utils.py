@@ -1,5 +1,6 @@
 """Utility functions."""
 import json
+from builtins import str
 
 from flask import request, url_for
 from flask_login import current_user
@@ -52,7 +53,7 @@ def weighted_average(values, weights):
 
 def event_logger(connection, log_model, model_name, action, event_data):
     # Cleanup and transform item to str
-    for item in event_data.keys():
+    for item in list(event_data.keys()):
         if item in ['_sa_instance_state', 'user']:
             event_data.pop(item, None)
         else:
@@ -82,7 +83,7 @@ def get_summary_stats_multi_sample(measurements, keys = None, samples = None):
     for key in keys:
         if samples and 'samples' in measurements[key]:
             # when measurements scope is panel
-            values = [measurements[key]['samples'][sample]['measurement'] for sample in samples] 
+            values = [measurements[key]['samples'][sample]['measurement'] for sample in samples]
         elif samples:
             values = [measurements[key][sample]['measurement'] for sample in samples]
         else:
