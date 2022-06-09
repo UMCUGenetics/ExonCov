@@ -74,7 +74,7 @@ def get_summary_stats(values):
     return(min(values), max(values), float(sum(values)) / len(values))
 
 
-def get_summary_stats_multi_sample(measurements, keys = None, samples = None):
+def get_summary_stats_multi_sample(measurements, keys=None, samples=None):
     if not keys:
         keys = measurements.keys()
     elif isinstance(keys, str):
