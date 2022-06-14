@@ -25,7 +25,7 @@ app.jinja_env.globals['url_for_other_page'] = url_for_other_page
 app.jinja_env.globals['git_version'] = check_output(['git', 'describe', '--tags']).decode('ascii').strip()
 app.jinja_env.globals['git_commit'] = check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
-from . import views, admin_views, models, forms
+from . import views, api_views, admin_views, models, forms
 
 # Setup flask_security
 user_datastore = SQLAlchemyUserDatastore(db, models.User, models.Role)
