@@ -1,5 +1,6 @@
 """ExonCov flask app."""
 from subprocess import check_output
+from os import path
 
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -22,8 +23,9 @@ toolbar = DebugToolbarExtension(app)
 
 # Jinja globals
 app.jinja_env.globals['url_for_other_page'] = url_for_other_page
-app.jinja_env.globals['git_version'] = check_output(['git', 'describe', '--tags']).decode('ascii').strip()
-app.jinja_env.globals['git_commit'] = check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+git_command = ['git', '--git-dir', '{file_path}/../.git'.format(file_path=path.abspath(path.dirname(__file__)))]
+app.jinja_env.globals['git_version'] = check_output(git_command + ['describe', '--tags']).decode('ascii').strip()
+app.jinja_env.globals['git_commit'] = check_output(git_command + ['rev-parse', 'HEAD']).decode('ascii').strip()
 
 from . import views, admin_views, models, forms
 
