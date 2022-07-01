@@ -57,7 +57,7 @@ class PrintPanelGenesTable(Command):
     """Print tab delimited panel / genes table."""
     option_list = (
         Option('-a', '--archived_panels', dest='active_panels', default=True,
-               action='store_false', help="Use active or archived panels"),
+               action='store_false', help="Use archived panels instead of active panels"),
     )
 
     def run(self, active_panels):
@@ -352,7 +352,7 @@ class SampleQC(Command):
         Option('-s', '--samples', nargs='+'),
         Option('-p', '--panels', nargs='+'),
         Option('-a', '--archived_panels', dest='active_panels', default=True,
-               action='store_false', help="Use active or archived panels"),
+               action='store_false', help="Use archived panels instead of active panels"),
     )
 
     def run(self, samples, panels, active_panels):
@@ -615,13 +615,13 @@ class ExportAliasTable(Command):
 
 
 class PrintPanelBed(Command):
-    """Print bed file containing regions in active, archived and validated panels. FULL_autosomal and FULL_TARGET are filtered from the list."""
+    """Print bed file containing regions in validated active or validated archived panels. FULL_autosomal and FULL_TARGET are filtered from the list."""
 
     option_list = (
         Option('-f', '--remove_flank', dest='remove_flank', default=False, action='store_true', help="Remove 20bp flank from exon coordinates."),
         Option('-p', '--panel', dest='panel', help="Filter on panel name (including version, for example AMY01v19.1)."),
         Option('-a', '--archived_panels', dest='active_panels', default=True,
-               action='store_false', help="Use active or archived panels"),
+               action='store_false', help="Use archived panels instead of active panels"),
     )
 
     def run(self, remove_flank, panel, active_panels):
@@ -838,7 +838,7 @@ class ExportCovStatsSampleSet(Command):
             default='measurement_percentage15'
         ),
         Option('-a', '--archived_panels', dest='active_panels', default=True,
-               action='store_false', help="Use active or archived panels"),
+               action='store_false', help="Use archived panels instead of active panels"),
     )
 
     def run(self, sample_set_id, data_type, measurement_type, active_panels):
