@@ -3,21 +3,14 @@ import re
 
 from flask_wtf import FlaskForm
 from flask_security.forms import RegisterForm
-from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
-from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField, FloatField
+from wtforms.ext.sqlalchemy.fields import QuerySelectField
+from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField, FloatField, SelectMultipleField
 from wtforms import validators
-import datetime
 
 from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
 
 
 # Query factories
-def all_samples():
-    """Query factory for all samples."""
-    #return Sample.query.all()
-    return Sample.query.filter(Sample.name.like('%C%')).filter(Sample.import_date >= datetime.date.today() - datetime.timedelta(days=365*2)).all()
-
-
 def active_sample_sets():
     """Query factory for active sample sets."""
     return SampleSet.query.filter_by(active=True).all()
@@ -30,6 +23,10 @@ def all_panels():
 
 def get_id(object):
     return object.id
+
+
+def get_sample(sample_id):
+    return Sample.query.get(sample_id)
 
 
 def get_gene(gene_id):
@@ -93,6 +90,14 @@ def parse_core_gene_list(gene_list, genes=[]):
     return errors, genes
 
 
+# Custom Fields
+class Select2MultipleField(SelectMultipleField):
+    """Select2MultipleField used for ajax based select2 fields."""
+    def pre_validate(self, form):
+        pass  # Prevent "not a valid choice" error
+
+
+# Forms
 class SampleForm(FlaskForm):
     """Query samples by run or samplename field"""
     sample = StringField('Sample')
@@ -113,11 +118,17 @@ class CustomPanelForm(FlaskForm):
 class CustomPanelNewForm(FlaskForm):
     """Custom Panel New form."""
 
-    sample_set = QuerySelectField('Sample set', query_factory=active_sample_sets, allow_blank=True, blank_text='None', get_pk=get_id)
-    samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None', get_pk=get_id)
+    sample_set = QuerySelectField(
+        'Sample set', query_factory=active_sample_sets, allow_blank=True, blank_text='None', get_pk=get_id
+    )
+    samples = Select2MultipleField('Samples', choices=[], coerce=get_sample)
     panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None', get_pk=get_id)
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, tab, ',' or ';'.", validators=[])
-    research_number = StringField('Test reference number', description="Provide a test reference number (onderzoeksnummer) for INC99 tests.")
+    gene_list = TextAreaField(
+        'Gene list', description="List of genes seperated by newline, space, tab, ',' or ';'.", validators=[]
+    )
+    research_number = StringField(
+        'Test reference number', description="Provide a test reference number (onderzoeksnummer) for INC99 tests."
+    )
     comments = TextAreaField('Comments', description="Provide a short description.")
     transcripts = []  # Filled in validate function
 
