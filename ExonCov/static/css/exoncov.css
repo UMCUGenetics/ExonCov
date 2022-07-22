@@ -15,3 +15,7 @@ body {
 .help-block-inline {
     display: inline;
 }
+
+.popover{
+    max-width: 100%;
+}
