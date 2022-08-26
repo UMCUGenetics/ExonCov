@@ -4,11 +4,6 @@
 {% block header %}Custom gene panel{% endblock %}
 
 {% block body %}
-<div class="alert alert-warning" role="alert">
-    Because of performance issues we have temporay disabled custom panel creation for 'parent samples' and samples older than 2 years.<br>
-    Please contact <b>bioinformatica-genetica@umcutrecht.nl</b> if you would like to create a custom panel containing a 'parent sample' or sample older than 2 years.
-</div>
-
 <div class="well">
     <form method="POST" action="{{ url_for('custom_panel_new') }}" class="form-horizontal">
         {{ form.csrf_token }}
@@ -31,9 +26,29 @@
 {% block custom_javascript %}
 <script>
     $(document).ready(function() {
-        $('.select2-form-field').select2({
-            minimumInputLength: 4 // only start searching when the user has input 4 or more characters
+        $('#samples').select2({
+            minimumInputLength: 4, // only start searching when the user has input 4 or more characters
+
+            ajax: {
+                url: '{{ url_for('api_samples') }}',
+                dataType: 'json',
+                delay: 250 // wait 250 milliseconds before triggering the request
+            }
         });
+        {% if form.samples.data %}
+            {% for sample in form.samples.data %}
+                console.log('derp')
+                var newOption = new Option('{{sample}}', {{sample.id}}, true, true);
+                $('#samples').append(newOption).trigger('change');
+            {% endfor %}
+        {% endif %}
+
+        $('#panel').select2({
+            minimumInputLength: 3 // only start searching when the user has input 3 or more characters
+        });
+
+        $('#sample_set').select2();
+
     });
 </script>
 {% endblock %}

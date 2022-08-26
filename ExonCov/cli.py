@@ -55,11 +55,15 @@ class PrintStats(Command):
 
 class PrintPanelGenesTable(Command):
     """Print tab delimited panel / genes table."""
+    option_list = (
+        Option('-a', '--archived_panels', dest='active_panels', default=True,
+               action='store_false', help="Use archived panels instead of active panels"),
+    )
 
-    def run(self):
+    def run(self, active_panels):
         print('{panel}\t{genes}'.format(panel='panel_version', genes='genes'))
 
-        panel_versions = PanelVersion.query.filter_by(active=True).options(joinedload('transcripts'))
+        panel_versions = PanelVersion.query.filter_by(active=active_panels).options(joinedload('transcripts'))
 
         for panel in panel_versions:
             print('{panel}\t{genes}'.format(
@@ -347,9 +351,11 @@ class SampleQC(Command):
     option_list = (
         Option('-s', '--samples', nargs='+'),
         Option('-p', '--panels', nargs='+'),
+        Option('-a', '--archived_panels', dest='active_panels', default=True,
+               action='store_false', help="Use archived panels instead of active panels"),
     )
 
-    def run(self, samples, panels):
+    def run(self, samples, panels, active_panels):
         # Check equal number of samples and panels
         if len(samples) != len(panels):
             sys.exit('Number of samples and number of panels must be exactly the same.')
@@ -360,7 +366,14 @@ class SampleQC(Command):
         for index, sample_id in enumerate(samples):
             # Query database
             sample = Sample.query.get(sample_id)
-            panel = PanelVersion.query.filter_by(panel_name=panels[index]).filter_by(active=True).filter_by(validated=True).order_by(PanelVersion.id.desc()).first()
+            panel = (
+                PanelVersion.query
+                .filter_by(panel_name=panels[index])
+                .filter_by(active=active_panels)
+                .filter_by(validated=True)
+                .order_by(PanelVersion.id.desc())
+                .first()
+            )
 
             if sample and panel:
                 transcript_measurements = (
@@ -602,22 +615,35 @@ class ExportAliasTable(Command):
 
 
 class PrintPanelBed(Command):
-    """Print bed file containing regions in active and validated panels. FULL_autosomal and FULL_TARGET are filtered from the list."""
+    """Print bed file containing regions in validated active or validated archived panels. FULL_autosomal and FULL_TARGET are filtered from the list."""
 
     option_list = (
         Option('-f', '--remove_flank', dest='remove_flank', default=False, action='store_true', help="Remove 20bp flank from exon coordinates."),
-        Option('-p', '--panel', dest='panel', help="Filter on panel name (including version, for example AMY01v19.1).")
+        Option('-p', '--panel', dest='panel', help="Filter on panel name (including version, for example AMY01v19.1)."),
+        Option('-a', '--archived_panels', dest='active_panels', default=True,
+               action='store_false', help="Use archived panels instead of active panels"),
     )
 
-    def run(self, remove_flank, panel):
+    def run(self, remove_flank, panel, active_panels):
         exons = []
 
         if panel:
             panel_name, version = panel.split('v')
             version_year, version_revision = version.split('.')
-            panel_versions = PanelVersion.query.filter_by(panel_name=panel_name).filter_by(version_year=version_year).filter_by(version_revision=version_revision).options(joinedload('transcripts'))
+            panel_versions = (
+                PanelVersion.query
+                .filter_by(panel_name=panel_name)
+                .filter_by(version_year=version_year)
+                .filter_by(version_revision=version_revision)
+                .options(joinedload('transcripts'))
+            )
         else:
-            panel_versions = PanelVersion.query.filter_by(active=True).filter_by(validated=True).options(joinedload('transcripts'))
+            panel_versions = (
+                PanelVersion.query
+                .filter_by(active=active_panels)
+                .filter_by(validated=True)
+                .options(joinedload('transcripts'))
+            )
 
         for panel in panel_versions:
             if 'FULL' not in panel.panel_name:  # skip FULL_autosomal and FULL_TARGET
@@ -811,10 +837,11 @@ class ExportCovStatsSampleSet(Command):
             dest='measurement_type',
             default='measurement_percentage15'
         ),
+        Option('-a', '--archived_panels', dest='active_panels', default=True,
+               action='store_false', help="Use archived panels instead of active panels"),
     )
 
-
-    def run(self, sample_set_id, data_type, measurement_type):
+    def run(self, sample_set_id, data_type, measurement_type, active_panels):
         # retrieve samples from sampleset
         try:
             sample_set = SampleSet.query.options(joinedload('samples')).filter_by(id=sample_set_id).one()
@@ -826,7 +853,7 @@ class ExportCovStatsSampleSet(Command):
         # retrieve panels, transcripts measurements per sample
         query = (
             db.session.query(PanelVersion, TranscriptMeasurement)
-            .filter_by(active=True, validated=True)
+            .filter_by(active=active_panels, validated=True)
             .filter(PanelVersion.panel_name.notlike("%FULL%"))
             .join(Transcript, PanelVersion.transcripts)
             .join(TranscriptMeasurement)

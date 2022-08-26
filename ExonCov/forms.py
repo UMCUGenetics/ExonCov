@@ -3,21 +3,14 @@ import re
 
 from flask_wtf import FlaskForm
 from flask_security.forms import RegisterForm
-from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
-from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField, FloatField
+from wtforms.ext.sqlalchemy.fields import QuerySelectField
+from wtforms.fields import SelectField, TextAreaField, StringField, BooleanField, FloatField, SelectMultipleField
 from wtforms import validators
-import datetime
 
 from .models import Sample, SampleSet, Gene, GeneAlias, PanelVersion, Panel
 
 
 # Query factories
-def all_samples():
-    """Query factory for all samples."""
-    #return Sample.query.all()
-    return Sample.query.filter(Sample.name.like('%C%')).filter(Sample.import_date >= datetime.date.today() - datetime.timedelta(days=365*2)).all()
-
-
 def active_sample_sets():
     """Query factory for active sample sets."""
     return SampleSet.query.filter_by(active=True).all()
@@ -28,6 +21,14 @@ def all_panels():
     return PanelVersion.query.filter_by(active=True).filter_by(validated=True).all()
 
 
+def get_id(object):
+    return object.id
+
+
+def get_sample(sample_id):
+    return Sample.query.get(sample_id)
+
+
 def get_gene(gene_id):
     """Find gene or gene aliases."""
     error = ''
@@ -36,10 +37,16 @@ def get_gene(gene_id):
     # Find possible gene alias if gene not found
     if not gene:
         gene_aliases = GeneAlias.query.filter_by(id=gene_id).all()
+        gene_case_differences = Gene.query.filter(Gene.id.ilike(gene_id)).all()
         if gene_aliases:
             error = 'Unkown gene: {0}. Possible aliases: {1}. Please check before using alias.'.format(
                 gene_id,
                 ', '.join([gene_alias.gene_id for gene_alias in gene_aliases])
+            )
+        elif gene_case_differences:
+            error = 'Unkown gene: {0}. Possible case difference: {1}. Please check before using suggestion.'.format(
+                gene_id,
+                ', '.join([gene.id for gene in gene_case_differences])
             )
         else:
             try:
@@ -83,6 +90,14 @@ def parse_core_gene_list(gene_list, genes=[]):
     return errors, genes
 
 
+# Custom Fields
+class Select2MultipleField(SelectMultipleField):
+    """Select2MultipleField used for ajax based select2 fields."""
+    def pre_validate(self, form):
+        pass  # Prevent "not a valid choice" error
+
+
+# Forms
 class SampleForm(FlaskForm):
     """Query samples by run or samplename field"""
     sample = StringField('Sample')
@@ -103,11 +118,17 @@ class CustomPanelForm(FlaskForm):
 class CustomPanelNewForm(FlaskForm):
     """Custom Panel New form."""
 
-    sample_set = QuerySelectField('Sample set', query_factory=active_sample_sets, allow_blank=True, blank_text='None')
-    samples = QuerySelectMultipleField('Samples', query_factory=all_samples, allow_blank=True, blank_text='None')
-    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
-    gene_list = TextAreaField('Gene list', description="List of genes seperated by newline, space, tab, ',' or ';'.", validators=[])
-    research_number = StringField('Test reference number', description="Provide a test reference number (onderzoeksnummer) for INC99 tests.")
+    sample_set = QuerySelectField(
+        'Sample set', query_factory=active_sample_sets, allow_blank=True, blank_text='None', get_pk=get_id
+    )
+    samples = Select2MultipleField('Samples', choices=[], coerce=get_sample)
+    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None', get_pk=get_id)
+    gene_list = TextAreaField(
+        'Gene list', description="List of genes seperated by newline, space, tab, ',' or ';'.", validators=[]
+    )
+    research_number = StringField(
+        'Test reference number', description="Provide a test reference number (onderzoeksnummer) for INC99 tests."
+    )
     comments = TextAreaField('Comments', description="Provide a short description.")
     transcripts = []  # Filled in validate function
 
@@ -342,9 +363,10 @@ class SampleSetPanelGeneForm(FlaskForm):
         query_factory=active_sample_sets,
         allow_blank=True,
         blank_text='None',
-        validators=[validators.InputRequired()]
+        validators=[validators.InputRequired()],
+        get_pk=get_id
     )
-    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None')
+    panel = QuerySelectField('Panel', query_factory=all_panels, allow_blank=True, blank_text='None', get_pk=get_id)
     gene = StringField('Gene')
 
     gene_id = ''
