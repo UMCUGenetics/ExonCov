@@ -193,7 +193,7 @@ class ImportBam(Command):
             temp_dir = temp_path
 
         # Run sambamba
-        p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
+        p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE, encoding='utf-8')
         exon_measurement_file_path = '{0}/{1}'.format(temp_dir, sample.exon_measurement_file)
         with open(exon_measurement_file_path, "w") as exon_measurement_file:
             for line in p.stdout:
