@@ -1,4 +1,4 @@
-"""empty message
+"""Add columns created_date and release_date to panel_versions table
 
 Revision ID: bcd8bff69995
 Revises: 68b4dcb164af
@@ -7,7 +7,6 @@ Create Date: 2023-01-05 15:43:10.411815
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
 revision = 'bcd8bff69995'
