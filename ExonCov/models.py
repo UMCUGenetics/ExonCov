@@ -190,6 +190,9 @@ class PanelVersion(db.Model):
     comments = db.Column(db.Text())
     coverage_requirement_15 = db.Column(db.Float)
 
+    created_date = db.Column(db.Date(), default=datetime.date.today)
+    release_date = db.Column(db.Date())
+
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     panel_name = db.Column(db.String(50), db.ForeignKey('panels.name'), nullable=False, index=True)
 
