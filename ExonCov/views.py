@@ -432,6 +432,11 @@ def panel_version_edit(id):
         panel.active = form.active.data
         if not panel.validated:  # only update if panel not yet validated.
             panel.validated = form.validated.data
+
+        # Set release date, first time that panel is active and validated.
+        if panel.active and panel.validated and not panel.release_date:
+            panel.release_date = datetime.date.today()
+
         panel.comments = form.comments.data
         panel.coverage_requirement_15 = form.coverage_requirement_15.data
         panel.core_genes = form.core_genes

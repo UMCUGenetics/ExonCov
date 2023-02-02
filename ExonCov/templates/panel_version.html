@@ -16,6 +16,8 @@ Gene panel - {{ panel.name_version }}
     <dt>Validated</dt><dd>{{ render_bool_glyph(panel.validated) }}</dd>
     <dt>Minimal % 15x</dt><dd>{{ panel.coverage_requirement_15 }}</dd>
     {% if current_user.has_role('panel_admin') %}<dt>Comments</dt><dd>{{ panel.comments }}</dd>{% endif %}
+    <dt>Created on</dt><dd>{{ panel.created_date }}</dd>
+    <dt>Released on</dt><dd>{{ panel.release_date }}</dd>
 
 </dl>
 {{ render_sample_datatable_form(filter=false) }}

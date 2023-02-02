@@ -47,8 +47,8 @@ class PanelVersionAdminView(CustomModelView):
     column_searchable_list = ['panel_name']
 
     form_columns = [
-        'panel', 'version_year', 'version_revision', 'comments', 'coverage_requirement_15', 'active', 'validated',
-        'transcripts', 'core_genes'
+        'panel', 'version_year', 'version_revision', 'comments', 'coverage_requirement_15', 'created_date',
+        'active', 'validated', 'release_date', 'transcripts', 'core_genes'
     ]
     form_ajax_refs = {
         'transcripts': {
