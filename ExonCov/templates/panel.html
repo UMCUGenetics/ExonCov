@@ -30,6 +30,8 @@ Gene panel - {{ panel.name }}
             <th>Active</th>
             <th>Validated</th>
             <th>Minimal % 15x</th>
+            <th>Created on</th>
+            <th>Released on</th>
         </tr>
     </thead>
     <tbody>
@@ -40,6 +42,8 @@ Gene panel - {{ panel.name }}
             <td>{{ render_bool_glyph(panel_version.active) }}</td>
             <td>{{ render_bool_glyph(panel_version.validated) }}</td>
             <td>{{ panel_version.coverage_requirement_15 }}</td>
+            <td>{{ panel_version.created_date }}</td>
+            <td>{{ panel_version.release_date }}</td>
         </tr>
         {% endfor %}
     </tbody>
