@@ -56,18 +56,21 @@ class PrintStats(Command):
 class PrintPanelGenesTable(Command):
     """Print tab delimited panel / genes table."""
     option_list = (
-        Option('-a', '--archived_panels', dest='active_panels', default=True,
-               action='store_false', help="Use archived panels instead of active panels"),
+        Option(
+            '-a', '--archived_panels', dest='active_panels', default=True,
+            action='store_false', help="Use archived panels instead of active panels"
+        ),
     )
 
     def run(self, active_panels):
-        print('{panel}\t{genes}'.format(panel='panel_version', genes='genes'))
+        print('{panel}\t{release_date}\t{genes}'.format(panel='panel_version', release_date='release_date', genes='genes'))
 
         panel_versions = PanelVersion.query.filter_by(active=active_panels).options(joinedload('transcripts'))
 
         for panel in panel_versions:
-            print('{panel}\t{genes}'.format(
+            print('{panel}\t{release_date}\t{genes}'.format(
                 panel=panel.name_version,
+                release_date=panel.release_date,
                 genes='\t'.join([transcript.gene_id for transcript in panel.transcripts])
             ))
 
