@@ -38,20 +38,19 @@ EXON_MEASUREMENTS_RSYNC_PATH = 'rsync/path/for/data'
 
 ### Load design
 ```bash
-cd /path/to/Exoncov
-. venv/bin/activate
+source venv/bin/activate
 python ExonCov.py load_design
 ```
 
 ### Import bam file
 ```bash
-cd /path/to/Exoncov
-. venv/bin/activate
+source venv/bin/activate
 python ExonCov.py import_bam <project_name> <bam_file>
 ```
 
 ### Run development webserver
 ```bash
+source venv/bin/activate
 python ExonCov.py runserver -r -d
 ```
 
