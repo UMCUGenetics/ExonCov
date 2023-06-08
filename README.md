@@ -2,7 +2,7 @@
 ExonCov: Exon coverage statistics from BAM files
 
 ### Requirements
-- [Python 2.7](https://www.python.org/)
+- [Python 3](https://www.python.org/)
 - [Virtualenv](https://virtualenv.pypa.io/en/stable/)
 - [MYSQL](https://www.mysql.com/)
 - [sambamba](https://github.com/biod/sambamba)
