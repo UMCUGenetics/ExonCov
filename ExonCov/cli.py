@@ -175,7 +175,7 @@ class ImportBam(Command):
             type=sample_type,
             file_name=bam,
             import_command=sambamba_command,
-            sequencing_runs=sequencing_runs.values(),
+            sequencing_runs=list(sequencing_runs.values()),
             exon_measurement_file='{0}_{1}'.format(sample_project.name, sample_name)
             )
         db.session.add(sample)
@@ -196,7 +196,7 @@ class ImportBam(Command):
             temp_dir = temp_path
 
         # Run sambamba
-        p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE)
+        p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE, encoding='utf-8')
         exon_measurement_file_path = '{0}/{1}'.format(temp_dir, sample.exon_measurement_file)
         with open(exon_measurement_file_path, "w") as exon_measurement_file:
             for line in p.stdout:
@@ -313,7 +313,7 @@ class ImportBam(Command):
 
         # Bulk insert transcript measurements
         bulk_insert_n = 1000
-        transcript_values = transcripts_measurements.values()
+        transcript_values = list(transcripts_measurements.values())
         for i in range(0, len(transcript_values), bulk_insert_n):
             db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
             db.session.commit()
@@ -737,7 +737,7 @@ class LoadDesign(Command):
             db.session.add_all(exons[i:i+bulk_insert_n])
             db.session.commit()
 
-        db.session.add_all(transcripts.values())
+        db.session.add_all(list(transcripts.values()))
         db.session.commit()
 
         # Load gene and transcript file
