@@ -4,6 +4,7 @@ Currently only used to implement api calls for select2 forms (ajax).
 """
 from flask import request, jsonify
 from flask_security import login_required
+from jose import jwt
 
 from . import app
 from .models import Sample

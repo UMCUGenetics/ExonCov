@@ -19,6 +19,8 @@ SECRET_KEY = 'change_this'
 SECURITY_PASSWORD_HASH = 'pbkdf2_sha512'
 SECURITY_PASSWORD_SALT = 'change_this'
 
+JWT_SECRET = ''
+
 SECURITY_LOGIN_URL = '/login/'
 SECURITY_LOGOUT_URL = '/logout/'
 SECURITY_REGISTER_URL = '/register/'

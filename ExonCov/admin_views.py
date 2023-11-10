@@ -1,7 +1,11 @@
 """ExonCov admin views."""
-from flask import redirect, abort, url_for, request
+import datetime
+
+from flask import redirect, abort, url_for, request, Markup
 from flask_admin.contrib.sqla import ModelView
 from flask_security import current_user
+import jwt
+import config
 
 from . import db, admin
 from ExonCov import models
@@ -204,6 +208,36 @@ class EventLogAdminView(CustomModelView):
     can_view_details = True
 
 
+class APITokensAdminView(CustomModelView):
+    can_edit = False
+    can_create = True
+    can_delete = True
+    can_view_details = True
+    details_modal = True
+    create_modal = True
+    column_labels = dict(application='Application name', token="API Token")
+    # column_formatters = dict(token=lambda a : a[ 0 : 10 ])
+
+    column_formatters_detail = {
+        'token': lambda v, c, m, p: Markup(f'{m.token}<br><br><b>IMPORTANT! Keep this token secret and do not use it for other applications.</b>')
+    }
+    column_formatters = {
+        'token': lambda v, c, m, p: Markup(
+            f'{m.token[:3]}...{m.token[-4:]} <a href="/admin/apitokens/details/?id={m.id}&url=%2Fadmin%2Fapitokens%2F%3Fsort%3D0&modal=True" data-target="#fa_modal_window" data-toggle="modal">see full token')
+    }
+
+    column_list = ["application", "token", "modified_on"]
+    form_columns = ["application"]
+
+    def on_model_change(self, form, model, is_created):
+        # Perform actions when a model is changed (created or modified)
+        if is_created:
+            # Set the created_at column to the current time when a new record is created
+            model.created_at = datetime.datetime.now()
+            model.user_id = 54
+            model.token = jwt.encode({"app": model.application, "iat":model.created_at}, config.JWT_SECRET, algorithm="HS256")
+
+
 # Link view classes and models
 admin.add_view(PanelAdminView(models.Panel, db.session))
 admin.add_view(PanelVersionAdminView(models.PanelVersion, db.session))
@@ -218,6 +252,7 @@ admin.add_view(GeneAdminView(models.Gene, db.session))
 admin.add_view(TranscriptAdminView(models.Transcript, db.session))
 admin.add_view(ExonAdminView(models.Exon, db.session))
 
-admin.add_view(UserAdminView(models.User, db.session))
-admin.add_view(CustomModelView(models.Role, db.session))
+admin.add_view(UserAdminView(models.User, db.session, category="Authentication "))
+admin.add_view(CustomModelView(models.Role, db.session, category="Authentication "))
+admin.add_view(APITokensAdminView(models.APITokens, db.session, name='API Tokens', category="Authentication ", endpoint="apitokens"))
 admin.add_view(EventLogAdminView(models.EventLog, db.session))

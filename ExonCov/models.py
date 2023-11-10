@@ -401,6 +401,17 @@ class EventLog(db.Model):
     user = db.relationship('User')
 
 
+class APITokens(db.Model):
+    """Store API Tokens """
+    __tablename__ = 'api_keys'
+
+    id = db.Column(db.Integer, primary_key=True)
+    application = db.Column(db.String(255), nullable=False)
+    token = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
+    modified_on = db.Column(db.DateTime, default=datetime.datetime.now)
+
+
 class User(db.Model, UserMixin):
     """User model."""
 
