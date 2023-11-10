@@ -219,7 +219,7 @@ class APITokensAdminView(CustomModelView):
     # column_formatters = dict(token=lambda a : a[ 0 : 10 ])
 
     column_formatters_detail = {
-        'token': lambda v, c, m, p: Markup(f'{m.token}<br><br><b>IMPORTANT! Keep this token secret and do not use it for other applications.</b>')
+        'token': lambda v, c, m, p: Markup(f'{m.token}<br><br><div class="alert alert-warning" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span>&nbsp;Keep this token secret and do not use it for other applications</div>')
     }
     column_formatters = {
         'token': lambda v, c, m, p: Markup(
