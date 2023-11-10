@@ -212,6 +212,7 @@ class APITokensAdminView(CustomModelView):
     can_edit = False
     can_create = True
     can_delete = True
+    column_display_actions = []
     can_view_details = True
     details_modal = True
     create_modal = True
