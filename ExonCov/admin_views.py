@@ -255,5 +255,5 @@ admin.add_view(ExonAdminView(models.Exon, db.session))
 
 admin.add_view(UserAdminView(models.User, db.session, category="Authentication "))
 admin.add_view(CustomModelView(models.Role, db.session, category="Authentication "))
-admin.add_view(APITokensAdminView(models.APITokens, db.session, name='API Tokens', category="Authentication ", endpoint="apitokens"))
+admin.add_view(APITokensAdminView(models.APIToken, db.session, name='API Tokens', category="Authentication ", endpoint="apitokens"))
 admin.add_view(EventLogAdminView(models.EventLog, db.session))

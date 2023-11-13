@@ -401,17 +401,6 @@ class EventLog(db.Model):
     user = db.relationship('User')
 
 
-class APITokens(db.Model):
-    """Store API Tokens """
-    __tablename__ = 'api_keys'
-
-    id = db.Column(db.Integer, primary_key=True)
-    application = db.Column(db.String(255), nullable=False)
-    token = db.Column(db.String(255), nullable=False)
-    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
-    modified_on = db.Column(db.DateTime, default=datetime.datetime.now)
-
-
 class User(db.Model, UserMixin):
     """User model."""
 
@@ -423,6 +412,9 @@ class User(db.Model, UserMixin):
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
     roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
+
+    # Establishing a one-to-many relationship with the Token model
+    api_tokens = db.relationship('APIToken', back_populates='user')
 
     def __init__(self, email, password, first_name, last_name, active, roles):
         self.email = email
@@ -462,3 +454,17 @@ class Role(db.Model, RoleMixin):
     def __str__(self):
         """Return string representation."""
         return self.name
+
+
+class APIToken(db.Model):
+    """Store API Tokens """
+    __tablename__ = 'api_tokens'
+
+    id = db.Column(db.Integer, primary_key=True)
+    application = db.Column(db.String(255), unique=True, nullable=False)
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
+    modified_on = db.Column(db.DateTime, default=datetime.datetime.now)
+
+    # Establishing a back-reference to the User model
+    user = db.relationship('User', back_populates='api_tokens')
