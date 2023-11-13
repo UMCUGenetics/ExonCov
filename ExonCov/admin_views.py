@@ -225,9 +225,10 @@ class APITokensAdminView(CustomModelView):
                                            f'Error:</span>&nbsp;Keep this token secret and do not use it for other application'
                                            f's</div>')
     }
+
     column_formatters = {
         'token': lambda v, c, m, p: Markup(
-            f'{m.token[:3]}...{m.token[-4:]} <a href="/admin/apitokens/details/?id={m.id}&url=%2Fadmin%2Fapitokens%2F%3Fsort%3'
+            f'{m.token[:4]}...{m.token[-4:]} <a href="/admin/apitokens/details/?id={m.id}&url=%2Fadmin%2Fapitokens%2F%3Fsort%3'
             f'D0&modal=True" data-target="#fa_modal_window" data-toggle="modal">see full token')
     }
 
@@ -257,8 +258,8 @@ admin.add_view(GeneAdminView(models.Gene, db.session))
 admin.add_view(TranscriptAdminView(models.Transcript, db.session))
 admin.add_view(ExonAdminView(models.Exon, db.session))
 
-admin.add_view(UserAdminView(models.User, db.session, category="Authentication "))
-admin.add_view(CustomModelView(models.Role, db.session, category="Authentication "))
-admin.add_view(APITokensAdminView(models.APIToken, db.session, name='API Tokens', category="Authentication ",
+admin.add_view(UserAdminView(models.User, db.session, category="Auth "))
+admin.add_view(CustomModelView(models.Role, db.session, category="Auth "))
+admin.add_view(APITokensAdminView(models.APIToken, db.session, name='API Tokens', category="Auth ",
                                   endpoint="apitokens"))
 admin.add_view(EventLogAdminView(models.EventLog, db.session))
