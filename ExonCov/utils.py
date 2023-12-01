@@ -4,6 +4,7 @@ from builtins import str
 
 from flask import request, url_for
 from flask_login import current_user
+from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 
@@ -91,3 +92,7 @@ def get_summary_stats_multi_sample(measurements, keys=None, samples=None):
             values = measurements[key].values()
         measurements[key]['min'], measurements[key]['max'], measurements[key]['mean'] = get_summary_stats(values)
     return measurements
+
+
+def model_to_dict(model_instance):
+    return {column.name: getattr(model_instance, column.name) for column in class_mapper(model_instance.__class__).mapped_table.c}
