@@ -34,7 +34,7 @@ def protected_api():
     return "success"
 
 
-@app.route('/api/sample/id/<sample_id>')
+@app.route('/api/samples/id/<sample_id>')
 @token_required
 def sample_by_id_api(sample_id):
     print("lookup {}".format(sample_id))
@@ -44,14 +44,23 @@ def sample_by_id_api(sample_id):
     return jsonify(result)
 
 
-@app.route('/api/sample/<sample_id>/panel/<panel_id>/')
+@app.route('/api/samples/')
 @token_required
-def get_summary_by_sample_id_and_panel_id_api(sample_id, panel_id):
-    print("lookup {}".format(sample_id))
-    result = model_to_dict(get_summary_by_sample_id_and_panel_id(sample_id, panel_id))
-    # To omit items from the object:
-    # result.pop("key")
-    return jsonify(result)
+def get_samples_api():
+    sample_name = request.args.get('sample_name') or ''
+    run_id = request.args.get('run_id') or ''
+
+    print(sample_name)
+    print(run_id)
+
+    samples = get_sample_by_like_sample_name_or_run_id(sample_name, run_id)
+
+    samples_list = []
+    for sample in samples:
+        sample = model_to_dict(sample)
+        sample.pop("import_command")
+        samples_list.append(sample)
+    return jsonify(samples_list)
 
 
 @app.route('/api/sample/<sample_name>/run/<run_id>/')
