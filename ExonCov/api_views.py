@@ -5,6 +5,7 @@ Currently only used to implement api calls for select2 forms (ajax).
 from flask import request, jsonify
 from flask_login import login_required
 
+from . import app
 from .auth_middleware import token_required
 from .services import *
 from .utils import model_to_dict
