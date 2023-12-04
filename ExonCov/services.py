@@ -1,5 +1,5 @@
 from sqlalchemy.orm import joinedload
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from . import db
 from .models import (
@@ -61,6 +61,19 @@ def get_sample_by_id(id):
     print(sample.import_date)
 
     return sample
+
+
+def get_sample_by_like_sample_name_or_run_id(sample_name, run_id):
+    samples = (
+        Sample.query
+        .order_by(Sample.import_date.desc())
+        .order_by(Sample.name.asc())
+        .options(joinedload('sequencing_runs'))
+        .options(joinedload('project'))
+    )
+    samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(
+        and_(Sample.name.like('%{0}%'.format(sample_name)), SequencingRun.platform_unit.like('%{0}%'.format(run_id))))
+    return samples
 
 
 def get_sample_by_like_sample_name(sample_name):
