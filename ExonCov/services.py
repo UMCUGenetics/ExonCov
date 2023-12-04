@@ -101,7 +101,9 @@ def get_samples_by_like_sample_name_or_like_run_id(sample_name, run_id):
         .options(joinedload('project'))
     )
     samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(
-        or_(Sample.name.like('%{0}%'.format(sample_name)), SequencingRun.name.like('%{0}%'.format(run_id)), SequencingRun.platform_unit.like('%{0}%'.format(run_id))))
+        or_(Sample.name.like('%{0}%'.format(sample_name)),
+            SequencingRun.name.like('%{0}%'.format(run_id)),
+            SequencingRun.platform_unit.like('%{0}%'.format(run_id))))
 
     return samples
 
@@ -137,12 +139,14 @@ def get_summary_by_sample_id_and_panel_id(sample_id, panel_id):
             weights=[tm[1].len for tm in transcript_measurements]
         ),
         'core_genes': ', '.join(
-            ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if
-             tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100]
+            ['{}({}) = {:.2f}%'.format(
+                tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements
+                if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100]
         ),
         'genes_15': ', '.join(
-            ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if
-             tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95]
+            ['{}({}) = {:.2f}%'.format(
+                tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements
+                if tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95]
         )
     }
 
