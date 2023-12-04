@@ -3,6 +3,7 @@ ExonCov API routes.
 Currently only used to implement api calls for select2 forms (ajax).
 """
 from flask import request, jsonify
+from flask_login import login_required
 
 from .auth_middleware import token_required
 from .services import *
@@ -32,7 +33,7 @@ def protected_api():
     return "success"
 
 
-@app.route('/api/sample/<sample_id>')
+@app.route('/api/sample/id/<sample_id>')
 @token_required
 def sample_by_id_api(sample_id):
     print("lookup {}".format(sample_id))
@@ -40,3 +41,43 @@ def sample_by_id_api(sample_id):
     # To omit items from the object:
     # result.pop("key")
     return jsonify(result)
+
+
+@app.route('/api/sample/<sample_id>/panel/<panel_id>/')
+@token_required
+def get_summary_by_sample_id_and_panel_id_api(sample_id, panel_id):
+    print("lookup {}".format(sample_id))
+    result = model_to_dict(get_summary_by_sample_id_and_panel_id(sample_id, panel_id))
+    # To omit items from the object:
+    # result.pop("key")
+    return jsonify(result)
+
+
+@app.route('/api/sample/<sample_name>/run/<run_id>/')
+@token_required
+def get_summary_by_sample_name_and_run_id_api(sample_name, run_id):
+    samples = get_samples_by_like_sample_name_or_like_run_id(sample_name, run_id)
+    samples_list = []
+    for sample in samples:
+        samples_list.append(model_to_dict(sample))
+    return jsonify(samples_list)
+
+
+@app.route('/api/sample/name/<name>/')
+@token_required
+def get_sample_by_like_sample_name_api(name):
+    samples = get_sample_by_like_sample_name(name)
+    samples_list = []
+    for sample in samples:
+        samples_list.append(model_to_dict(sample))
+    return jsonify(samples_list)
+
+
+@app.route('/api/sample/run/<run_id>/')
+@token_required
+def get_summary_by_run_id_api(run_id):
+    samples = get_sample_by_like_run_id(run_id)
+    samples_list = []
+    for sample in samples:
+        samples_list.append(model_to_dict(sample))
+    return jsonify(samples_list)
