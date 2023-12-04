@@ -1,13 +1,10 @@
-import time
-import datetime
-
 from sqlalchemy.orm import joinedload
 from sqlalchemy import or_
 
-from . import app, db
+from . import db
 from .models import (
-    Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript,
-    TranscriptMeasurement, panels_transcripts
+    Sample, SequencingRun, PanelVersion, Transcript, TranscriptMeasurement,
+    panels_transcripts
 )
 from .utils import weighted_average
 
