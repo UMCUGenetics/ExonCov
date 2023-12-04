@@ -73,14 +73,11 @@ def get_summary_by_sample_name_and_run_id_api(sample_name, run_id):
     return jsonify(samples_list)
 
 
-@app.route('/api/sample/name/<name>/')
+@app.route('/api/samples/name/<sample_name>/')
 @token_required
-def get_sample_by_like_sample_name_api(name):
-    samples = get_sample_by_like_sample_name(name)
-    samples_list = []
-    for sample in samples:
-        samples_list.append(model_to_dict(sample))
-    return jsonify(samples_list)
+def get_sample_by_sample_name_api(sample_name):
+    sample = get_sample_by_sample_name(sample_name)
+    return jsonify(model_to_dict(sample))
 
 
 @app.route('/api/sample/run/<run_id>/')
