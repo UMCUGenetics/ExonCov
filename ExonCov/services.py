@@ -76,17 +76,10 @@ def get_sample_by_like_sample_name_or_run_id(sample_name, run_id):
     return samples
 
 
-def get_sample_by_like_sample_name(sample_name):
-    samples = (
-        Sample.query
-        .order_by(Sample.import_date.desc())
-        .order_by(Sample.name.asc())
-        .options(joinedload('sequencing_runs'))
-        .options(joinedload('project'))
-    )
-
-    samples = samples.filter(Sample.name.like('%{0}%'.format(sample_name)))
-    return samples
+def get_sample_by_sample_name(sample_name):
+    sample = (
+        Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).filter_by(name=sample_name).first())
+    return sample
 
 
 def get_sample_by_like_run_id(run_id):
