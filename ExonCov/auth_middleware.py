@@ -15,7 +15,7 @@ def token_required(f):
             token = request.headers["Authorization"].split(" ")[1]
         if not token:
             return jsonify({
-                "message": "Authentication Token is missing!",
+                "message": "Authentication Token is missing.",
                 "data": None,
                 "error": "Unauthorized"
             }), 401
@@ -28,13 +28,13 @@ def token_required(f):
             )
             if not req_app:
                 return jsonify({
-                    "message": "Invalid Authentication token! Koekjes",
+                    "message": "Invalid Authentication token.",
                     "data": None,
                     "error": "Unauthorized"
                 }), 401
         except DecodeError as de:
             return jsonify({
-                "message": "Invalid Authentication token! Coukd bnit",
+                "message": "Invalid Authentication token.",
                 "data": None,
                 "error": "Unauthorized"
             }), 401
