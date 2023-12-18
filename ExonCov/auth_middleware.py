@@ -1,7 +1,7 @@
 from functools import wraps
 import jwt
 from flask import request, jsonify
-from jwt import InvalidSignatureError
+from jwt import DecodeError
 
 from .models import APIToken
 import config
@@ -28,21 +28,24 @@ def token_required(f):
             )
             if not req_app:
                 return jsonify({
-                    "message": "Invalid Authentication token!",
+                    "message": "Invalid Authentication token! Koekjes",
                     "data": None,
                     "error": "Unauthorized"
                 }), 401
-        except InvalidSignatureError as ise:
+        except DecodeError as de:
             return jsonify({
-                "message": "Invalid Authentication token!",
+                "message": "Invalid Authentication token! Coukd bnit",
                 "data": None,
                 "error": "Unauthorized"
             }), 401
         except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            print(message)
             return jsonify({
                 "message": "Something went wrong",
                 "data": None,
-                "error": str(ex)
+                "error": "See the server logs"
             }), 500
 
         return f(*args, **kwargs)
