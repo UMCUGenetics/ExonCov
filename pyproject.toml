@@ -1,3 +1,6 @@
+[project]
+name = "ExonCov"
+
 [build-system]
 requires = ["setuptools", "wheel"]
 
