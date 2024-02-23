@@ -44,7 +44,7 @@ def sample_by_id_api(sample_id):
     return jsonify(result)
 
 
-@app.route('/api/samples/')
+@app.route('/api/samples')
 @token_required
 def get_samples_api():
     sample_name = request.args.get('sample_name') or ''
@@ -63,7 +63,7 @@ def get_samples_api():
     return jsonify(samples_list)
 
 
-@app.route('/api/sample/<sample_name>/run/<run_id>/')
+@app.route('/api/sample/<sample_name>/run/<run_id>')
 @token_required
 def get_summary_by_sample_name_and_run_id_api(sample_name, run_id):
     samples = get_samples_by_like_sample_name_or_like_run_id(sample_name, run_id)
@@ -73,14 +73,14 @@ def get_summary_by_sample_name_and_run_id_api(sample_name, run_id):
     return jsonify(samples_list)
 
 
-@app.route('/api/samples/name/<sample_name>/')
+@app.route('/api/samples/name/<sample_name>')
 @token_required
 def get_sample_by_sample_name_api(sample_name):
     sample = get_sample_by_sample_name(sample_name)
     return jsonify(model_to_dict(sample))
 
 
-@app.route('/api/sample/run/<run_id>/')
+@app.route('/api/sample/run/<run_id>')
 @token_required
 def get_summary_by_run_id_api(run_id):
     samples = get_sample_by_like_run_id(run_id)
