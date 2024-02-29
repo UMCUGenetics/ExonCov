@@ -3,8 +3,7 @@ from collections import OrderedDict
 import sys
 import re
 import time
-import subprocess
-import os
+from subprocess import run as subprocess_run, PIPE, Popen, CalledProcessError
 import shlex
 import urllib
 import datetime
@@ -196,7 +195,7 @@ class ImportBam(Command):
             temp_dir = temp_path
 
         # Run sambamba
-        p = subprocess.Popen(shlex.split(sambamba_command), stdout=subprocess.PIPE, encoding='utf-8')
+        p = Popen(shlex.split(sambamba_command), stdout=PIPE, encoding='utf-8')
         exon_measurement_file_path = '{0}/{1}'.format(temp_dir, sample.exon_measurement_file)
         with open(exon_measurement_file_path, "w") as exon_measurement_file:
             for line in p.stdout:
@@ -267,21 +266,6 @@ class ImportBam(Command):
                         'measurement_percentage100': measurement_percentage100,
                     }
 
-        # Compress, index and rsync
-        exon_measurement_file_path_gz = '{0}.gz'.format(exon_measurement_file_path)
-        pysam.tabix_compress(exon_measurement_file_path, exon_measurement_file_path_gz)
-        pysam.tabix_index(exon_measurement_file_path_gz, seq_col=0, start_col=1, end_col=2)
-        os.system('rsync {0}* {1}'.format(exon_measurement_file_path_gz, app.config['EXON_MEASUREMENTS_RSYNC_PATH']))
-
-        # Change exon_measurement_file to path on server.
-        sample = Sample.query.get(sample_id)
-        sample.exon_measurement_file = '{0}/{1}.gz'.format(
-            app.config['EXON_MEASUREMENTS_RSYNC_PATH'].split(':')[-1],
-            sample.exon_measurement_file
-        )
-        db.session.add(sample)
-        db.session.commit()
-
         # Set transcript measurements
         transcripts = Transcript.query.options(joinedload('exons')).all()
         transcripts_measurements = {}
@@ -317,6 +301,30 @@ class ImportBam(Command):
         for i in range(0, len(transcript_values), bulk_insert_n):
             db.session.bulk_insert_mappings(TranscriptMeasurement, transcript_values[i:i+bulk_insert_n])
             db.session.commit()
+
+        # Compress, index and rsync exon_measurements
+        exon_measurement_file_path_gz = '{0}.gz'.format(exon_measurement_file_path)
+        pysam.tabix_compress(exon_measurement_file_path, exon_measurement_file_path_gz)
+        pysam.tabix_index(exon_measurement_file_path_gz, seq_col=0, start_col=1, end_col=2)
+
+        # External subprocess
+        command_result = subprocess_run(
+            f"rsync {exon_measurement_file_path_gz}* {app.config['EXON_MEASUREMENTS_RSYNC_PATH']}", shell=True, stdout=PIPE
+        )
+        # Check returncode and raise CalledProcessError if non-zero.
+        try:
+            command_result.check_returncode()
+        except CalledProcessError:
+            sys.exit(f'ERROR: Rsync unsuccesful, returncode {command_result.returncode}.')
+
+        # Change exon_measurement_file to path on server.
+        sample = Sample.query.get(sample_id)
+        sample.exon_measurement_file = '{0}/{1}.gz'.format(
+            app.config['EXON_MEASUREMENTS_RSYNC_PATH'].split(':')[-1],
+            sample.exon_measurement_file
+        )
+        db.session.add(sample)
+        db.session.commit()
 
         # Remove temp_dir
         if not temp_path:
