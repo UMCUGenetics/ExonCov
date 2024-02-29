@@ -4,7 +4,6 @@ import sys
 import re
 import time
 from subprocess import run as subprocess_run, PIPE, Popen, CalledProcessError
-import os
 import shlex
 import urllib
 import datetime
