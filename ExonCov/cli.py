@@ -271,12 +271,12 @@ class ImportBam(Command):
         pysam.tabix_compress(exon_measurement_file_path, exon_measurement_file_path_gz)
         pysam.tabix_index(exon_measurement_file_path_gz, seq_col=0, start_col=1, end_col=2)
 
-        # external subprocess
+        # External subprocess
+        command_result = subprocess_run(
+            f"rsync {exon_measurement_file_path_gz}* {app.config['EXON_MEASUREMENTS_RSYNC_PATH']}", shell=True, stdout=PIPE
+        )
+        # Check returncode and raise CalledProcessError if non-zero.
         try:
-            command_result = subprocess_run(
-                f"rsync {exon_measurement_file_path_gz}* {app.config['EXON_MEASUREMENTS_RSYNC_PATH']}", 
-                shell=True, stdout=PIPE
-            )
             command_result.check_returncode()
         except CalledProcessError:
             sys.exit(f'ERROR: Rsync unsuccesful, returncode {command_result.returncode}.')
