@@ -411,6 +411,8 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(255), nullable=False)
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
+    fs_uniquifier = db.Column(db.String(255), unique=True, nullable=False)
+
     roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
 
     def __init__(self, email, password, first_name, last_name, active, roles):

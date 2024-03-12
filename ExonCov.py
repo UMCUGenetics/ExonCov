@@ -6,7 +6,7 @@ from flask_migrate import Migrate, MigrateCommand
 from ExonCov import app, db, cli
 
 manager = Manager(app)
-migrate = Migrate(app, db)
+# migrate = Migrate(app, db)
 db_manager = Manager(usage='Database commands.')
 
 manager.add_command("db", db_manager)

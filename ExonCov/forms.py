@@ -132,7 +132,7 @@ class CustomPanelNewForm(FlaskForm):
     comments = TextAreaField('Comments', description="Provide a short description.")
     transcripts = []  # Filled in validate function
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation, used to validate gene list."""
         # Default validation as defined in field validators
         self.transcripts = []  # Reset transcripts on validation
@@ -228,7 +228,7 @@ class CreatePanelForm(FlaskForm):
     transcript = []  # Filled in validate function
     core_genes = []
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Additional validation, used to validate gene list and panel name."""
 
         # Reset on validation
@@ -281,7 +281,7 @@ class PanelNewVersionForm(FlaskForm):
     transcript = []
     core_genes = []
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Additional validation, used to validate gene list."""
 
         # Reset before validation
@@ -333,7 +333,7 @@ class PanelVersionEditForm(FlaskForm):
 
     core_genes = []
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation, used to validate core gene list."""
         self.core_genes = []  # Reset core_genes on validation
 
@@ -371,7 +371,7 @@ class SampleSetPanelGeneForm(FlaskForm):
 
     gene_id = ''
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation to parse panel / gene selection"""
         self.gene_id = ''
         valid_form = True
@@ -404,7 +404,7 @@ class SampleGeneForm(FlaskForm):
     gene = StringField('Gene', validators=[validators.InputRequired()])
     gene_id = ''
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation to parse panel / gene selection"""
         self.gene_id = ''
         valid_form = True

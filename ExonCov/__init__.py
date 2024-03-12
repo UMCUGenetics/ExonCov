@@ -8,13 +8,14 @@ from flask_wtf.csrf import CSRFProtect
 import flask_admin
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_debugtoolbar import DebugToolbarExtension
-
+from flask_migrate import Migrate
 from ExonCov.utils import url_for_other_page, event_logger
 
 # Setup APP
 app = Flask(__name__)
 app.config.from_object('config')
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
 admin = flask_admin.Admin(app, name='ExonCov Admin', template_mode='bootstrap3')
 
