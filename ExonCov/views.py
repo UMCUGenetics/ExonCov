@@ -2,6 +2,7 @@
 
 import time
 import datetime
+from operator import attrgetter
 
 from flask import render_template, request, redirect, url_for
 from flask_security import login_required, roles_required
@@ -307,7 +308,7 @@ def panel_new_version(name):
         transcripts = panel_new_version_form.transcripts
 
         # Check for panel changes
-        if sorted(transcripts) == sorted(panel_last_version.transcripts):
+        if sorted(transcripts, key=attrgetter('id')) == sorted(panel_last_version.transcripts, key=attrgetter('id')):
             panel_new_version_form.gene_list.errors.append('No changes.')
 
         else:
