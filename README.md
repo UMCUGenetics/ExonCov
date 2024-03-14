@@ -63,6 +63,13 @@ source venv/bin/activate
 flask --app ExonCov run --debug
 ```
 
+### Run production webserver
+
+```bash
+source venv/bin/activate
+gunicorn -w 4 ExonCov:app
+```
+
 ### Export and Import existing ExonCov db
 
 Ignore large tables, samples should be imported using cli.
