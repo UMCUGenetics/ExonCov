@@ -9,13 +9,14 @@ import flask_admin
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_migrate import Migrate
+
 from ExonCov.utils import url_for_other_page, event_logger
 
 # Setup APP
 app = Flask(__name__)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, command='db_migrate')
 csrf = CSRFProtect(app)
 admin = flask_admin.Admin(app, name='ExonCov Admin', template_mode='bootstrap3')
 
@@ -28,7 +29,10 @@ git_command = ['git', '--git-dir', '{file_path}/../.git'.format(file_path=path.a
 app.jinja_env.globals['git_version'] = check_output(git_command + ['describe', '--tags']).decode('ascii').strip()
 app.jinja_env.globals['git_commit'] = check_output(git_command + ['rev-parse', 'HEAD']).decode('ascii').strip()
 
-from . import views, api_views, admin_views, models, forms
+from . import views, api_views, admin_views, models, forms, cli
+
+# Setup CLI
+app.cli.add_command(cli.db_cli)
 
 # Setup flask_security
 user_datastore = SQLAlchemyUserDatastore(db, models.User, models.Role)

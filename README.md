@@ -1,7 +1,9 @@
 # ExonCov
+
 ExonCov: Exon coverage statistics from BAM files
 
 ### Requirements
+
 - [Python 3](https://www.python.org/)
 - [Virtualenv](https://virtualenv.pypa.io/en/stable/)
 - [MYSQL](https://www.mysql.com/)
@@ -9,18 +11,22 @@ ExonCov: Exon coverage statistics from BAM files
 - [Dx Tracks](https://github.com/UMCUGenetics/Dx_tracks)
 
 ### Setup
+
 ```bash
 # Clone git repository
 git clone git@github.com:UMCUGenetics/ExonCov.git
 cd ExonCov
 
 # Setup python virtual environment and install python dependencies
-python3 -m venv venv
+python3.11 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
 #### Edit config.py
+
 Change the following lines in config.py
+
 ```python
 SQLALCHEMY_DATABASE_URI = 'mysql://<user>:<password>@localhost/exoncov3' #or 'mysql+mysqlconnector://'
 SECRET_KEY = <generate_key>
@@ -37,25 +43,30 @@ EXON_MEASUREMENTS_RSYNC_PATH = 'rsync/path/for/data'
 ```
 
 ### Load design
+
 ```bash
 source venv/bin/activate
 python ExonCov.py load_design
 ```
 
 ### Import bam file
+
 ```bash
 source venv/bin/activate
-python ExonCov.py import_bam <project_name> <bam_file>
+flask --app ExonCov import_bam <project_name> <bam_file>
 ```
 
 ### Run development webserver
+
 ```bash
 source venv/bin/activate
-python ExonCov.py runserver -r -d
+flask --app ExonCov run --debug
 ```
 
 ### Export and Import existing ExonCov db
+
 Ignore large tables, samples should be imported using cli.
+
 ```bash
 mysqldump --user=<user> --password --no-data --tab=<dir_name> exoncov
 
@@ -77,6 +88,7 @@ mysql --init-command="SET SESSION FOREIGN_KEY_CHECKS=0;" --user=exoncov --passwo
 ```
 
 Execute following mysql statements to import data from txt files.
+
 ```mysql
 LOAD DATA LOCAL INFILE 'alembic_version.txt' INTO TABLE alembic_version;
 LOAD DATA LOCAL INFILE 'exons.txt' INTO TABLE exons;
