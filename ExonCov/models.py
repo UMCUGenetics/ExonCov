@@ -415,13 +415,14 @@ class User(db.Model, UserMixin):
 
     roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
 
-    def __init__(self, email, password, first_name, last_name, active, roles):
+    def __init__(self, email, password, first_name, last_name, active, roles, fs_uniquifier):
         self.email = email
         self.password = password
         self.first_name = first_name
         self.last_name = last_name
         self.active = False
         self.roles = roles
+        self.fs_uniquifier = fs_uniquifier
 
     def __repr__(self):
         return "User({0}-{1})".format(self.id, self.email)

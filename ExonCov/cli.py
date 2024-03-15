@@ -255,7 +255,7 @@ def import_bam(project_name, sample_type, bam, exon_bed_file, threads, overwrite
                 }
 
     # Set transcript measurements
-    transcripts = Transcript.query.options(joinedload('exons')).all()
+    transcripts = Transcript.query.options(joinedload(Transcript.exons)).all()
     transcripts_measurements = {}
 
     for transcript in transcripts:
