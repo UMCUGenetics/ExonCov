@@ -14,7 +14,7 @@ import pysam
 from . import app, db
 from .models import (
     Sample, SampleProject, SampleSet, SequencingRun, PanelVersion, Panel, CustomPanel, Gene, Transcript,
-    TranscriptMeasurement, panels_transcripts, Exon
+    TranscriptMeasurement, panels_transcripts
 )
 from .forms import (
     MeasurementTypeForm, CustomPanelForm, CustomPanelNewForm, CustomPanelValidateForm, SampleForm,
@@ -57,7 +57,16 @@ def samples():
         if project:
             samples = samples.join(SampleProject).filter(SampleProject.name.like('%{0}%'.format(project)))
         if run:
-            samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(or_(SequencingRun.name.like('%{0}%'.format(run)), SequencingRun.platform_unit.like('%{0}%'.format(run))))
+            samples = (
+                samples
+                .join(SequencingRun, Sample.sequencing_runs)
+                .filter(
+                    or_(
+                        SequencingRun.name.like('%{0}%'.format(run)),
+                        SequencingRun.platform_unit.like('%{0}%'.format(run))
+                    )
+                )
+            )
         samples = samples.paginate(page=page, per_page=samples_per_page)
     else:
         samples = samples.paginate(page=page, per_page=samples_per_page)
@@ -202,10 +211,16 @@ def sample_panel(sample_id, panel_id):
             weights=[tm[1].len for tm in transcript_measurements]
         ),
         'core_genes': ', '.join(
-            ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100]
+            [
+                '{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15)
+                for tm in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100
+            ]
         ),
         'genes_15': ', '.join(
-            ['{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15) for tm in transcript_measurements if tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95]
+            [
+                '{}({}) = {:.2f}%'.format(tm[0].gene, tm[0], tm[1].measurement_percentage15)
+                for tm in transcript_measurements if tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95
+            ]
         )
     }
 
@@ -250,7 +265,13 @@ def sample_transcript(sample_id, transcript_name):
         'measurement_percentage30': '>30',
         'measurement_percentage100': '>100',
     }
-    return render_template('sample_transcript.html', sample=sample, transcript=transcript, exon_measurements=exon_measurements, measurement_types=measurement_types)
+    return render_template(
+        'sample_transcript.html',
+        sample=sample,
+        transcript=transcript,
+        exon_measurements=exon_measurements,
+        measurement_types=measurement_types
+    )
 
 
 @app.route('/sample/<int:sample_id>/gene/<string:gene_id>')
@@ -267,9 +288,22 @@ def sample_gene(sample_id, gene_id):
         'measurement_percentage30': '>30',
         'measurement_percentage100': '>100',
     }
-    transcript_measurements = db.session.query(Transcript, TranscriptMeasurement).filter(Transcript.gene_id == gene.id).join(TranscriptMeasurement).filter_by(sample_id=sample.id).options(joinedload(Transcript.exons, innerjoin=True)).all()
+    transcript_measurements = (
+        db.session.query(Transcript, TranscriptMeasurement)
+        .filter(Transcript.gene_id == gene.id)
+        .join(TranscriptMeasurement)
+        .filter_by(sample_id=sample.id)
+        .options(joinedload(Transcript.exons, innerjoin=True))
+        .all()
+    )
 
-    return render_template('sample_gene.html', sample=sample, gene=gene, transcript_measurements=transcript_measurements, measurement_types=measurement_types)
+    return render_template(
+        'sample_gene.html',
+        sample=sample,
+        gene=gene,
+        transcript_measurements=transcript_measurements,
+        measurement_types=measurement_types
+    )
 
 
 @app.route('/panel')
@@ -284,7 +318,12 @@ def panels():
 @login_required
 def panel(name):
     """Panel page."""
-    panel = Panel.query.filter_by(name=name).options(joinedload(Panel.versions).joinedload(PanelVersion.transcripts)).first_or_404()
+    panel = (
+        Panel.query
+        .filter_by(name=name)
+        .options(joinedload(Panel.versions).joinedload(PanelVersion.transcripts))
+        .first_or_404()
+    )
     return render_template('panel.html', panel=panel)
 
 
@@ -293,7 +332,12 @@ def panel(name):
 @roles_required('panel_admin')
 def panel_new_version(name):
     """Create new panel version page."""
-    panel = Panel.query.filter_by(name=name).options(joinedload(Panel.versions).joinedload(PanelVersion.transcripts)).first_or_404()
+    panel = (
+        Panel.query
+        .filter_by(name=name)
+        .options(joinedload(Panel.versions).joinedload(PanelVersion.transcripts))
+        .first_or_404()
+    )
     panel_last_version = panel.last_version
 
     genes = '\n'.join([transcript.gene_id for transcript in panel_last_version.transcripts])
@@ -527,7 +571,10 @@ def custom_panel(id):
 
     sample_ids = [sample.id for sample in custom_panel.samples]
     transcript_ids = [transcript.id for transcript in custom_panel.transcripts]
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'],
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+    ]
     transcript_measurements = {}
     panel_measurements = {}
     sample_stats = {sample: [[], {}] for sample in custom_panel.samples}
@@ -552,7 +599,9 @@ def custom_panel(id):
         if transcript_measurement[measurement_type[0]] == 100:
             sample_stats[sample][0].append('{0}({1})'.format(transcript.gene.id, transcript.name))
         else:
-            sample_stats[sample][1]['{0}({1})'.format(transcript.gene.id, transcript.name)] = transcript_measurement[measurement_type[0]]
+            sample_stats[sample][1]['{0}({1})'.format(
+                transcript.gene.id, transcript.name
+            )] = transcript_measurement[measurement_type[0]]
 
         # Calculate weighted average per sample for entire panel
         if sample not in panel_measurements:
@@ -572,7 +621,15 @@ def custom_panel(id):
 
     values = [panel_measurements[sample]['measurement'] for sample in panel_measurements]
     panel_measurements['min'], panel_measurements['max'], panel_measurements['mean'] = get_summary_stats(values)
-    return render_template('custom_panel.html', form=measurement_type_form, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, panel_measurements=panel_measurements, sample_stats=sample_stats)
+    return render_template(
+        'custom_panel.html',
+        form=measurement_type_form,
+        custom_panel=custom_panel,
+        measurement_type=measurement_type,
+        transcript_measurements=transcript_measurements,
+        panel_measurements=panel_measurements,
+        sample_stats=sample_stats
+    )
 
 
 @app.route('/panel/custom/<int:id>/transcript/<string:transcript_name>', methods=['GET', 'POST'])
@@ -590,13 +647,21 @@ def custom_panel_transcript(id, transcript_name):
         .options(joinedload(Transcript.exons))
         .first()
     )
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'],
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+    ]
     transcript_measurements = {}
     exon_measurements = {}
 
     if sample_ids and measurement_type:
         # Get transcript measurements
-        query = TranscriptMeasurement.query.filter(TranscriptMeasurement.sample_id.in_(sample_ids)).filter_by(transcript_id=transcript.id).all()
+        query = (
+            TranscriptMeasurement.query
+            .filter(TranscriptMeasurement.sample_id.in_(sample_ids))
+            .filter_by(transcript_id=transcript.id)
+            .all()
+        )
         for transcript_measurement in query:
             sample = transcript_measurement.sample
             transcript_measurements[sample] = transcript_measurement[measurement_type[0]]
@@ -629,7 +694,15 @@ def custom_panel_transcript(id, transcript_name):
 
         exon_measurements = get_summary_stats_multi_sample(measurements=exon_measurements)
 
-    return render_template('custom_panel_transcript.html', form=measurement_type_form, transcript=transcript, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements, exon_measurements=exon_measurements)
+    return render_template(
+        'custom_panel_transcript.html',
+        form=measurement_type_form,
+        transcript=transcript,
+        custom_panel=custom_panel,
+        measurement_type=measurement_type,
+        transcript_measurements=transcript_measurements,
+        exon_measurements=exon_measurements
+    )
 
 
 @app.route('/panel/custom/<int:id>/gene/<string:gene_id>', methods=['GET', 'POST'])
@@ -642,7 +715,10 @@ def custom_panel_gene(id, gene_id):
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in custom_panel.samples]
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'],
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+    ]
     transcript_measurements = {}
 
     if sample_ids and measurement_type:
@@ -665,7 +741,14 @@ def custom_panel_gene(id, gene_id):
 
         transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
-    return render_template('custom_panel_gene.html', form=measurement_type_form, gene=gene, custom_panel=custom_panel, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
+    return render_template(
+        'custom_panel_gene.html',
+        form=measurement_type_form,
+        gene=gene,
+        custom_panel=custom_panel,
+        measurement_type=measurement_type,
+        transcript_measurements=transcript_measurements
+    )
 
 
 @app.route('/panel/custom/<int:id>/set_validated', methods=['GET', 'POST'])
@@ -686,7 +769,11 @@ def custom_panel_validated(id):
 
         return redirect(url_for('custom_panel', id=custom_panel.id))
     else:
-        return render_template('custom_panel_validate_confirm.html', form=custom_panel_validate_form, custom_panel=custom_panel)
+        return render_template(
+            'custom_panel_validate_confirm.html',
+            form=custom_panel_validate_form,
+            custom_panel=custom_panel
+        )
 
 
 @app.route('/sample_set', methods=['GET', 'POST'])
@@ -699,9 +786,17 @@ def sample_sets():
 
     if panel_gene_form.validate_on_submit():
         if panel_gene_form.panel.data:
-            return redirect(url_for('sample_set_panel', sample_set_id=panel_gene_form.sample_set.data.id, panel_id=panel_gene_form.panel.data.id))
+            return redirect(url_for(
+                'sample_set_panel',
+                sample_set_id=panel_gene_form.sample_set.data.id,
+                panel_id=panel_gene_form.panel.data.id
+            ))
         elif panel_gene_form.gene_id:
-            return redirect(url_for('sample_set_gene', sample_set_id=panel_gene_form.sample_set.data.id, gene_id=panel_gene_form.gene_id))
+            return redirect(url_for(
+                'sample_set_gene',
+                sample_set_id=panel_gene_form.sample_set.data.id,
+                gene_id=panel_gene_form.gene_id
+            ))
 
     return render_template('sample_sets.html', sample_sets=sample_sets, form=panel_gene_form)
 
@@ -747,14 +842,23 @@ def sample_set(id):
             }
         else:
             panels_measurements[panel]['samples'][sample]['measurement'] = weighted_average(
-                values=[panels_measurements[panel]['samples'][sample]['measurement'], transcript_measurement[measurement_type[0]]],
+                values=[
+                    panels_measurements[panel]['samples'][sample]['measurement'],
+                    transcript_measurement[measurement_type[0]]
+                ],
                 weights=[panels_measurements[panel]['samples'][sample]['len'], transcript_measurement.len]
             )
             panels_measurements[panel]['samples'][sample]['len'] += transcript_measurement.len
 
     panels_measurements = get_summary_stats_multi_sample(measurements=panels_measurements, samples=sample_set.samples)
 
-    return render_template('sample_set.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panels_measurements=panels_measurements)
+    return render_template(
+        'sample_set.html',
+        sample_set=sample_set,
+        form=measurement_type_form,
+        measurement_type=measurement_type,
+        panels_measurements=panels_measurements
+    )
 
 
 @app.route('/sample_set/<int:sample_set_id>/panel/<int:panel_id>', methods=['GET', 'POST'])
@@ -767,7 +871,10 @@ def sample_set_panel(sample_set_id, panel_id):
 
     sample_ids = [sample.id for sample in sample_set.samples]
     transcript_ids = [transcript.id for transcript in panel.transcripts]
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'],
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+    ]
     transcript_measurements = {}
 
     query = (
@@ -790,7 +897,14 @@ def sample_set_panel(sample_set_id, panel_id):
     # Calculate min, mean, max
     transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
-    return render_template('sample_set_panel.html', sample_set=sample_set, form=measurement_type_form, measurement_type=measurement_type, panel=panel, transcript_measurements=transcript_measurements)
+    return render_template(
+        'sample_set_panel.html',
+        sample_set=sample_set,
+        form=measurement_type_form,
+        measurement_type=measurement_type,
+        panel=panel,
+        transcript_measurements=transcript_measurements
+    )
 
 
 @app.route('/sample_set/<int:sample_set_id>/transcript/<string:transcript_name>', methods=['GET', 'POST'])
@@ -807,7 +921,10 @@ def sample_set_transcript(sample_set_id, transcript_name):
     )
     measurement_type_form = MeasurementTypeForm()
 
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'],
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+    ]
     exon_measurements = {}
 
     # Get exon measurements
@@ -833,7 +950,14 @@ def sample_set_transcript(sample_set_id, transcript_name):
 
         exon_measurements = get_summary_stats_multi_sample(measurements=exon_measurements)
 
-    return render_template('sample_set_transcript.html', form=measurement_type_form, transcript=transcript, sample_set=sample_set, measurement_type=measurement_type, exon_measurements=exon_measurements)
+    return render_template(
+        'sample_set_transcript.html',
+        form=measurement_type_form,
+        transcript=transcript,
+        sample_set=sample_set,
+        measurement_type=measurement_type,
+        exon_measurements=exon_measurements
+    )
 
 
 @app.route('/sample_set/<int:sample_set_id>/gene/<string:gene_id>', methods=['GET', 'POST'])
@@ -845,7 +969,10 @@ def sample_set_gene(sample_set_id, gene_id):
     measurement_type_form = MeasurementTypeForm()
 
     sample_ids = [sample.id for sample in sample_set.samples]
-    measurement_type = [measurement_type_form.data['measurement_type'], dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])]
+    measurement_type = [
+        measurement_type_form.data['measurement_type'],
+        dict(measurement_type_form.measurement_type.choices).get(measurement_type_form.data['measurement_type'])
+    ]
     transcript_measurements = {}
 
     if sample_ids and measurement_type:
@@ -868,4 +995,11 @@ def sample_set_gene(sample_set_id, gene_id):
 
         transcript_measurements = get_summary_stats_multi_sample(measurements=transcript_measurements)
 
-    return render_template('sample_set_gene.html', form=measurement_type_form, gene=gene, sample_set=sample_set, measurement_type=measurement_type, transcript_measurements=transcript_measurements)
+    return render_template(
+        'sample_set_gene.html',
+        form=measurement_type_form,
+        ene=gene,
+        sample_set=sample_set,
+        measurement_type=measurement_type,
+        transcript_measurements=transcript_measurements
+    )

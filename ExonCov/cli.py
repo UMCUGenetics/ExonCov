@@ -1,8 +1,6 @@
 """CLI functions."""
 from collections import OrderedDict
 import sys
-import re
-import time
 from subprocess import run as subprocess_run, PIPE, Popen, CalledProcessError
 import shlex
 import urllib.request
@@ -55,12 +53,12 @@ def print_stats():
 
 
 @db_cli.command('panel_genes')
-@click.option('--archived_panels', '-a', default=True, is_flag=True)
-def print_panel_genes_table(archived_panels):
+@click.option('-a', '--archived_panels', 'active_panels', default=True, is_flag=True)
+def print_panel_genes_table(active_panels):
     """Print tab delimited panel / genes table."""
-    print('{panel}\t{release_date}\t{genes}'.format(panel='panel_version', release_date='release_date', genes='genes'))
+    print('panel_version\trelease_date\tgenes')
 
-    panel_versions = PanelVersion.query.filter_by(active=archived_panels).options(joinedload(PanelVersion.transcripts))
+    panel_versions = PanelVersion.query.filter_by(active=active_panels).options(joinedload(PanelVersion.transcripts))
 
     for panel in panel_versions:
         print('{panel}\t{release_date}\t{genes}'.format(
@@ -71,7 +69,7 @@ def print_panel_genes_table(archived_panels):
 
 
 @db_cli.command('gene_transcripts')
-@click.option('--preferred_transcripts', '-p', is_flag=True)
+@click.option('-p', '--preferred_transcripts', is_flag=True)
 def print_transcripts(preferred_transcripts):
     """Print tab delimited gene / transcript table"""
     print('{gene}\t{transcript}'.format(gene='Gene', transcript='Transcript'))
@@ -120,7 +118,7 @@ def import_bam(project_name, sample_type, bam, exon_bed_file, threads, overwrite
                 db.session,
                 SequencingRun,
                 platform_unit=read_group['PU']
-            )  # returns object and exists bool
+            )  # Returns object and exists bool
             sequencing_runs[read_group['PU']] = sequencing_run
             sequencing_run_ids.append(sequencing_run.id)
 
@@ -135,7 +133,7 @@ def import_bam(project_name, sample_type, bam, exon_bed_file, threads, overwrite
         SampleProject,
         name=project_name,
         type=''
-    )  # returns object and exists bool
+    )  # Returns object and exists bool
 
     # Look for sample in database
     sample = Sample.query.filter_by(name=sample_name).filter_by(project_id=sample_project.id).first()
@@ -146,13 +144,19 @@ def import_bam(project_name, sample_type, bam, exon_bed_file, threads, overwrite
         sys.exit("ERROR: Sample and project combination already exists.\t{0}".format(sample))
 
     # Create sambamba command
-    sambamba_command = "{sambamba} depth region {bam_file} --nthreads {threads} --filter '{filter}' --regions {bed_file} {settings}".format(
+    sambamba_command = (
+        "{sambamba} depth region {bam_file} --nthreads {threads} --filter '{filter}' --regions {bed_file} {settings}"
+    ).format(
         sambamba=app.config['SAMBAMBA'],
         bam_file=bam,
         threads=threads,
         filter=app.config['SAMBAMBA_FILTER'],
         bed_file=exon_bed_file,
-        settings='--fix-mate-overlaps --min-base-quality 10 --cov-threshold 10 --cov-threshold 15 --cov-threshold 20 --cov-threshold 30 --cov-threshold 50 --cov-threshold 100',
+        settings=(
+            '--fix-mate-overlaps --min-base-quality 10 '
+            '--cov-threshold 10 --cov-threshold 15 --cov-threshold 20 '
+            '--cov-threshold 30 --cov-threshold 50 --cov-threshold 100'
+        )
     )
 
     # Create sample
@@ -179,7 +183,7 @@ def import_bam(project_name, sample_type, bam, exon_bed_file, threads, overwrite
     # Create temp_dir
     if not temp_path:
         temp_dir = tempfile.mkdtemp()
-    else:  # assume path exist and user is responsible for this directory
+    else:  # Assume path exist and user is responsible for this directory
         temp_dir = temp_path
 
     # Run sambamba
@@ -275,7 +279,11 @@ def import_bam(project_name, sample_type, bam, exon_bed_file, threads, overwrite
                     'measurement_percentage100': exon_measurement['measurement_percentage100'],
                 }
             else:
-                measurement_types = ['measurement_mean_coverage', 'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20', 'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100']
+                measurement_types = [
+                    'measurement_mean_coverage',
+                    'measurement_percentage10', 'measurement_percentage15', 'measurement_percentage20',
+                    'measurement_percentage30', 'measurement_percentage50', 'measurement_percentage100'
+                ]
                 for measurement_type in measurement_types:
                     transcripts_measurements[transcript.id][measurement_type] = utils.weighted_average(
                         values=[transcripts_measurements[transcript.id][measurement_type], exon_measurement[measurement_type]],
@@ -410,7 +418,7 @@ def sample_qc(samples, panels, active_panels):
                 panel_qc=panel_qc,
                 core_gene_qc=core_gene_qc
             )
-        else:  # sample and/or panel not found
+        else:  # Sample and/or panel not found
             sample_msg = 'unknown_sample={0}'.format(sample_id)
             panel_msg = 'unknown_panel={0}'.format(panels[index])
 
@@ -447,10 +455,16 @@ def check_samples():
     error = False
 
     transcript_count = Transcript.query.count()
-    sample_transcript_count = db.session.query(Sample.name, func.count(TranscriptMeasurement.id)).outerjoin(TranscriptMeasurement).group_by(Sample.id).all()
+    sample_transcript_count = (
+        db.session.query(Sample.name, func.count(TranscriptMeasurement.id))
+        .outerjoin(TranscriptMeasurement)
+        .group_by(Sample.id).all()
+    )
     for sample_count in sample_transcript_count:
         if sample_count[1] != transcript_count:
-            print("ERROR: Sample:{0} TranscriptMeasurement:{1} Exons:{2}".format(sample_count[0], sample_count[1], transcript_count))
+            print("ERROR: Sample:{0} TranscriptMeasurement:{1} Exons:{2}".format(
+                sample_count[0], sample_count[1], transcript_count
+            ))
             error = True
 
     if not error:
@@ -540,7 +554,7 @@ def import_alias_table():
     header = hgnc_file.readline().decode("utf-8").strip().split('\t')
     for line in hgnc_file:
         data = line.decode("utf-8").strip().split('\t')
-        # skip lines without locus_group, refseq_accession, gene symbol or alias symbol
+        # Skip lines without locus_group, refseq_accession, gene symbol or alias symbol
         try:
             locus_group = data[header.index('locus_group')]
             refseq_accession = data[header.index('refseq_accession')]
@@ -550,7 +564,11 @@ def import_alias_table():
             continue
 
         # Only process protein-coding gene or non-coding RNA with 'NM' refseq_accession
-        if (locus_group == 'protein-coding gene' or locus_group == 'non-coding RNA') and 'NM' in refseq_accession and hgnc_prev_symbols:
+        if (
+            (locus_group == 'protein-coding gene' or locus_group == 'non-coding RNA')
+            and 'NM' in refseq_accession
+            and hgnc_prev_symbols
+        ):
             # Possible gene id's
             hgnc_gene_ids = [hgnc_gene_symbol]
             hgnc_gene_ids.extend(hgnc_prev_symbols.split('|'))
@@ -578,7 +596,7 @@ def import_alias_table():
                             except IntegrityError:
                                 db.session.rollback()
                                 continue
-                        elif hgnc_gene_id != db_gene_id:  # but does exist as gene in database
+                        elif hgnc_gene_id != db_gene_id:  # Does exist as gene in database
                             print("ERROR: Can not import alias: {0} for gene: {1}".format(hgnc_gene_id, db_gene_id))
 
 
@@ -591,17 +609,8 @@ def export_alias_table():
         print('{alias}\t{gene}'.format(alias=gene.id, gene=gene.gene_id))
 
 
-# class PrintPanelBed(Command):
-#
-
-#     option_list = (
-#         Option('-f', '--remove_flank', dest='remove_flank', default=False, action='store_true', help="Remove 20bp flank from exon coordinates."),
-#         Option('-p', '--panel', dest='panel', help="Filter on panel name (including version, for example AMY01v19.1)."),
-#         Option('-a', '--archived_panels', dest='active_panels', default=True,
-#                action='store_false', help="Use archived panels instead of active panels"),
-#     )
 @db_cli.command('export_panel_bed')
-@click.option('-f', '--remove_flank', default=False, is_flag=True, help="Remove 20bp flank from exon coordinates.")
+@click.option('-f', '--remove_flank', is_flag=True, help="Remove 20bp flank from exon coordinates.")
 @click.option('-p', '--panel', help="Filter on panel name (including version, for example AMY01v19.1).")
 @click.option(
     '-a', '--archived_panels', 'active_panels', default=True, is_flag=True,
@@ -632,7 +641,7 @@ def print_panel_bed(remove_flank, panel, active_panels):
         )
 
     for panel in panel_versions:
-        if 'FULL' not in panel.panel_name:  # skip FULL_autosomal and FULL_TARGET
+        if 'FULL' not in panel.panel_name:  # Skip FULL_autosomal and FULL_TARGET
             for transcript in panel.transcripts:
                 for exon in transcript.exons:
                     if exon.id not in exons:
@@ -674,13 +683,13 @@ def export_cov_stats_sample_set(sample_set_id, data_type, measurement_type, acti
     """Print tab delimited coverage statistics of panel or transcript as table."""
     def retrieve_and_print_panel_measurements(ss_samples, query, measurement_type):
         panels_measurements = OrderedDict()
-        # retrieve panel measurements
+        # Retrieve panel measurements
         for panel, transcript_measurement in query:
             sample = transcript_measurement.sample
-            # add new panel
+            # Add new panel
             if panel not in panels_measurements:
                 panels_measurements[panel] = OrderedDict()
-            # add new sample or calculate weighted avg
+            # Add new sample or calculate weighted avg
             if sample not in panels_measurements[panel]:
                 panels_measurements[panel][sample] = {
                     'len': transcript_measurement.len,
@@ -693,7 +702,7 @@ def export_cov_stats_sample_set(sample_set_id, data_type, measurement_type, acti
                 )
                 panels_measurements[panel][sample]['len'] += transcript_measurement.len
 
-        # print header
+        # Print header
         print("panel_version\tmeasurement_type\tmean\tmin\tmax")
         for panel in panels_measurements:
             panel_cov_stats = utils.get_summary_stats_multi_sample(
@@ -712,29 +721,29 @@ def export_cov_stats_sample_set(sample_set_id, data_type, measurement_type, acti
     def retrieve_and_print_transcript_measurements(query, measurement_type):
         panels_measurements = OrderedDict()
 
-        # retrieve transcript measurements
+        # Retrieve transcript measurements
         for panel, transcript_measurement in query:
             sample = transcript_measurement.sample
             transcript = transcript_measurement.transcript
 
-            # add new panel
+            # Add new panel
             if panel not in panels_measurements:
                 panels_measurements[panel] = OrderedDict()
-            # add new transcript
+            # Add new transcript
             if transcript not in panels_measurements[panel]:
                 panels_measurements[panel][transcript] = {}
-            # add new sample
+            # Add new sample
             if sample not in panels_measurements[panel][transcript]:
                 panels_measurements[panel][transcript][sample] = transcript_measurement[measurement_type]
 
-        # print header
+        # Print header
         print("panel_version\ttranscript_id\tgene_id\tmeasurement_type\tmean\tmin\tmax")
         for panel in panels_measurements:
             for transcript in panels_measurements[panel]:
                 transcript_cov_stats = utils.get_summary_stats_multi_sample(
                     measurements=panels_measurements[panel], keys=[transcript]
                 )
-                # print summary
+                # Print summary
                 print(
                     "{panel_version}\t{transcript}\t{gene}\t{measurement_type}\t{mean}\t{min}\t{max}".format(
                         panel_version=panel,
@@ -747,7 +756,7 @@ def export_cov_stats_sample_set(sample_set_id, data_type, measurement_type, acti
                     )
                 )
 
-    # retrieve samples from sampleset
+    # Retrieve samples from sampleset
     try:
         sample_set = SampleSet.query.options(joinedload(SampleSet.samples)).filter_by(id=sample_set_id).one()
     except NoResultFound as e:
@@ -755,7 +764,7 @@ def export_cov_stats_sample_set(sample_set_id, data_type, measurement_type, acti
         sys.exit(e)
     sample_ids = [sample.id for sample in sample_set.samples]
 
-    # retrieve panels, transcripts measurements per sample
+    # Retrieve panels, transcripts measurements per sample
     query = (
         db.session.query(PanelVersion, TranscriptMeasurement)
         .filter_by(active=active_panels, validated=True)
@@ -778,11 +787,13 @@ def export_cov_stats_sample_set(sample_set_id, data_type, measurement_type, acti
     elif data_type == "transcript":
         retrieve_and_print_transcript_measurements(query=query, measurement_type=measurement_type)
 
-
+# Disabled, can be used to setup a new database from scratch
+# Needs imports:
+# import re
+# import time
 # @db_cli.command('load_design')
 # def load_design():
 #     """Load design files to database."""
-#     # Disabled, can be used to setup a new database from scratch
 #     # files
 #     exon_file = app.config['EXON_BED_FILE']
 #     gene_transcript_file = app.config['GENE_TRANSCRIPT_FILE']

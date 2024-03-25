@@ -216,7 +216,9 @@ class CreatePanelForm(FlaskForm):
         description="List of genes seperated by newline, space, tab, ',' or ';'.",
         validators=[validators.InputRequired()]
     )
-    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'.")
+    core_gene_list = TextAreaField(
+        'Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'."
+    )
     coverage_requirement_15 = FloatField('Minimal % 15x', default=99, validators=[validators.InputRequired()])
     disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
     disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
@@ -256,7 +258,9 @@ class CreatePanelForm(FlaskForm):
         if self.name.data:
             panel = Panel.query.filter_by(name=self.name.data).first()
             if panel:
-                self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.')
+                self.name.errors.append(
+                    'Panel already exists, use the update button on the panel page to create a new version.'
+                )
 
         if self.gene_list.errors or self.core_gene_list.errors or self.name.errors:
             return False
@@ -272,7 +276,9 @@ class PanelNewVersionForm(FlaskForm):
         description="List of genes seperated by newline, space, tab, ',' or ';'.",
         validators=[validators.InputRequired()]
     )
-    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'.")
+    core_gene_list = TextAreaField(
+        'Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'."
+    )
     coverage_requirement_15 = FloatField('Minimal % 15x')
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     confirm = BooleanField('Confirm')
@@ -329,7 +335,9 @@ class PanelVersionEditForm(FlaskForm):
     active = BooleanField('Active')
     validated = BooleanField('Validated')
     coverage_requirement_15 = FloatField('Minimal % 15x')
-    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'.")
+    core_gene_list = TextAreaField(
+        'Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'."
+    )
 
     core_genes = []
 

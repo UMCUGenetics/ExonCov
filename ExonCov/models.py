@@ -9,7 +9,7 @@ from sqlalchemy.dialects.mysql import BIGINT
 
 from . import db
 
-# association tables
+# Association tables
 exons_transcripts = db.Table(
     'exons_transcripts',
     db.Column('exon_id', db.ForeignKey('exons.id'), primary_key=True),
@@ -118,7 +118,7 @@ class Gene(db.Model):
 
     __tablename__ = 'genes'
 
-    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
+    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # HGNC
     default_transcript_id = db.Column(
         db.Integer(),
         db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'),
@@ -139,7 +139,7 @@ class GeneAlias(db.Model):
 
     __tablename__ = 'gene_aliases'
 
-    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
+    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # HGNC
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), primary_key=True)
 
     gene = db.relationship('Gene', backref='aliases', foreign_keys=[gene_id])
@@ -230,7 +230,7 @@ class CustomPanel(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
-    research_number = db.Column(db.String(255), server_default='')  # onderzoeksnummer @ lab
+    research_number = db.Column(db.String(255), server_default='')  # Onderzoeksnummer @ lab
     comments = db.Column(db.Text())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     validated = db.Column(db.Boolean, index=True, default=False)
