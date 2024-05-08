@@ -332,10 +332,12 @@ def import_bam(project_name, sample_type, bam, exon_bed_file, threads, overwrite
 
 
 @app.cli.command('search_sample')
-@click.argument('sample_name')
-def search_sample(sample_name):
-    samples = Sample.query.filter(Sample.name.like('%{0}%'.format(sample_name))).all()
-
+# Unlimited sample_names is allowed (nargs=-1)
+@click.argument('sample_names', nargs=-1)
+def search_sample(sample_names):
+    samples = Sample.query.filter(
+        or_(*[Sample.name.like(f'%{sample_name}%') for sample_name in sample_names])
+    ).all()
     print("Sample ID\tSample Name\tProject\tSequencing Runs\tCustom Panels")
     for sample in samples:
         print("{id}\t{name}\t{project}\t{runs}\t{custom_panels}".format(
