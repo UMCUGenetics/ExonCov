@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func
+from sqlalchemy import or_
 import tempfile
 import shutil
 import pysam
