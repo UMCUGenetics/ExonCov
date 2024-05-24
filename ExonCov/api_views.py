@@ -28,12 +28,6 @@ def api_samples():
     return jsonify(result)
 
 
-@app.route('/api/protected-by-token')
-@token_required
-def protected_api():
-    return "success"
-
-
 @app.route('/api/samples/id/<sample_id>')
 @token_required
 def sample_by_id_api(sample_id):
@@ -41,6 +35,14 @@ def sample_by_id_api(sample_id):
     result = model_to_dict(get_sample_by_id(sample_id))
     # To omit items from the object:
     # result.pop("key")
+    return jsonify(result)
+
+
+@app.route('/api/samples/id/<sample_id>/panel/<panel_id>/qc')
+@token_required
+def sample_coverage_by_id_api(sample_id, panel_id):
+    result = {"qc": get_qc_for_sample_and_panel(sample_id, panel_id, True)}
+    result["qc"]["summary"] = get_summary_by_sample_id_and_panel_id(sample_id, panel_id, True)
     return jsonify(result)
 
 
