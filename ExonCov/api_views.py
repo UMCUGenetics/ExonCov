@@ -108,8 +108,11 @@ def get_summary_by_sample_name_and_run_id_api(sample_name, run_id):
     """
     samples = get_samples_by_like_sample_name_or_like_run_id(sample_name, run_id)
     samples_list = []
-    for sample in samples:
-        samples_list.append(model_to_dict(sample))
+    if len(samples) > 0:
+        for sample in samples:
+            samples_list.append(model_to_dict(sample))
+    else:
+        samples_list.append(generate_not_found_dict())
     return jsonify(samples_list)
 
 
@@ -125,11 +128,12 @@ def get_sample_by_sample_name_api(sample_name):
     Returns:
         The sample as a JSON object if it is found in the database
     """
-    if get_sample_by_id(sample_name):
-        result = get_sample_by_sample_name(sample_name)
+    sample = get_sample_by_id(sample_name)
+    if sample:
+        result = model_to_dict(sample)
     else:
         result = generate_not_found_dict()
-    return jsonify(model_to_dict(result))
+    return jsonify(result)
 
 
 @app.route('/api/samples/run/<run_id>')
@@ -146,6 +150,9 @@ def get_summary_by_run_id_api(run_id):
         """
     samples = get_sample_by_like_run_id(run_id)
     samples_list = []
-    for sample in samples:
-        samples_list.append(model_to_dict(sample))
+    if len(samples) > 0:
+        for sample in samples:
+            samples_list.append(model_to_dict(sample))
+    else:
+        samples_list.append(generate_not_found_dict())
     return jsonify(samples_list)
