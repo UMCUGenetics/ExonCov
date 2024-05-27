@@ -61,6 +61,13 @@ def sample_coverage_by_id_api(sample_id, panel_id):
     Returns:
         QC details for the requested sample and panel as a JSON object
     """
+    qc = get_qc_for_sample_and_panel(sample_id, panel_id, True)
+    if qc:
+        result = {"qc": qc}
+        result["qc"]["summary"] = get_summary_by_sample_id_and_panel_id(sample_id, panel_id, True)
+    else:
+        result = generate_not_found_dict()
+
     return jsonify(result)
 
 
@@ -75,9 +82,6 @@ def get_samples_api():
     """
     sample_name = request.args.get('sample_name') or ''
     run_id = request.args.get('run_id') or ''
-
-    print(sample_name)
-    print(run_id)
 
     samples = get_sample_by_like_sample_name_or_run_id(sample_name, run_id)
 
@@ -121,6 +125,11 @@ def get_sample_by_sample_name_api(sample_name):
     Returns:
         The sample as a JSON object if it is found in the database
     """
+    if get_sample_by_id(sample_name):
+        result = get_sample_by_sample_name(sample_name)
+    else:
+        result = generate_not_found_dict()
+    return jsonify(model_to_dict(result))
 
 
 @app.route('/api/samples/run/<run_id>')
