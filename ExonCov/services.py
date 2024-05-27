@@ -223,3 +223,13 @@ def get_qc_for_sample_and_panel(sample_id, panel, active_panels):
         }
     else:
         return None
+
+
+def generate_not_found_dict():
+    """
+    Method to generate a dictionary with a not found message
+
+    Returns:
+        Dictionary with a not found status message
+    """
+    return {"status": "error", "message": "Not found in database"}
