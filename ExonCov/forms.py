@@ -132,7 +132,7 @@ class CustomPanelNewForm(FlaskForm):
     comments = TextAreaField('Comments', description="Provide a short description.")
     transcripts = []  # Filled in validate function
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation, used to validate gene list."""
         # Default validation as defined in field validators
         self.transcripts = []  # Reset transcripts on validation
@@ -216,7 +216,9 @@ class CreatePanelForm(FlaskForm):
         description="List of genes seperated by newline, space, tab, ',' or ';'.",
         validators=[validators.InputRequired()]
     )
-    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'.")
+    core_gene_list = TextAreaField(
+        'Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'."
+    )
     coverage_requirement_15 = FloatField('Minimal % 15x', default=99, validators=[validators.InputRequired()])
     disease_description_eng = StringField('Disease description', validators=[validators.InputRequired()])
     disease_description_nl = StringField('Ziekteomschrijving', validators=[validators.InputRequired()])
@@ -228,7 +230,7 @@ class CreatePanelForm(FlaskForm):
     transcript = []  # Filled in validate function
     core_genes = []
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Additional validation, used to validate gene list and panel name."""
 
         # Reset on validation
@@ -256,7 +258,9 @@ class CreatePanelForm(FlaskForm):
         if self.name.data:
             panel = Panel.query.filter_by(name=self.name.data).first()
             if panel:
-                self.name.errors.append('Panel already exists, use the update button on the panel page to create a new version.')
+                self.name.errors.append(
+                    'Panel already exists, use the update button on the panel page to create a new version.'
+                )
 
         if self.gene_list.errors or self.core_gene_list.errors or self.name.errors:
             return False
@@ -272,7 +276,9 @@ class PanelNewVersionForm(FlaskForm):
         description="List of genes seperated by newline, space, tab, ',' or ';'.",
         validators=[validators.InputRequired()]
     )
-    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'.")
+    core_gene_list = TextAreaField(
+        'Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'."
+    )
     coverage_requirement_15 = FloatField('Minimal % 15x')
     comments = TextAreaField('Comments', description="Provide a short description.", validators=[validators.InputRequired()])
     confirm = BooleanField('Confirm')
@@ -281,7 +287,7 @@ class PanelNewVersionForm(FlaskForm):
     transcript = []
     core_genes = []
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Additional validation, used to validate gene list."""
 
         # Reset before validation
@@ -329,11 +335,13 @@ class PanelVersionEditForm(FlaskForm):
     active = BooleanField('Active')
     validated = BooleanField('Validated')
     coverage_requirement_15 = FloatField('Minimal % 15x')
-    core_gene_list = TextAreaField('Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'.")
+    core_gene_list = TextAreaField(
+        'Core gene list', description="List of core genes seperated by newline, space, tab, ',' or ';'."
+    )
 
     core_genes = []
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation, used to validate core gene list."""
         self.core_genes = []  # Reset core_genes on validation
 
@@ -371,7 +379,7 @@ class SampleSetPanelGeneForm(FlaskForm):
 
     gene_id = ''
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation to parse panel / gene selection"""
         self.gene_id = ''
         valid_form = True
@@ -404,7 +412,7 @@ class SampleGeneForm(FlaskForm):
     gene = StringField('Gene', validators=[validators.InputRequired()])
     gene_id = ''
 
-    def validate(self):
+    def validate(self, extra_validators=[]):
         """Extra validation to parse panel / gene selection"""
         self.gene_id = ''
         valid_form = True

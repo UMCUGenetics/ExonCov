@@ -9,7 +9,7 @@ from sqlalchemy.dialects.mysql import BIGINT
 
 from . import db
 
-# association tables
+# Association tables
 exons_transcripts = db.Table(
     'exons_transcripts',
     db.Column('exon_id', db.ForeignKey('exons.id'), primary_key=True),
@@ -118,7 +118,7 @@ class Gene(db.Model):
 
     __tablename__ = 'genes'
 
-    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
+    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # HGNC
     default_transcript_id = db.Column(
         db.Integer(),
         db.ForeignKey('transcripts.id', name='default_transcript_foreign_key'),
@@ -139,7 +139,7 @@ class GeneAlias(db.Model):
 
     __tablename__ = 'gene_aliases'
 
-    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # hgnc
+    id = db.Column(db.String(50, collation='utf8_bin'), primary_key=True)  # HGNC
     gene_id = db.Column(db.String(50, collation='utf8_bin'), db.ForeignKey('genes.id'), primary_key=True)
 
     gene = db.relationship('Gene', backref='aliases', foreign_keys=[gene_id])
@@ -230,7 +230,7 @@ class CustomPanel(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     date = db.Column(db.Date(), default=datetime.date.today, nullable=False, index=True)
-    research_number = db.Column(db.String(255), server_default='')  # onderzoeksnummer @ lab
+    research_number = db.Column(db.String(255), server_default='')  # Onderzoeksnummer @ lab
     comments = db.Column(db.Text())
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'), nullable=False, index=True)
     validated = db.Column(db.Boolean, index=True, default=False)
@@ -411,18 +411,21 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(255), nullable=False)
     active = db.Column(db.Boolean(), index=True, nullable=False)
 
+    fs_uniquifier = db.Column(db.String(255), unique=True, nullable=False)
+
     roles = db.relationship('Role', secondary=roles_users, lazy='joined', backref=db.backref('users'))
 
     # Establishing a one-to-many relationship with the Token model
     api_tokens = db.relationship('APIToken', back_populates='user')
 
-    def __init__(self, email, password, first_name, last_name, active, roles):
+    def __init__(self, email, password, first_name, last_name, active, roles, fs_uniquifier):
         self.email = email
         self.password = password
         self.first_name = first_name
         self.last_name = last_name
         self.active = False
         self.roles = roles
+        self.fs_uniquifier = fs_uniquifier
 
     def __repr__(self):
         return "User({0}-{1})".format(self.id, self.email)
