@@ -150,10 +150,12 @@ def get_summary_by_sample_id_and_panel_id(sample_id, panel, active_panels):
             values=[tm[1].measurement_percentage15 for tm in transcript_measurements],
             weights=[tm[1].len for tm in transcript_measurements]
         ),
-        'core_genes': [ {"gene": str(tm[0].gene), "transcript_measurement": str(tm[0]), "measurement_percentage15": str(tm[1].measurement_percentage15) } for tm
-             in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100],
-        'genes_15': [ {"gene": str(tm[0].gene), "transcript_measurement": str(tm[0]), "measurement_percentage15": str(tm[1].measurement_percentage15) } for tm
-             in transcript_measurements if tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95]
+        'core_genes': [{"gene": str(tm[0].gene), "transcript_measurement": str(tm[0]),
+                        "measurement_percentage15": str(tm[1].measurement_percentage15)} for tm
+                       in transcript_measurements if tm[0].gene in panel.core_genes and tm[1].measurement_percentage15 < 100],
+        'genes_15': [{"gene": str(tm[0].gene), "transcript_measurement": str(tm[0]),
+                      "measurement_percentage15": str(tm[1].measurement_percentage15)} for tm
+                     in transcript_measurements if tm[0].gene not in panel.core_genes and tm[1].measurement_percentage15 < 95]
     }
     return panel_summary
 
