@@ -46,7 +46,7 @@ EXON_MEASUREMENTS_RSYNC_PATH = 'rsync/path/for/data'
 
 ```bash
 source venv/bin/activate
-python ExonCov.py load_design
+flask --app ExonCov load_design
 ```
 
 ### Import bam file
