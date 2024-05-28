@@ -70,6 +70,11 @@ source venv/bin/activate
 gunicorn -w 4 ExonCov:app
 ```
 
+### Upgrade database scheme
+```bash
+ flask --app ExonCov db_migrate upgrade <commit id>
+```
+
 ### Export and Import existing ExonCov db
 
 Ignore large tables, samples should be imported using cli.
