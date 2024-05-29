@@ -174,7 +174,6 @@ def get_qc_for_sample_and_panel(sample_id, panel, active_panels):
     """
     # Query database
     sample = Sample.query.get(sample_id)
-    print(f"sample: {sample}")
     panel = (
         PanelVersion.query
         .filter_by(panel_name=panel)
@@ -183,7 +182,6 @@ def get_qc_for_sample_and_panel(sample_id, panel, active_panels):
         .order_by(PanelVersion.id.desc())
         .first()
     )
-    print(f"panel: {panel}")
 
     if sample and panel:
         transcript_measurements = (
