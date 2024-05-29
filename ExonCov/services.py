@@ -13,9 +13,9 @@ def get_sample_by_id(id):
     # Query Sample and panels
     sample = (
         Sample.query
-        .options(joinedload('sequencing_runs'))
-        .options(joinedload('project'))
-        .options(joinedload('custom_panels'))
+        .options(joinedload(Sample.sequencing_runs))
+        .options(joinedload(Sample.project))
+        .options(joinedload(Sample.custom_panels))
         .get(id)
     )
 
@@ -57,8 +57,6 @@ def get_sample_by_id(id):
                     weights=[panels[panel.id]['len'], transcript_measurement.len]
                 )
             panels[panel.id]['len'] += transcript_measurement.len
-    print(sample.name)
-    print(sample.import_date)
 
     return sample
 
@@ -68,9 +66,10 @@ def get_sample_by_like_sample_name_or_run_id(sample_name, run_id):
         Sample.query
         .order_by(Sample.import_date.desc())
         .order_by(Sample.name.asc())
-        .options(joinedload('sequencing_runs'))
-        .options(joinedload('project'))
+        .options(joinedload(Sample.sequencing_runs))
+        .options(joinedload(Sample.project))
     )
+
     samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(
         and_(Sample.name.like('%{0}%'.format(sample_name)), SequencingRun.platform_unit.like('%{0}%'.format(run_id))))
     return samples
@@ -78,7 +77,7 @@ def get_sample_by_like_sample_name_or_run_id(sample_name, run_id):
 
 def get_sample_by_sample_name(sample_name):
     sample = (
-        Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).filter_by(name=sample_name).first())
+        Sample.query.options(joinedload(Sample.sequencing_runs)).options(joinedload(Sample.project)).filter_by(name=sample_name).first())
     return sample
 
 
@@ -87,8 +86,8 @@ def get_sample_by_like_run_id(run_id):
         Sample.query
         .order_by(Sample.import_date.desc())
         .order_by(Sample.name.asc())
-        .options(joinedload('sequencing_runs'))
-        .options(joinedload('project'))
+        .options(joinedload(Sample.sequencing_runs))
+        .options(joinedload(Sample.project))
     )
 
     samples = samples.filter(SequencingRun.id.like('%{0}%'.format(run_id)))
@@ -100,8 +99,8 @@ def get_samples_by_like_sample_name_or_like_run_id(sample_name, run_id):
         Sample.query
         .order_by(Sample.import_date.desc())
         .order_by(Sample.name.asc())
-        .options(joinedload('sequencing_runs'))
-        .options(joinedload('project'))
+        .options(joinedload(Sample.sequencing_runs))
+        .options(joinedload(Sample.project))
     )
     samples = samples.join(SequencingRun, Sample.sequencing_runs).filter(
         or_(Sample.name.like('%{0}%'.format(sample_name)),
@@ -112,7 +111,7 @@ def get_samples_by_like_sample_name_or_like_run_id(sample_name, run_id):
 
 
 def get_summary_by_sample_id_and_panel_id(sample_id, panel, active_panels):
-    sample = Sample.query.options(joinedload('sequencing_runs')).options(joinedload('project')).get(sample_id)
+    sample = Sample.query.options(joinedload(Sample.sequencing_runs)).options(joinedload(Sample.project)).get(sample_id)
 
     panel = (
         PanelVersion.query
@@ -122,7 +121,7 @@ def get_summary_by_sample_id_and_panel_id(sample_id, panel, active_panels):
         .order_by(PanelVersion.id.desc())
         .first()
     )
-    panel = PanelVersion.query.options(joinedload('core_genes')).get(panel.id)
+    panel = PanelVersion.query.options(joinedload(PanelVersion.core_genes)).get(panel.id)
 
     measurement_types = {
         'measurement_mean_coverage': 'Mean coverage',
