@@ -150,9 +150,11 @@ def get_summary_by_run_id_api(run_id):
         """
     samples = get_sample_by_like_run_id(run_id)
     samples_list = []
-    if len(samples) > 0:
-        for sample in samples:
-            samples_list.append(model_to_dict(sample))
-    else:
-        samples_list.append(generate_not_found_dict())
+
+    for sample in samples:
+        samples_list.append(model_to_dict(sample))
+
+    if len(samples_list) == 0:
+        samples_list = generate_not_found_dict()
+
     return jsonify(samples_list)
