@@ -90,7 +90,20 @@ def get_sample_by_like_run_id(run_id):
         .options(joinedload(Sample.project))
     )
 
-    samples = samples.filter(SequencingRun.id.like('%{0}%'.format(run_id)))
+    samples = samples.filter(SequencingRun.platform_unit.like('%{0}%'.format(run_id)))
+    return samples
+
+
+def get_sample_by_like_run_db_id(run_id):
+    samples = (
+        Sample.query
+        .order_by(Sample.import_date.desc())
+        .order_by(Sample.name.asc())
+        .options(joinedload(Sample.sequencing_runs))
+        .options(joinedload(Sample.project))
+    )
+
+    samples = samples.filter(SequencingRun.id == run_id)
     return samples
 
 

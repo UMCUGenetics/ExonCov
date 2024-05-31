@@ -138,7 +138,7 @@ def get_sample_by_sample_name_api(sample_name):
 
 @app.route('/api/samples/run/id/<int:run_id>')
 @token_required
-def get_summary_by_run_id_api(run_id):
+def get_summary_by_run_db_id_api(run_id):
     """
         Look up samples by its run database ID
 
@@ -149,6 +149,32 @@ def get_summary_by_run_id_api(run_id):
             A list of sample as a JSON object if there are any found in the database
         """
     samples = get_sample_by_like_run_id(run_id)
+    samples_list = []
+
+    for sample in samples:
+        sample = model_to_dict(sample)
+        sample.pop("import_command")
+        samples_list.append(sample)
+
+    if len(samples_list) == 0:
+        samples_list = generate_not_found_dict()
+
+    return jsonify(samples_list)
+
+
+@app.route('/api/samples/run/seqid/<string:seq_run_id>')
+@token_required
+def get_summary_by_run_seq_id_api(seq_run_id):
+    """
+        Look up samples by its sequencer run ID
+
+        Args:
+            run_id (str): run sequencer id
+
+        Returns:
+            A list of sample as a JSON object if there are any found in the database
+        """
+    samples = get_sample_by_like_run_id(seq_run_id)
     samples_list = []
 
     for sample in samples:
