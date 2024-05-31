@@ -1,9 +1,30 @@
-[project]
-name = "ExonCov"
+[tool.poetry]
+name = "exoncov"
 version = "3.7.0"
+description = "ExonCov: Exon coverage statistics from BAM files"
+authors = ["Bioinformatica Genetica <bioinformatica-genetica@umcutrecht.nl>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+	 { include = "ExonCov"}
+]
+
+
+[tool.poetry.dependencies]
+python = "3.11.*"
+flask = "2.2.5"
+flask-admin = "1.6.1"
+flask-debugtoolbar = "0.14.1"
+flask-migrate = "4.0.7"
+flask-security-too = "4.1.6"
+flask-sqlalchemy = "3.1.1"
+flask-wtf = "1.2.1"
+gunicorn = "21.2.0"
+mysql-connector-python = "8.3.0"
+pysam = "0.22.0"
+wtforms = "2.3.3"
+
 
 [build-system]
-requires = ["setuptools", "wheel"]
-
-[tool.setuptools]
-packages=["ExonCov"]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
