@@ -128,7 +128,7 @@ def get_sample_by_sample_name_api(sample_name):
     Returns:
         The sample as a JSON object if it is found in the database
     """
-    sample = get_sample_by_id(sample_name)
+    sample = get_sample_by_sample_name(sample_name)
     if sample:
         result = model_to_dict(sample)
     else:
