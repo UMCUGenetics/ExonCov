@@ -152,8 +152,8 @@ def get_summary_by_run_id_api(run_id):
     samples_list = []
 
     for sample in samples:
-        samples_list.append(model_to_dict(sample))
         sample = model_to_dict(sample)
+        sample.pop("import_command")
         samples_list.append(sample)
 
     if len(samples_list) == 0:
