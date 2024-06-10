@@ -71,7 +71,7 @@ def event_logger(connection, log_model, model_name, action, event_data):
 
 
 def get_summary_stats(values):
-    return(min(values), max(values), float(sum(values)) / len(values))
+    return (min(values), max(values), float(sum(values)) / len(values))
 
 
 def get_summary_stats_multi_sample(measurements, keys=None, samples=None):
@@ -82,12 +82,12 @@ def get_summary_stats_multi_sample(measurements, keys=None, samples=None):
 
     for key in keys:
         if samples and 'samples' in measurements[key]:
-            # when measurements scope is panel
+            # When measurements scope is panel
             values = [measurements[key]['samples'][sample]['measurement'] for sample in samples]
         elif samples:
             values = [measurements[key][sample]['measurement'] for sample in samples]
         else:
-            # when measurements scope is transcript or exon
+            # When measurements scope is transcript or exon
             values = measurements[key].values()
         measurements[key]['min'], measurements[key]['max'], measurements[key]['mean'] = get_summary_stats(values)
     return measurements
