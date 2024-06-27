@@ -2,40 +2,8 @@
 
 ExonCov: Exon coverage statistics from BAM files
 
-## Requirements
+### Requirements
 
-Exoncov is recommended to be installed with Poetry & pyenv.
-It requires a MySQL like DB, sambamba and DxTracks to be installed on the system.
-
-### Install pyenv (Sets the python version)
-https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
-
-```commandline
-# Once installed, set the correct python version locally (instll it first if not present):
-pyenv local 3.11
-```
-
-### Install Poetry (installs all python requirements)
-https://python-poetry.org/docs/#installation
-
-```commandline
-# Once installed, install the poetry project
-poetry install
-```
-### Install MySQL (required database)
-https://dev.mysql.com/doc/mysql-installation-excerpt/8.0/en/
-
-### Install sambamba (required binary)
-https://github.com/biod/sambamba?tab=readme-ov-file#binary-installation
-
-### Install Dx Tracks (required repository)
-https://github.com/UMCUGenetics/Dx_tracks
-
-
-
-
-
-Python 3.11+ 
 - [Python 3](https://www.python.org/)
 - [Virtualenv](https://virtualenv.pypa.io/en/stable/)
 - [MYSQL](https://www.mysql.com/)
