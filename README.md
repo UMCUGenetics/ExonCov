@@ -5,23 +5,9 @@ ExonCov: Exon coverage statistics from BAM files
 ## Requirements
 
 Exoncov is recommended to be installed with Poetry & pyenv.
-It requires a MySQL like DB, sambamba and DxTracks to be installed on the system.
+It can be installed with PIP, but this is not recommended. 
+ExonCov requires Python 3.11 or higher to be present, a MySQL like DB, sambamba and DxTracks to be installed on the system.
 
-### Install pyenv (Sets the python version)
-https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
-
-```commandline
-# Once installed, set the correct python version locally (instll it first if not present):
-pyenv local 3.11
-```
-
-### Install Poetry (installs all python requirements)
-https://python-poetry.org/docs/#installation
-
-```commandline
-# Once installed, install the poetry project
-poetry install
-```
 ### Install MySQL (required database)
 https://dev.mysql.com/doc/mysql-installation-excerpt/8.0/en/
 
@@ -32,32 +18,33 @@ https://github.com/biod/sambamba?tab=readme-ov-file#binary-installation
 https://github.com/UMCUGenetics/Dx_tracks
 
 
+### Install pyenv (Sets the python version)
+https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
 
 
+### Install Poetry (installs all python requirements)
+https://python-poetry.org/docs/#installation
 
-Python 3.11+ 
-- [Python 3](https://www.python.org/)
-- [Virtualenv](https://virtualenv.pypa.io/en/stable/)
-- [MYSQL](https://www.mysql.com/)
-- [sambamba](https://github.com/biod/sambamba)
-- [Dx Tracks](https://github.com/UMCUGenetics/Dx_tracks)
-
-### Setup
+## Setup
 
 ```bash
+# first set the local python version used (optional, but recommended)
+pyenv local 3.11
+
 # Clone git repository
 git clone git@github.com:UMCUGenetics/ExonCov.git
 cd ExonCov
 
-# Setup python virtual environment and install python dependencies
-python3.11 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+# Once cloned, install using poetry
+poetry install
+
+# Alternative (not recommended)
+pip3 install -r requirements.txt
 ```
 
 #### Edit config.py
 
-Change the following lines in config.py
+Change the following lines in config.py before ExonCov can be used
 
 ```python
 SQLALCHEMY_DATABASE_URI = 'mysql://<user>:<password>@localhost/exoncov3' #or 'mysql+mysqlconnector://'
