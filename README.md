@@ -35,8 +35,8 @@ pyenv local 3.11
 git clone git@github.com:UMCUGenetics/ExonCov.git
 cd ExonCov
 
-# Once cloned, install using poetry
-poetry install
+# Once cloned, install using poetry (excluding non-main dependancies)
+poetry install --only main
 
 # Alternative (not recommended)
 pip3 install -r requirements.txt
@@ -129,3 +129,15 @@ LOAD DATA LOCAL INFILE 'roles_users.txt' INTO TABLE roles_users;
 LOAD DATA LOCAL INFILE 'transcripts.txt' INTO TABLE transcripts;
 LOAD DATA LOCAL INFILE 'user.txt' INTO TABLE user;
 ```
+
+
+## Updating requirements:
+To update python packages used, add them to the ```pyproject.toml``` file. 
+Here, dependencies can be grouped by type (docs, tests, dev, etc) if desired.
+
+After every update of ```pyproject.toml```, the lock file needs to be updated. To do so, run 
+```console
+poetry lock
+```
+to update the ```poetry.lock``` file. 
+After these files are updated, make sure to commit both the ```pyproject.toml``` and ```poetry.lock``` to git.
