@@ -132,8 +132,14 @@ LOAD DATA LOCAL INFILE 'user.txt' INTO TABLE user;
 
 
 ## Updating requirements:
-To update python packages used, add them to the ```pyproject.toml``` file. 
-Here, dependencies can be grouped by type (docs, tests, dev, etc) if desired.
+To update python packages used, use 
+```commandline
+poetry add <package name>
+```
+Using this method will show when any package conflicts arise.
+The added packages will then be added to the ```pyproject.toml``` file. 
+
+In this file, dependencies can be grouped by type (docs, tests, dev, etc) if so desired.
 
 After every update of ```pyproject.toml```, the lock file needs to be updated. To do so, run 
 ```console
@@ -141,3 +147,9 @@ poetry lock
 ```
 to update the ```poetry.lock``` file. 
 After these files are updated, make sure to commit both the ```pyproject.toml``` and ```poetry.lock``` to git.
+
+### Creating a new requirements.txt
+To export the requirements into the older requirements.txt, use
+```commandline
+poetry export 
+```
