@@ -2,49 +2,30 @@
 
 ExonCov: Exon coverage statistics from BAM files
 
-## Requirements
+### Requirements
 
-Exoncov is recommended to be installed with Poetry & pyenv.
-It can be installed with PIP, but this is not recommended. 
-ExonCov requires Python 3.11 or higher to be present, a MySQL like DB, sambamba and DxTracks to be installed on the system.
+- [Python 3](https://www.python.org/)
+- [Virtualenv](https://virtualenv.pypa.io/en/stable/)
+- [MYSQL](https://www.mysql.com/)
+- [sambamba](https://github.com/biod/sambamba)
+- [Dx Tracks](https://github.com/UMCUGenetics/Dx_tracks)
 
-### Install MySQL (required database)
-https://dev.mysql.com/doc/mysql-installation-excerpt/8.0/en/
-
-### Install sambamba (required binary)
-https://github.com/biod/sambamba?tab=readme-ov-file#binary-installation
-
-### Install Dx Tracks (required repository)
-https://github.com/UMCUGenetics/Dx_tracks
-
-
-### Install pyenv (Sets the python version)
-https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
-
-
-### Install Poetry (installs all python requirements)
-https://python-poetry.org/docs/#installation
-
-## Setup
+### Setup
 
 ```bash
-# first set the local python version used (optional, but recommended)
-pyenv local 3.11
-
 # Clone git repository
 git clone git@github.com:UMCUGenetics/ExonCov.git
 cd ExonCov
 
-# Once cloned, install using poetry (excluding non-main dependancies)
-poetry install --only main
-
-# Alternative (not recommended)
-pip3 install -r requirements.txt
+# Setup python virtual environment and install python dependencies
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 #### Edit config.py
 
-Change the following lines in config.py before ExonCov can be used
+Change the following lines in config.py
 
 ```python
 SQLALCHEMY_DATABASE_URI = 'mysql://<user>:<password>@localhost/exoncov3' #or 'mysql+mysqlconnector://'
@@ -128,28 +109,4 @@ LOAD DATA LOCAL INFILE 'role.txt' INTO TABLE role;
 LOAD DATA LOCAL INFILE 'roles_users.txt' INTO TABLE roles_users;
 LOAD DATA LOCAL INFILE 'transcripts.txt' INTO TABLE transcripts;
 LOAD DATA LOCAL INFILE 'user.txt' INTO TABLE user;
-```
-
-
-## Updating requirements:
-To update python packages used, use 
-```commandline
-poetry add <package name>
-```
-Using this method will show when any package conflicts arise.
-The added packages will then be added to the ```pyproject.toml``` file. 
-
-In this file, dependencies can be grouped by type (docs, tests, dev, etc) if so desired.
-
-After every update of ```pyproject.toml```, the lock file needs to be updated. To do so, run 
-```console
-poetry lock
-```
-to update the ```poetry.lock``` file. 
-After these files are updated, make sure to commit both the ```pyproject.toml``` and ```poetry.lock``` to git.
-
-### Creating a new requirements.txt
-To export the requirements into the older requirements.txt, use
-```commandline
-poetry export 
 ```
