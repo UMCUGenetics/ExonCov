@@ -998,7 +998,7 @@ def sample_set_gene(sample_set_id, gene_id):
     return render_template(
         'sample_set_gene.html',
         form=measurement_type_form,
-        ene=gene,
+        gene=gene,
         sample_set=sample_set,
         measurement_type=measurement_type,
         transcript_measurements=transcript_measurements
