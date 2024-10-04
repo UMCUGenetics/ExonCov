@@ -77,7 +77,7 @@ def get_sample_by_like_sample_name_or_run_id(sample_name, run_id):
 
 def get_sample_by_sample_name(sample_name):
     sample = (
-        Sample.query.options(joinedload(Sample.sequencing_runs)).options(joinedload(Sample.project)).filter_by(name=sample_name).first())
+        Sample.query.options(joinedload(Sample.sequencing_runs)).options(joinedload(Sample.project)).filter_by(name=sample_name))
     return sample
 
 
