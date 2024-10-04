@@ -128,8 +128,8 @@ def get_sample_by_sample_name_api(sample_name):
     Returns:
         The sample as a JSON object if it is found in the database
     """
-    sample = get_sample_by_sample_name(sample_name)
-    if sample:
+    samples = get_sample_by_sample_name(sample_name)
+    if samples:
         samples_list = []
 
         for sample in samples:
