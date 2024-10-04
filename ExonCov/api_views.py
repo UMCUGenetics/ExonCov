@@ -136,19 +136,19 @@ def get_sample_by_sample_name_api(sample_name):
     return jsonify(result)
 
 
-@app.route('/api/samples/run/id/<int:run_id>')
+@app.route('/api/samples/run/id/<int:run_dbid>')
 @token_required
-def get_summary_by_run_db_id_api(run_id):
+def get_summary_by_run_db_id_api(run_dbid):
     """
         Look up samples by its run database ID
 
         Args:
-            run_id (int): run database id
+            run_dbid (int): run database id
 
         Returns:
             A list of sample as a JSON object if there are any found in the database
         """
-    samples = get_sample_by_like_run_id(run_id)
+    samples = get_sample_by_like_run_id(run_dbid)
     samples_list = []
 
     for sample in samples:
