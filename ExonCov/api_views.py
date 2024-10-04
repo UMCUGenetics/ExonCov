@@ -130,7 +130,13 @@ def get_sample_by_sample_name_api(sample_name):
     """
     sample = get_sample_by_sample_name(sample_name)
     if sample:
-        result = model_to_dict(sample)
+        samples_list = []
+
+        for sample in samples:
+            sample = model_to_dict(sample)
+            sample.pop("import_command")
+            samples_list.append(sample)
+        result = samples_list
     else:
         result = generate_not_found_dict()
     return jsonify(result)
