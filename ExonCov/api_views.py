@@ -133,9 +133,11 @@ def get_sample_by_sample_name_api(sample_name):
         samples_list = []
 
         for sample in samples:
-            sample = model_to_dict(sample)
-            sample.pop("import_command")
-            samples_list.append(sample)
+            sample_dict = model_to_dict(sample)
+            sample_dict["project"] = str(sample.project)
+            sample_dict.pop("import_command")
+            samples_list.append(sample_dict)
+            print(sample_dict)
         result = samples_list
     else:
         result = generate_not_found_dict()
