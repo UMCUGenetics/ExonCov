@@ -43,10 +43,10 @@ def sample_by_id_api(sample_id):
     """
     if get_sample_by_id(sample_id):
         result = model_to_dict(get_sample_by_id(sample_id))
+        return jsonify(result)
     else:
         result = generate_not_found_dict()
-    return jsonify(result)
-
+        return jsonify(result), 404
 
 @app.route('/api/samples/id/<sample_id>/panel/<panel_id>/qc')
 @token_required
@@ -65,10 +65,9 @@ def sample_coverage_by_id_api(sample_id, panel_id):
     if qc:
         result = {"qc": qc}
         result["qc"]["summary"] = get_summary_by_sample_id_and_panel_id(sample_id, panel_id, True)
+        return jsonify(result)
     else:
-        result = generate_not_found_dict()
-
-    return jsonify(result)
+        return generate_not_found_dict(), 404
 
 
 @app.route('/api/samples')
