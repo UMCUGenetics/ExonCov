@@ -46,7 +46,7 @@ def print_stats():
             if len(project_date) == 6:
                 project_year = project.name[0:2]
             elif len(project_date) == 8:
-                project_year = project.name[0:4]
+                project_year = project.name[2:4]
             else:
                 project_year = "unknown"
             if project_year not in projects_year:
