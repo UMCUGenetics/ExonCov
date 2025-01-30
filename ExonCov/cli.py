@@ -40,8 +40,15 @@ def print_stats():
     print("Number of projects and samples per year:")
     projects_year = {}
     for project in SampleProject.query.options(joinedload(SampleProject.samples)):
-        if project.name[0:6].isdigit() and project.samples:
-            project_year = project.name[0:2]
+        project_date = project.name.split('_')[0]
+
+        if project_date.isdigit() and project.samples:
+            if len(project_date) == 6:
+                project_year = project.name[0:2]
+            elif len(project_date) == 8:
+                project_year = project.name[0:4]
+            else:
+                project_year = "unknown"
             if project_year not in projects_year:
                 projects_year[project_year] = [0, 0]
             projects_year[project_year][0] += 1
